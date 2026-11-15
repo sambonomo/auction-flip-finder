@@ -1884,6 +1884,71 @@ function setSold(vin,v){
   renderSold();
 }
 const soldOdd=(sold,mmr)=>mmr>0&&(sold/mmr<.5||sold/mmr>1.4);   // under half or over 140% of MMR is almost always a typo
+/* ===== Sold results without a VIN: Manheim's post-sale reports leave the VIN off ===== */
+// Reads a results file or pasted table. Needs a sale price, plus lane and run, or year / make / model.
+function parseSoldFile(text){
+  const lines=(text||'').split(/\r\n|\r|\n/).map(l=>l.trim()).filter(Boolean);if(lines.length<2)return {rows:[],missing:['a header row and at least one car']};
+  const cut=l=>l.includes('\t')&&!l.includes(',')?l.split('\t').map(x=>x.trim()):splitCSV(l);
+  const head=cut(lines[0]),H=head.map(x=>x.toLowerCase().trim()),idx=mapSalesHeaders(head);
+  const ex=(k,t)=>{const i=H.findIndex((x,j)=>t(x)&&!Object.values(idx).includes(j));if(i>=0)idx[k]=i;};
+  ex('lane',x=>/^lane/.test(x));ex('run',x=>/^run/.test(x));ex('lot',x=>/^lot|lane.*run|run ?(#|no|num)/.test(x));
+  const missing=[];if(idx.price==null)missing.push('a sale price column');
+  if(idx.vin==null&&!(idx.lane!=null&&idx.run!=null)&&idx.lot==null&&idx.model==null)missing.push('lane and run, or year / make / model');
+  if(missing.length)return {rows:[],missing};
+  const rows=lines.slice(1).map(l=>{const c=cut(l),g=k=>idx[k]!=null?c[idx[k]]:null;
+    const vin=(g('vin')||'').toUpperCase().replace(/[^A-Z0-9]/g,'');const lane=(g('lane')||'').trim(),run=(g('run')||'').trim();
+    return {vin:vin.length===17?vin:'',lot:lane&&run?`${lane}-${run}`:(g('lot')||'').trim(),date:idx.date!=null?parseDate(g('date')):null,price:num(g('price')),grade:crGrade(num(g('grade'))),miles:num(g('miles')),
+      year:num(g('year')),make:(g('make')||'').trim(),model:(g('model')||'').trim(),trim:(g('trim')||'').trim(),auction:(g('auction')||'').trim(),mmr:num(g('mmr'))};
+  }).filter(r=>r.price>0);
+  return {rows,missing:[]};
+}
+// Which run-list car is this result? VIN if there is one, then lane and run on the same sale day,
+// then year / make / model / trim with the odometer as the tie-breaker. Anything unclear stays unmatched.
+function matchSoldRow(r,cars){
+  if(r.vin){const c=cars.find(c=>c.realVin===r.vin||c.vin===r.vin);if(c)return c;}
+  const day=t=>{const d=typeof t==='number'?t:Date.parse(t);return isNaN(d)?null:Math.floor(d/864e5);};
+  if(r.lot){const k=norm(r.lot);const hit=cars.filter(c=>norm(String(c.lot||''))===k&&(r.date==null||!c.saleAt||Math.abs(day(r.date)-day(c.saleAt))<=1));
+    const same=hit.filter(c=>!r.year||!c.year||+c.year===+r.year);if(same.length===1)return same[0];}
+  if(!r.model)return null;
+  let hit=cars.filter(c=>(!r.year||+c.year===+r.year)&&(!r.make||norm(c.make)===norm(r.make))&&(norm(c.model||'').startsWith(norm(r.model))||norm(r.model).startsWith(norm((c.raw&&c.raw.model)||c.model||'~'))));
+  if(r.trim){const t=hit.filter(c=>norm(c.model||'').includes(norm(r.trim))||norm((c.raw&&c.raw.trim)||'')===norm(r.trim));if(t.length)hit=t;}
+  if(r.miles!=null){const m=hit.filter(c=>c.miles!=null&&Math.abs(c.miles-r.miles)<=300);if(m.length===1)return m[0];if(hit.some(c=>c.miles!=null))return null;}
+  return hit.length===1?hit[0]:null;
+}
+function addLooseSold(r){   // a sold car that is not on a loaded run list: kept only when it brings its own MMR
+  ST.results=ST.results||{};const key='M-'+hashStr([r.lot,r.date,r.year,r.make,r.model,r.miles,r.price].join('|')).toString(36)+'-'+Math.round(r.price);
+  const prev=ST.results[key]||{};
+  ST.results[key]={vin:r.vin||'',lot:r.lot||'',auction:r.auction||'',saleAt:r.date?new Date(r.date).toISOString():'',year:r.year||'',make:r.make||'',model:[r.model,r.trim].filter(Boolean).join(' '),miles:r.miles??null,cond:r.grade??null,mmr:r.mmr,mmrSrc:'entered',
+    est:Math.round(r.mmr*ST.settings.hammerPct/100),safe:null,max:null,walk:null,verdict:'',sold:r.price,bought:!!r.bought,manual:true,at:prev.at||Date.now(),u:Date.now()};
+  shareSold(key);return key;
+}
+function importSold(text){
+  const P=parseSoldFile(text);if(P.missing.length){toast('Could not read that file. It needs '+P.missing.join(' and ')+'.');return;}
+  const cars=CARS.filter(c=>c.ok);let matched=0,loose=0,skipped=0;const used=new Set();
+  P.rows.forEach(r=>{const c=matchSoldRow(r,cars.filter(c=>!used.has(c.vin)));
+    if(c){used.add(c.vin);setSold(c.vin,r.price);matched++;}
+    else if(r.mmr>0&&(r.year||r.model)){addLooseSold(r);loose++;}else skipped++;});
+  persist();autoTune();renderSold();
+  showModal(`<h2 style="margin:0 0 8px">Sold results imported</h2><table class="brk"><tbody>
+    <tr><td>Matched to a car on your run lists</td><td><b>${matched}</b></td></tr>
+    <tr><td>Added with the MMR from the file</td><td><b>${loose}</b></td></tr>
+    <tr><td>Skipped: no match and no MMR to compare with</td><td><b>${skipped}</b></td></tr></tbody></table>
+    <p class="hint" style="margin-top:8px">Cars are matched by lane and run on the sale day, then by year, make, model, trim and odometer. A VIN is not needed.${skipped?' To use the skipped cars, load the run list they were on first, then import again.':''}</p>
+    <div class="btns"><button class="b primary" id="m-c">Done</button></div>`);$('m-c').onclick=closeModal;
+}
+function askLooseSold(){
+  showModal(`<h2 style="margin:0 0 4px">Add a sold car</h2><p class="hint" style="margin:0 0 8px">For a car that is not on a loaded run list. No VIN needed.</p><div class="edits" style="grid-template-columns:1fr 1fr">
+    <label style="grid-column:1/-1">Year, make and model<input type="text" id="ls-v" placeholder="2020 Honda CR-V EX"></label>
+    <label>CR grade<input type="number" inputmode="decimal" id="ls-g" step="0.1" placeholder="2.2"></label><label>MMR that day<input type="number" inputmode="numeric" id="ls-m" step="50"></label>
+    <label>Sold for<input type="number" inputmode="numeric" id="ls-p" step="25"></label><label>Lane-run (optional)<input type="text" id="ls-l" placeholder="41-47"></label></div>
+    <div class="btns" style="display:grid;grid-template-columns:1fr 1fr"><button class="b" id="m-c">Cancel</button><button class="b primary" id="m-y">Save</button></div>`);
+  $('m-c').onclick=closeModal;
+  $('m-y').onclick=()=>{const w=$('ls-v').value.trim().split(/\s+/),price=+$('ls-p').value||0,mmr=+$('ls-m').value||0;
+    if(!(price>0)||!(mmr>0)){toast('Enter the MMR and what it sold for');return;}
+    const hasYr=/^(19|20)\d\d$/.test(w[0]||'');
+    addLooseSold({year:hasYr?+w[0]:'',make:hasYr?(w[1]||''):(w[0]||''),model:w.slice(hasYr?2:1).join(' '),grade:crGrade(+$('ls-g').value||null),mmr,price,lot:$('ls-l').value.trim(),date:Date.now()});
+    persist();autoTune();closeModal();renderSold();toast(`Saved. ${money(price)} is ${Math.round(price/mmr*100)}% of MMR.`);};
+}
 function soldStats(){
   const real=Object.values(ST.results||{}).filter(r=>r.sold>0&&r.mmr>0&&r.mmrSrc!=='est');
   const rs=real.filter(r=>!soldOdd(r.sold,r.mmr));const odd=real.length-rs.length;
@@ -1910,11 +1975,14 @@ function renderSold(){
   const lg=$('soldlog');
   if(lg){
     lg.innerHTML=`<h2>Sold prices log <span class="mini">${st.all.length} car${st.all.length===1?'':'s'}, ${st.bought} bought</span></h2>
-      <p class="hint">Type what each car sold for on the Run List, whether you bought it or not. This compares real sale prices with MMR so the model's expected bid can be set from results.</p>
+      <p class="hint">Type what each car sold for on the Run List, whether you bought it or not, or import a results file. No VIN is needed: results are matched by lane and run, then by year, make, model and odometer. This compares real sale prices with MMR so the model's expected bid can be set from results.</p>
       ${st.n?`<table class="cal"><thead><tr><th>Cars</th><th>Count</th><th>Sold at (median % of MMR)</th><th>Model expects</th></tr></thead><tbody>
         ${[{l:'All logged cars',n:st.n,med:st.med}].concat(st.groups.filter(g=>g.n)).map(g=>`<tr><td>${g.l}</td><td>${g.n}</td><td>${g.med.toFixed(1)}%</td><td>${S.hammerPct}%</td></tr>`).join('')}</tbody></table>`:'<div class="empty" style="padding:16px">No sold prices logged yet.</div>'}
-      ${st.all.length?'<div class="btns"><button class="b" id="soldExport">Download the log</button></div>':''}`;
+      <div class="btns"><button class="b primary" id="soldImport">Import sold results</button><button class="b" id="soldAdd">Add a sold car</button>${st.all.length?'<button class="b" id="soldExport">Download the log</button>':''}</div>`;
     if($('soldExport'))$('soldExport').onclick=()=>offerFile('sold-prices.csv',soldCSV());
+    $('soldAdd').onclick=askLooseSold;
+    $('soldImport').onclick=()=>{const f=document.createElement('input');f.type='file';f.accept='.csv,.txt,.tsv,text/csv,text/plain';f.id='soldFile';f.style.display='none';document.body.appendChild(f);
+      f.onchange=async()=>{const x=f.files[0];f.remove();if(x)importSold(await x.text());};f.click();};
   }
 }
 function undoStatus(vin){
