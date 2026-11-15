@@ -29,7 +29,7 @@ create or replace function public.aff_list(p_secret text) returns setof public.a
 language plpgsql security definer set search_path = '' as $$
 begin
   perform public.aff_check(p_secret);
-  return query select * from public.aff_sold order by updated_at;
+  return query select * from public.aff_sold where sold > 0 order by updated_at;
 end $$;
 
 create or replace function public.aff_upsert(p_secret text, p_user text, p_rows jsonb) returns integer
@@ -54,10 +54,14 @@ language plpgsql security definer set search_path = '' as $$
 declare n integer;
 begin
   perform public.aff_check(p_secret);
-  delete from public.aff_sold where key = p_key;
+  -- keep the row and zero the price, so nothing is ever lost
+  update public.aff_sold set sold = 0, updated_at = now() where key = p_key and sold > 0;
   get diagnostics n = row_count;
   return n;
 end $$;
 
 revoke all on function public.aff_check(text) from public, anon, authenticated;
 grant execute on function public.aff_list(text), public.aff_upsert(text, text, jsonb), public.aff_delete(text, text) to anon;
+
+-- After running this, store the SHA-256 of the server secret (the AFF_DB_SECRET value in Vercel):
+-- insert into public.aff_config (name, value) values ('secret_sha256', '<sha256 hex>');
