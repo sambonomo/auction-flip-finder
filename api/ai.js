@@ -107,6 +107,16 @@ async function ask(client, params) {
   }
 }
 
+// Brake on runaway use: at most 80 review requests per 10 minutes on each server instance.
+const recent = [];
+function tooFast() {
+  const now = Date.now();
+  while (recent.length && now - recent[0] > 600000) recent.shift();
+  if (recent.length >= 80) return true;
+  recent.push(now);
+  return false;
+}
+
 module.exports = async (req, res) => {
   res.setHeader('Cache-Control', 'no-store');
   const send = (code, obj) => { res.statusCode = code; res.setHeader('Content-Type', 'application/json'); res.end(JSON.stringify(obj)); };
@@ -115,6 +125,7 @@ module.exports = async (req, res) => {
   if (req.method !== 'POST') return send(405, { error: 'method' });
   if (!process.env.ANTHROPIC_API_KEY) return send(503, { error: 'no_key', message: 'AI is not set up yet. Add ANTHROPIC_API_KEY in the Vercel project settings and redeploy.' });
 
+  if (tooFast()) return send(429, { error: 'rate_limited', message: 'Too many AI requests in a short time. It will try again shortly.' });
   const body = readBody(req);
   const cars = (Array.isArray(body.cars) ? body.cars : []).slice(0, MAX_CARS).map(cleanCar);
   if (!cars.length) return send(400, { error: 'no_cars' });

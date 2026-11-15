@@ -1658,16 +1658,19 @@ function setSold(vin,v){
     ST.results[vin]=c?{vin:c.realVin||'',lot:c.lot,auction:c.auction||'',saleAt:c.saleAt||'',year:c.year,make:c.make,model:c.model||'',miles:c.miles??null,cond:c.cond??null,mmr:c.mmr,mmrSrc:c.mmrSrc||'',
       est:Math.round(c.mmr*ST.settings.hammerPct/100),safe:c.safe||null,max:c.max||null,walk:c.walk||null,verdict:c.mVerdict||c.verdict,ai:c.ai?c.ai.call:null,aiValue:c.ai?c.ai.value:null,sold:v,bought:o.status==='won',at:prev.at||Date.now()}:{...prev,sold:v};ST.results[vin].u=Date.now();}
   shareSold(vin);
+  if(v>0&&c&&soldOdd(v,c.mmr))setTimeout(()=>toast(`Saved ${money(v)}, but that is ${Math.round(v/c.mmr*100)}% of MMR. Check for a typo. It is left out of the model's math.`),80);
   persist();if(v>0)autoTune();
   document.querySelectorAll('input[data-sold]').forEach(i=>{if(i.dataset.sold===vin&&document.activeElement!==i)i.value=v>0?v:'';});
   renderSold();
 }
+const soldOdd=(sold,mmr)=>mmr>0&&(sold/mmr<.5||sold/mmr>1.4);   // under half or over 140% of MMR is almost always a typo
 function soldStats(){
-  const rs=Object.values(ST.results||{}).filter(r=>r.sold>0&&r.mmr>0&&r.mmrSrc!=='est');
+  const real=Object.values(ST.results||{}).filter(r=>r.sold>0&&r.mmr>0&&r.mmrSrc!=='est');
+  const rs=real.filter(r=>!soldOdd(r.sold,r.mmr));const odd=real.length-rs.length;
   const med=a=>{if(!a.length)return null;const b=a.slice().sort((x,y)=>x-y);const m=b.length>>1;return b.length%2?b[m]:(b[m-1]+b[m])/2;};
   const pct=r=>r.sold/r.mmr*100;
   const grp=(l,f)=>{const g=rs.filter(f);return {l,n:g.length,med:med(g.map(pct))};};
-  return {all:Object.values(ST.results||{}),n:rs.length,med:med(rs.map(pct)),
+  return {odd,all:Object.values(ST.results||{}),n:rs.length,med:med(rs.map(pct)),
     groups:[grp('CR 2.5 and under',r=>r.cond!=null&&r.cond<=2.5),grp('CR 2.6 to 3.5',r=>r.cond!=null&&r.cond>2.5&&r.cond<=3.5),grp('CR 3.6 and up',r=>r.cond!=null&&r.cond>3.5),grp('No grade',r=>r.cond==null)],
     bought:rs.filter(r=>r.bought).length};
 }
@@ -1871,7 +1874,7 @@ $('resetBook').onclick=()=>{ST.book=clone(DEFAULT_BOOK);persist();recompute();re
 $('resetSettings').onclick=()=>{ST.settings=clone(DEFAULT_SETTINGS);persist();recompute();renderSettings();renderListSoon();toast('Assumptions reset');};
 
 /* ================= Load / export ================= */
-function toast(m){const t=$('toast');t.textContent=m;t.classList.add('on');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('on'),2000);}
+function toast(m){const t=$('toast');t.textContent=m;t.classList.add('on');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('on'),m.length>50?5000:2000);}
 function listLabel(rows,name){
   const r=rows.find(x=>x.auction||x.saleAt)||{};const d=r.saleAt?new Date(r.saleAt):null;
   const ds=d&&!isNaN(d)?d.toLocaleDateString([], {weekday:'short',month:'short',day:'numeric'}):'';
