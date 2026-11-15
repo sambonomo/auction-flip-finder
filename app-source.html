@@ -472,6 +472,15 @@ body.simple .nav-more{display:flex}body.simple #topnav .nav-more{display:inline-
 body.simple #kpis,body.simple #strat,body.simple .notices,body.simple .filterbar,body.simple #sortsel,body.simple #exportList,body.simple #cards,body.simple .tbl-wrap,body.simple #loadbox,body.simple #howbox,body.simple #steps{display:none!important}
 body:not(.simple) #simple{display:none}
 #simple{display:grid;gap:10px;margin-top:12px}
+.s-sort{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 6px;margin:0 -2px;scrollbar-width:none;-webkit-overflow-scrolling:touch}.s-sort::-webkit-scrollbar{display:none}
+.s-sort button{flex:none;border:1px solid var(--line);background:var(--panel);color:var(--text);border-radius:999px;padding:10px 14px;font:inherit;font-size:14px;font-weight:600;cursor:pointer;min-height:42px}
+.s-sort button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.s-opts{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.s-opts select{flex:1;min-width:130px;min-height:42px}
+.s-opts .tog{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:600;border:1px solid var(--line);background:var(--panel);border-radius:12px;padding:0 12px;min-height:42px;cursor:pointer}.s-opts .tog input{width:18px;height:18px;accent-color:var(--accent)}
+.s-sum{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px 14px;font-size:14px;line-height:1.45}.s-sum b{font-weight:700}
+.s-note{font-size:13px;color:var(--muted);margin:-4px 2px 0;line-height:1.4}
+.scard .sc-n{flex:none;width:28px;height:28px;border-radius:50%;background:var(--accent);color:#fff;font-size:13px;font-weight:800;display:grid;place-items:center}.scard .sc-n.lo{background:transparent;color:var(--muted);border:1px solid var(--line)}
+.scard .sc-m{font-size:13.5px;font-weight:600;margin-top:4px;line-height:1.35}.scard .sc-m .hi{color:var(--accent)}
 .s-head{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:8px 2px 0}
 .scard{display:flex;align-items:center;gap:12px;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px;cursor:pointer;box-shadow:var(--shadow);-webkit-tap-highlight-color:transparent}
 .scard .sc-l{flex:1;min-width:0}.scard .veh{font-size:16px;line-height:1.25}
@@ -520,7 +529,7 @@ details.s-fold>summary::-webkit-details-marker{display:none}
       <div class="toolbar">
         <div class="search"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input type="search" id="search" placeholder="Search lot, make or model" aria-label="Search"></div>
         <select id="sortsel" aria-label="Sort">
-          <option value="rank">Best first</option><option value="profit">Most profit</option><option value="ppd">Profit per day</option><option value="odds">Best odds</option><option value="down">Safest (stress test)</option><option value="lift">Biggest grade lift</option><option value="lot">Lot / run order</option>
+          <option value="rank">Best first</option><option value="chase">Best to chase</option><option value="profit">Most profit</option><option value="ppd">Profit per day</option><option value="odds">Best odds</option><option value="down">Safest (stress test)</option><option value="lift">Biggest grade lift</option><option value="lot">Lot / run order</option>
         </select>
         <label class="filebtn primary-file" title="Upload a run list">Upload list<input type="file" id="file3" multiple accept=".csv,.txt,text/csv,text/plain,text/comma-separated-values,application/vnd.ms-excel"></label>
         <button class="ic-btn line" id="exportList" title="Export to spreadsheet" aria-label="Export to spreadsheet"><svg viewBox="0 0 24 24"><path d="M12 4v12M7 11l5 5 5-5M5 20h14"/></svg></button>
@@ -1571,11 +1580,28 @@ function learnedHammer(H,S,r){
   if(!pick)return null;const n=pick.g.n,v=(n*pick.g.med+5*S.hammerPct)/(n+5);
   return {pct:Math.round(Math.min(105,Math.max(60,v))*2)/2,why:`${n} real sales from ${pick.l} at a median of ${pick.g.med.toFixed(0)}% of MMR`};
 }
+/* ===== Which cars to chase =====
+   A max bid only pays when the bidding stops under it. So each car gets a chance to get it (how far the max bid sits from the price it
+   usually sells for, against how much real prices scatter) and an expected payoff: chance x profit at the max bid, plus what is saved when it sells for less. */
+const HAM_SD=7;   // points of MMR that hammer prices scatter around the usual price until 8 real sold prices say otherwise (assumption)
+function hamSpread(){
+  const v=Object.values(ST.results||{}).filter(r=>r.sold>0&&r.mmr>0&&r.mmrSrc!=='est'&&!soldOdd(r.sold,r.mmr)).map(r=>r.sold/r.mmr*100).sort((a,b)=>a-b);
+  if(v.length<8)return {sd:HAM_SD,n:v.length};const q=f=>v[Math.min(v.length-1,Math.floor(v.length*f))];
+  return {sd:Math.min(15,Math.max(3,(q(.75)-q(.25))/1.349)),n:v.length};
+}
+const normCdf=z=>{const t=1/(1+.2316419*Math.abs(z)),d=.3989423*Math.exp(-z*z/2),p=d*t*(.3193815+t*(-.3565638+t*(1.781478+t*(-1.821256+t*1.330274))));return z>0?1-p:p;};
+function chaseOf(c,sp){
+  c.pWin=c.ev=c.atMax=c.roiMax=null;if(!(c.max>0)||c.hard||!(c.mmr>0)||!(c.bidUsed>0))return;
+  const S=c.S||ST.settings,s=sp.sd/100*c.mmr,z=(c.max-c.bidUsed)/s,pw=normCdf(z);
+  c.pWin=pw;c.atMax=c.tMax;c.ev=pw*c.tMax+s*(z*pw+.3989423*Math.exp(-z*z/2));
+  c.roiMax=c.tMax/(c.max+buyerFee(S,c.max)+S.tIn+(c.recon||0));
+}
 function recompute(){
   const S=ST.settings;const H=hammerGroups();
   CARS=RAW.map((r,i)=>{const k=carKey(r,i);const a=aiFor(k,r);const lh=learnedHammer(H,S,r);const c=buildCar(S,ST.book,r,{...aiOv(ST.ov[k],a),...(lh?{hammerPct:lh.pct,hamWhy:lh.why}:{})});c.listId=r._list;applyAi(c,a);return c;});
   const ok=CARS.filter(c=>c.ok);
   ok.sort((a,b)=>score(b)-score(a)).forEach((c,i)=>c.rank=i+1);
+  const sd=hamSpread();ok.forEach(c=>chaseOf(c,sd));
   const spent=wonSpend();
   const cands=ok.filter(c=>!c.status&&(c.verdict==='buy'||(ST.incMaybe&&c.verdict==='maybe')));
   PLAN=planBudget(cands,Math.max(0,ST.budget-spent));
@@ -1630,22 +1656,52 @@ function plainWhy(c){   // one short reason, in plain words
   if(!c.max)return 'No price makes the profit target';
   return `Only pays at ${money(c.max)} or less`;
 }
-function simpleCard(c){
+const SORTS=[['chase','Best to chase','best to chase first','Ranked by the money each car should bring: profit at your max bid times the chance the bidding stops under it.'],
+  ['profit','Most profit','most profit first','Ranked by what the car typically makes if you win it at your max bid.'],
+  ['roi','Best return','best return on cash first','Ranked by profit for each dollar tied up in the car.'],
+  ['win','Easiest to get','easiest to get first','Ranked by the chance the bidding stops under your max bid.'],
+  ['safe','Safest','safest first','Ranked by the odds the car still clears the profit floor if you pay the full max bid.'],
+  ['run','Run order','in run order','In the order the cars cross the block.']];
+let sSort='chase',sLane='',sLong=false;try{const v=localStorage.getItem('aff_sort');if(SORTS.some(x=>x[0]===v))sSort=v;sLane=localStorage.getItem('aff_lane')||'';sLong=localStorage.getItem('aff_long')==='1';}catch(e){}
+const sSave=()=>{try{localStorage.setItem('aff_sort',sSort);localStorage.setItem('aff_lane',sLane);localStorage.setItem('aff_long',sLong?'1':'0');}catch(e){}};
+const laneNo=c=>{const m=String(c.lot??'').match(/^(\d+)\D+\d+$/);return m?m[1]:'';};
+const pct0=x=>x<.01?'under 1%':x>.99?'over 99%':Math.round(x*100)+'%';
+const getTxt=c=>c.max>=c.bidUsed?'your bid covers the usual price':c.pWin>=.05?`about ${pct0(c.pWin)} chance to get it`:`long shot, must sell ${money(c.bidUsed-c.max)} under usual`;
+const cap1=t=>t.charAt(0).toUpperCase()+t.slice(1);
+function simpleCard(c,i){
   if(!c.ok)return `<div class="scard skip"><div class="sc-l"><div class="veh">Run ${esc(c.lot)}</div><div class="sc-why">Could not read this row</div></div><div class="sc-r"><div class="v">Check</div></div></div>`;
   const sub=`Run ${esc(c.lot)}${c.cond!=null?' · grade '+g1(c.cond):''}${c.miles!=null?' · '+Math.round(c.miles/1000)+'k mi':''}`;
   const won=c.status==='won',bid=worthBid(c);
-  return `<div class="scard${won?' won':bid?'':' skip'}" data-vin="${c.vin}"><div class="sc-l"><div class="veh">${c.year} ${esc(c.make)} ${esc(c.model||'')}</div><div class="vin">${sub}</div><div class="sc-why">${esc(plainWhy(c))}</div>${needsResult(c)?soldInput(c):''}</div>
+  const mk=bid&&!won&&c.pWin!=null?`makes about ${money(c.atMax)}`:'',gt=mk?getTxt(c):'';
+  const bits=mk?(sSort==='roi'?[`${Math.round(c.roiMax*100)}% return on ${money(c.atMax/c.roiMax)}`,gt]:sSort==='win'?[cap1(gt),mk]:sSort==='safe'&&c.pHitMax!=null?[`${pct0(c.pHitMax)} odds of ${money(ST.settings.minP)} or more`,gt]:[cap1(mk),gt]):null;
+  return `<div class="scard${won?' won':bid?'':' skip'}" data-vin="${c.vin}">${bid&&!won&&i!=null&&sSort!=='run'?`<div class="sc-n${i<3?'':' lo'}">${i+1}</div>`:''}<div class="sc-l"><div class="veh">${c.year} ${esc(c.make)} ${esc(c.model||'')}</div><div class="vin">${sub}</div>${bits?`<div class="sc-m"><span class="hi">${bits[0]}</span> · ${bits[1]}</div>`:''}<div class="sc-why">${esc(plainWhy(c))}</div>${needsResult(c)?soldInput(c):''}</div>
     <div class="sc-r">${won?`<div class="l">Won</div><div class="v">${money(c.paid)}</div>`:bid?`<div class="l">Bid up to</div><div class="v">${money(c.max)}</div>`:`<div class="v">Skip</div>`}</div></div>`;
 }
 function renderSimple(list){
   const el=$('simple');if(!el)return;if(VIEW!=='simple'||!RAW.length){el.innerHTML='';return;}
   const byRun=(a,b)=>{const x=lotKey(a),y=lotKey(b);return x>y?1:x<y?-1:0;};
-  const need=CARS.filter(needsResult),bids=list.filter(c=>worthBid(c)||c.status==='won').sort(byRun),skips=list.filter(c=>!(worthBid(c)||c.status==='won')).sort(byRun);
+  const lanes=[...new Set(list.map(laneNo).filter(Boolean))].sort((a,b)=>a-b);if(sLane&&!lanes.includes(sLane))sLane='';
+  if(sLane)list=list.filter(c=>laneNo(c)===sLane);
+  const sk={chase:c=>c.ev,profit:c=>c.atMax,roi:c=>c.roiMax,win:c=>c.pWin,safe:c=>c.pHitMax}[sSort];
+  const ord=sk?(a,b)=>(sk(b)??-1e9)-(sk(a)??-1e9)||(b.ev??-1e9)-(a.ev??-1e9)||(b.max/b.bidUsed)-(a.max/a.bidUsed)||byRun(a,b):byRun;
+  const need=CARS.filter(needsResult),won=list.filter(c=>c.status==='won').sort(byRun);
+  let bids=list.filter(c=>worthBid(c)&&c.status!=='won');const longN=bids.filter(c=>c.pWin!=null&&c.pWin<.1).length;
+  if(sLong)bids=bids.filter(c=>!(c.pWin!=null&&c.pWin<.1));bids.sort(ord);
+  const skips=list.filter(c=>!(worthBid(c)||c.status==='won')).sort(byRun);
+  const S=SORTS.find(x=>x[0]===sSort),eW=bids.reduce((a,c)=>a+(c.pWin||0),0),eV=bids.reduce((a,c)=>a+(c.ev||0),0),sp=hamSpread();
   el.innerHTML=`${need.length?`<div class="s-banner"><b>${need.length} car${need.length>1?'s':''} from a past sale need${need.length>1?'':'s'} a result.</b> Type what each one sold for, or import the results file under More. That is how the bids get sharper.</div>`:''}
-    <div class="s-head">${bids.length?`${bids.length} car${bids.length>1?'s':''} worth a bid, in run order`:'No cars worth a bid on this list'}</div>
-    ${bids.map(simpleCard).join('')}
-    ${skips.length?`<details class="s-fold"${bids.length?'':' open'}><summary>Show ${skips.length} car${skips.length>1?'s':''} to skip</summary><div style="display:grid;gap:2px">${skips.map(simpleCard).join('')}</div></details>`:''}`;
+    <div class="s-sort" role="tablist" aria-label="Sort cars">${SORTS.map(x=>`<button data-ss="${x[0]}" class="${x[0]===sSort?'on':''}">${x[1]}</button>`).join('')}</div>
+    <div class="s-opts">${lanes.length>1?`<select id="s-lane" aria-label="Lane"><option value="">All lanes</option>${lanes.map(l=>`<option value="${l}"${l===sLane?' selected':''}>Lane ${l}</option>`).join('')}</select>`:''}
+      ${longN&&longN<bids.length+(sLong?longN:0)?`<label class="tog"><input type="checkbox" id="s-long"${sLong?' checked':''}>Hide ${longN} long shot${longN>1?'s':''}</label>`:''}</div>
+    ${bids.length?`<div class="s-sum">${eW>=.5?`Bid on all ${bids.length} and stop at each number: expect to win about <b>${Math.max(1,Math.round(eW))}</b> and make about <b>${money(Math.round(eV/50)*50)}</b> in total.`:`<b>Every car here is a long shot today.</b> The closest one has to sell ${money(Math.min(...bids.map(c=>c.bidUsed-c.max)))} under its usual price before it pays. Bid anyway and stop at each number: a win at these prices is a good buy.`}</div>`:''}
+    <div class="s-head">${bids.length?`${bids.length} car${bids.length>1?'s':''} worth a bid, ${S[2]}`:'No cars worth a bid'+(sLane||sLong?' with these filters':' on this list')}</div>
+    <div class="s-note">${S[3]}${sSort==='chase'||sSort==='win'?` Chances assume prices land within about ${Math.round(sp.sd)} points of MMR around the usual price${sp.n>=8?`, measured from ${sp.n} real sold prices`:', until 8 real sold prices are logged'}.`:''}</div>
+    ${won.map(c=>simpleCard(c)).join('')}${bids.map((c,i)=>simpleCard(c,i)).join('')}
+    ${skips.length?`<details class="s-fold"${bids.length||won.length?'':' open'}><summary>Show ${skips.length} car${skips.length>1?'s':''} to skip</summary><div style="display:grid;gap:2px">${skips.map(c=>simpleCard(c)).join('')}</div></details>`:''}`;
   el.querySelectorAll('.scard[data-vin]').forEach(x=>x.onclick=e=>{if(e.target.closest('.vc-sold,.sold-in'))return;openCar(x.dataset.vin);});
+  el.querySelectorAll('[data-ss]').forEach(b=>b.onclick=()=>{sSort=b.dataset.ss;sSave();renderList();});
+  if($('s-lane'))$('s-lane').onchange=e=>{sLane=e.target.value;sSave();renderList();};
+  if($('s-long'))$('s-long').onchange=e=>{sLong=e.target.checked;sSave();renderList();};
 }
 function showMore(){
   showModal(`<h2 style="margin:0 0 2px">More</h2><div class="morelist">
@@ -1688,7 +1744,7 @@ function renderList(){
   if(filt==='ai')list=list.filter(c=>c.aiDis||c.aiFixed);
   if(filt==='star')list=list.filter(c=>c.star);
   if(filt==='plan')list=list.filter(c=>c.inPlan);
-  const key={rank:c=>c.rank,profit:c=>-(c.typ??c.profit),ppd:c=>-c.ppd,down:c=>-c.down,odds:c=>-c.pHit,lift:c=>-c.lift,lot:lotKey}[sortKey]||(c=>c.rank);
+  const key={rank:c=>c.rank,chase:c=>-(c.ev??-1e9),profit:c=>-(c.typ??c.profit),ppd:c=>-c.ppd,down:c=>-c.down,odds:c=>-c.pHit,lift:c=>-c.lift,lot:lotKey}[sortKey]||(c=>c.rank);
   list.sort((a,b)=>{if(!a.ok)return 1;if(!b.ok)return -1;const x=key(a),y=key(b);return (x>y?1:x<y?-1:0)*sortDir;});
   const empty=RAW.length?'Nothing matches.':'Drop the Manheim export at the top of this page to start.';
   if(!list.length){$('cards').innerHTML=`<div class="empty">${empty}</div>`;$('tbody').innerHTML=`<tr><td colspan="12" class="empty">${empty}</td></tr>`;}
