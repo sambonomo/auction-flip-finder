@@ -347,7 +347,7 @@ button.b.good{background:var(--good-bg);border-color:var(--good-line);color:var(
 .dropzone.has{padding:12px 14px;border:1px solid var(--line);flex-direction:row;justify-content:space-between;gap:4px 12px}
 .dropzone.has .dz-ic{display:none}.dropzone.has b{font-size:14px}.dropzone.has span{font-size:13px;font-weight:600;color:var(--accent)}
 #tab-list.nolist{max-width:640px;margin:6vh auto 0}
-.nolist #strat,.nolist #kpis,.nolist #liftcal,.nolist #listcard,.nolist #howbox{display:none}
+.nolist #strat,.nolist #kpis,.nolist #liftcal,.nolist #soldcal,.nolist #listcard,.nolist #howbox{display:none}
 #kpis{grid-template-columns:repeat(3,1fr)}
 #loadbox,#howbox{background:none;border:0;box-shadow:none;padding:0 4px}
 #loadbox>summary,#howbox>summary{justify-content:center;gap:6px;color:var(--muted)}
@@ -396,6 +396,9 @@ table.t tbody tr:last-child td{border-bottom:0}
   .dropzone{padding:36px 14px}
   #tab-list.nolist{margin-top:3vh}
 }
+.sold-in{width:96px!important;padding:7px 8px!important;text-align:right;background:var(--panel)!important;border-color:var(--line2)!important}
+.vc-sold{display:flex;align-items:center;gap:10px;margin-top:12px;padding-top:12px;border-top:1px solid var(--line);font-size:13px;font-weight:600;color:var(--muted)}
+.vc-sold .sold-in{flex:1;width:auto!important;padding:10px 12px!important;text-align:left}
 </style>
 </head>
 <body>
@@ -415,6 +418,7 @@ table.t tbody tr:last-child td{border-bottom:0}
   <p class="rules" id="strat"></p>
   <section class="kpis" id="kpis"></section>
   <div id="liftcal"></div>
+  <div id="soldcal"></div>
   <div class="card" id="listcard">
     <div class="toolbar">
       <div class="seg" id="filter">
@@ -491,6 +495,7 @@ table.t tbody tr:last-child td{border-bottom:0}
 <!-- ============ BACKTEST ============ -->
 <section id="tab-backtest">
   <div class="card" style="background:var(--panel)"><div class="l" style="color:var(--accent)">Backtest</div><div style="font-size:15px;font-weight:700;margin-top:2px">Who already ran this play at this auction, and did it pay?</div><div class="hint" style="margin:4px 0 0">Load the auction's sales history. The app finds cars that sold twice, bought rough and re-sold, and runs each pair through the same cost model. Recon isn't known, so each pair shows the most the buyer could have spent and still broken even, plus estimated profit using your recon $ per grade point.</div></div>
+  <div class="card" id="soldlog"></div>
   <details class="card" id="btload">
     <summary><h2>Load sales history <span class="mini" id="btmini"></span></h2><span class="chev">▼</span></summary>
     <p class="hint">One row per sale: <b>Sale Date, Sale Price, Grade, Odometer</b>, plus <b>VIN</b> if available. Add an <b>Auction</b> column (Dallas or DFW) to compare the two lanes. Without VINs it matches on Year / Make / Model / Trim / Color and mileage.</p>
@@ -615,12 +620,12 @@ function roughMMR(d,miles){
 
 /* ================= Defaults ================= */
 const DEFAULT_SETTINGS={
-  maxGrade:2.5,sellGrade:4.0,cap:2000,minP:1000,target:1500,
+  maxGrade:2.5,sellGrade:4.0,cap:2000,minP:750,target:1500,
   liftPct:9,panelPenalty:0.2,hammerPct:92,driftWk:0.3,
   exitMode:'auction',auctionDays:21,retailPct:112,retailPrep:400,retailCost:600,retailDays:45,dealerPct:96,dealerDays:10,
   feeMode:'tiered',feeVal:500,tIn:150,tOut:150,sellFee:300,doc:100,perDay:10,apr:9,reserve:150,
   reconMult:1,reconPt:750,overrun:25,shortGrade:3.5,
-  mmrKind:'adj',baseGrade:3.2,rev:4,
+  mmrKind:'adj',baseGrade:3.2,rev:5,
   sellPct:98,sellThru:60,rerunDays:7,noSaleFee:50,onlineFee:0,psi:0,
   gradeSd:0.3,reconSd:25,priceSd:4,lemonPct:5,lemonCost:1500,
   liftSd:2.5,rerunCut:1,fpFee:0,conf:70,needSell:'yes',
@@ -1093,8 +1098,9 @@ function mergeState(s){
   if(rv<2)out.settings.mmrKind='adj';
   if(rv<3){out.settings.tIn=150;out.settings.tOut=150;}   // all local cars: $150 per trip
   if(rv<4&&out.settings.liftPct===10)out.settings.liftPct=9;   // first real MMR pair: $12,700 at CR 2.2 to $15,350 at 4.5 = 9.1% per point
-  out.settings.rev=4;   // Manheim's export MMR is confirmed grade-adjusted
-  out.book=Array.isArray(s.book)&&s.book.length?s.book:clone(DEFAULT_BOOK);out.ov=s.ov||{};return out;
+  if(rv<5&&out.settings.minP===1000)out.settings.minP=750;   // floor lowered from $1,000 to $750
+  out.settings.rev=5;   // Manheim's export MMR is confirmed grade-adjusted
+  out.book=Array.isArray(s.book)&&s.book.length?s.book:clone(DEFAULT_BOOK);out.ov=s.ov||{};out.results=s.results||{};return out;
 }
 let saveT=null,saving=false,saveAgain=false;
 function persist(){
@@ -1220,13 +1226,15 @@ function renderList(){
   const key={rank:c=>c.rank,profit:c=>-c.profit,ppd:c=>-c.ppd,down:c=>-c.down,odds:c=>-c.pHit,lift:c=>-c.lift,lot:lotKey}[sortKey]||(c=>c.rank);
   list.sort((a,b)=>{if(!a.ok)return 1;if(!b.ok)return -1;const x=key(a),y=key(b);return (x>y?1:x<y?-1:0)*sortDir;});
   const empty=RAW.length?'Nothing matches.':'Drop the Manheim export at the top of this page to start.';
-  if(!list.length){$('cards').innerHTML=`<div class="empty">${empty}</div>`;$('tbody').innerHTML=`<tr><td colspan="11" class="empty">${empty}</td></tr>`;}
+  if(!list.length){$('cards').innerHTML=`<div class="empty">${empty}</div>`;$('tbody').innerHTML=`<tr><td colspan="12" class="empty">${empty}</td></tr>`;}
   else{
     $('cards').innerHTML=list.map(cardHTML).join('');
     $('tbody').innerHTML=list.map(rowHTML).join('');
   }
-  $('thead').innerHTML=['','Lot','Vehicle','CR','MMR → resale','Recon','Safe bid','Max bid','Profit at est. bid','Odds','Call'].map((h,i)=>`<th class="${i>2&&i<10?'num':''}">${h}</th>`).join('');
-  document.querySelectorAll('#cards .vcard[data-vin],#tbody tr[data-vin]').forEach(el=>el.onclick=e=>{if(e.target.closest('.star'))return;openCar(el.dataset.vin);});
+  $('thead').innerHTML=['','Lot','Vehicle','CR','MMR → resale','Recon','Safe bid','Max bid','Profit at est. bid','Odds','Call','Sold for'].map((h,i)=>`<th class="${i>2&&i<10||i===11?'num':''}">${h}</th>`).join('');
+  document.querySelectorAll('#cards .vcard[data-vin],#tbody tr[data-vin]').forEach(el=>el.onclick=e=>{if(e.target.closest('.star,.vc-sold,.sold-in'))return;openCar(el.dataset.vin);});
+  document.querySelectorAll('input[data-sold]').forEach(i=>{i.onchange=()=>{const v=+i.value||0;setSold(i.dataset.sold,v);toast(v>0?`Sold price saved: ${money(v)}`:'Sold price cleared');};i.onkeydown=e=>{if(e.key==='Enter')i.blur();};});
+  renderSold();
   document.querySelectorAll('.star[data-star]').forEach(b=>b.onclick=e=>{e.stopPropagation();toggleStar(b.dataset.star);});
   renderLiveCount();
 }
@@ -1242,14 +1250,15 @@ function cardHTML(c){
       <div><div class="l">Safe bid</div><div class="v">${c.safe?money(c.safe):'—'}</div></div>
       <div><div class="l">Profit at est. bid</div><div class="v ${pc(c.profit)}">${money(c.profit)}</div></div>
     </div>
-    <div class="vc-foot">${badges(c)}<span class="reason r-${c.verdict}">${esc(c.reason)}</span></div></div>`;
+    <div class="vc-foot">${badges(c)}<span class="reason r-${c.verdict}">${esc(c.reason)}</span></div>
+    <label class="vc-sold"><span>Sold for</span><input class="sold-in" type="number" inputmode="numeric" step="25" min="0" data-sold="${c.vin}" value="${soldOf(c.vin)||''}" placeholder="$ sale price"></label></div>`;
 }
 const tg=t=>`<span class="src">${t}</span>`;
 function fmtWhen(s){const d=new Date(s);return isNaN(d)?s:d.toLocaleString([], {weekday:'short',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});}
 const pc100=x=>x==null?'—':Math.round(x*100)+'%';
 const oc=x=>x>=.6?'pos':x>=.4?'warn':'neg';
 function rowHTML(c){
-  if(!c.ok)return `<tr><td></td><td>${esc(c.lot)}</td><td><div class="veh" style="color:var(--bad)">Can\'t read row</div><div class="vin">${esc(c.vin)} · ${c.err}</div></td><td colspan="7" style="color:var(--muted)">Fix this row and re-run</td><td><span class="badge b-err">Check</span></td></tr>`;
+  if(!c.ok)return `<tr><td></td><td>${esc(c.lot)}</td><td><div class="veh" style="color:var(--bad)">Can\'t read row</div><div class="vin">${esc(c.vin)} · ${c.err}</div></td><td colspan="7" style="color:var(--muted)">Fix this row and re-run</td><td><span class="badge b-err">Check</span></td><td></td></tr>`;
   return `<tr data-vin="${c.vin}" class="v-${c.verdict} ${c.verdict==='skip'||c.status==='lost'?'dim':''}">
     <td><button class="star${c.star?' on':''}" data-star="${c.vin}" aria-label="Star">★</button></td><td>${esc(c.lot)}</td>
     <td><div class="veh">${c.year} ${esc(c.make)} ${esc(c.model||'')}</div><div class="reason r-${c.verdict}">${esc(c.reason)}</div></td>
@@ -1260,7 +1269,8 @@ function rowHTML(c){
     <td class="num maxbid">${c.max?money(c.max):'—'}</td>
     <td class="num ${pc(c.profit)}">${money(c.profit)}</td>
     <td class="num ${oc(c.pHit)}">${pc100(c.pHit)}</td>
-    <td>${badges(c)}</td></tr>`;
+    <td>${badges(c)}</td>
+    <td class="num"><input class="sold-in" type="number" inputmode="numeric" step="25" min="0" data-sold="${c.vin}" value="${soldOf(c.vin)||''}" placeholder="$" aria-label="Sold for"></td></tr>`;
 }
 function toggleStar(vin){const c=CARS.find(x=>x.vin===vin);setOv(vin,'star',c&&c.star?null:true);recompute();renderAll();}
 
@@ -1288,6 +1298,8 @@ function openCar(vin){
     <label>…that MMR is at CR<input type="number" step="0.1" id="e-sellat" value="${o.sellAt??c.raw.sellAt??''}" placeholder="${g1(S.sellGrade)}"></label>
     <label>Est. bid<input type="number" step="100" id="e-bid" value="${o.bid??c.raw.bid??''}" placeholder="${Math.round(c.mmr*S.hammerPct/100/100)*100}"></label>
   </div>
+  <div class="sec-l">After the sale</div>
+  <div class="edits"><label style="grid-column:span 2">Sold for (hammer price, whether he bought it or not)<input type="number" inputmode="numeric" step="25" min="0" id="e-sold" data-sold="${c.vin}" value="${soldOf(c.vin)||''}" placeholder="$"></label></div>
   <div class="sh-grid" style="margin-top:12px">
     <details class="card" open><summary><h2>The math: buy, fix, resell</h2><span class="chev">▼</span></summary><div id="d-exits"></div></details>
     <details class="card"><summary><h2>Recon <span class="mini" id="d-reconmini"></span></h2><span class="chev">▼</span></summary><div id="d-recon"></div>
@@ -1299,6 +1311,7 @@ function openCar(vin){
   $('d-close').onclick=closeCar;
   $('d-star').onclick=()=>{toggleStar(vin);$('d-star').classList.toggle('on',carBy(vin).star);};
   const bind=(id,k)=>$(id).addEventListener('input',e=>{const v=e.target.value===''?null:+e.target.value;setOv(vin,k,(k==='cond'||k==='sellAt')&&v!=null?crGrade(v):v);recompute();updateDetail();renderListSoon();});
+  $('e-sold').onchange=()=>{const v=+$('e-sold').value||0;setSold(vin,v);toast(v>0?`Sold price saved: ${money(v)}`:'Sold price cleared');};
   bind('e-cond','cond');bind('e-mmr','mmr');bind('e-sell','mmrSell');bind('e-sellat','sellAt');bind('e-bid','bid');
   updateDetail();
 }
@@ -1320,7 +1333,7 @@ function updateDetail(){
     ${c.gradeCapped?`<div class="callout red">${c.bodyPanels} repainted panel${c.bodyPanels>1?'s':''} → AutoGrade deducts for previous repairs, so this car realistically tops out at CR ${g1(c.gradeAch)}, not ${g1(S.sellGrade)}.</div>`:''}
     ${c.sellSrc==='est'?`<div class="callout blue">MMR after recon is estimated at +${S.liftPct}% per grade point. Type the real resale MMR from the MMR tool below, and the grade it is for, to replace the guess.</div>`:c.sellAt!=null&&Math.abs(c.sellAt-c.gradeAch)>.05?`<div class="callout blue">Resale MMR of ${money(c.mmrSell)} is for CR ${g1(c.sellAt)}. This car is planned to reach CR ${g1(c.gradeAch)}, so the model uses ${money(c.mmrAtSell)}, on a straight line from ${money(c.mmr)} at CR ${g1(c.cond)}.</div>`:''}`;
   // ladder
-  const live=c.status?`<div class="callout ${c.status==='won'?'green':'blue'}">${c.status==='won'?`Won at ${money(c.paid)}. It's in the Garage.`:'Marked lost.'} <a href="#" id="d-undo" style="color:inherit">Undo</a></div>`
+  const live=c.status?`<div class="callout ${c.status==='won'?'green':'blue'}">${c.status==='won'?`Won at ${money(c.paid)}. It's in the Garage.`:`Marked lost${soldOf(c.vin)?`. It sold for ${money(soldOf(c.vin))}`:''}.`} <a href="#" id="d-undo" style="color:inherit">Undo</a></div>`
     :`<div class="btns" style="display:grid;grid-template-columns:1fr 1fr"><button class="b good" id="d-won">Won it</button><button class="b bad" id="d-lost">Lost / passed</button></div>`;
   $('d-ladder').innerHTML=`<div class="ladder">
       <div><div class="l">Safe bid</div><div class="v pos">${c.safe?money(c.safe):'—'}</div><div class="s">${S.conf}% odds of ${kf(S.minP)}+</div></div>
@@ -1333,7 +1346,7 @@ function updateDetail(){
     ${!c.max?'<div class="callout red">No bid clears the target. Pass unless the numbers change.</div>':c.bidUsed>c.walk?`<div class="callout red">The expected bid is above walk-away. Let it go unless it stalls under ${money(c.walk)}.</div>`:''}
     ${live}`;
   if($('d-won'))$('d-won').onclick=()=>askWon(c.vin);
-  if($('d-lost'))$('d-lost').onclick=()=>{setStatus(c.vin,'lost');};
+  if($('d-lost'))$('d-lost').onclick=()=>askLost(c.vin);
   if($('d-undo'))$('d-undo').onclick=e=>{e.preventDefault();undoStatus(c.vin);};
   // exits
   const best=c.exits.slice().sort((a,b)=>b.profit-a.profit)[0];
@@ -1432,7 +1445,7 @@ Reply with JSON only, no prose: {"lines":{"<id>":<qty>},"risks":"<one short sent
 function askWon(vin){
   const c=carBy(vin);
   showModal(`<h2 style="margin:0 0 4px">Won lot ${esc(c.lot)}</h2><p class="hint">${c.year} ${esc(c.make)} ${esc(c.model||'')}. What was the hammer price?</p>
-    <input type="number" id="m-h" inputmode="numeric" value="${c.bidUsed}" step="25">
+    <input type="number" id="m-h" inputmode="numeric" value="${soldOf(vin)||c.bidUsed}" step="25">
     <p class="hint" id="m-p" style="margin:8px 0 0"></p>
     <div class="btns" style="display:grid;grid-template-columns:1fr 1fr"><button class="b" id="m-cancel">Cancel</button><button class="b primary" id="m-ok">Add to garage</button></div>`);
   const upd=()=>{const h=+$('m-h').value||0;const e=exitCalc(ST.settings,c,c.exitUsed,{hammer:h});$('m-p').innerHTML=`Projected profit at ${money(h)}: <b class="${pc(e.profit)}">${money(e.profit)}</b>${h>c.walk?' <span class="neg">· above walk-away</span>':''}`;};
@@ -1441,7 +1454,7 @@ function askWon(vin){
   $('m-ok').onclick=()=>{const h=+$('m-h').value;if(!h){toast('Enter the hammer price');return;}closeModal();markWon(vin,h);};
 }
 function markWon(vin,h){
-  const o=ov(vin);o.status='won';o.paid=h;persist();recompute();
+  const o=ov(vin);o.status='won';o.paid=h;persist();recompute();setSold(vin,h);
   const c=carBy(vin);const S=ST.settings;
   const id=`flip_${vin}_${Date.now().toString(36)}`;o.flipId=id;persist();
   saveFlip({id,vin:c.realVin||'',lot:c.lot,year:c.year,make:c.make,model:c.model||'',crBuy:c.cond,mmrBuy:c.mmr,mmrSellProj:c.mmrAtSell,gradeProj:c.gradeAch,sellSrc:c.sellSrc,safeBid:c.safe,oddsAtBuy:simCar(S,c,300,h).pHit,
@@ -1450,10 +1463,66 @@ function markWon(vin,h){
   toast(`Lot ${c.lot} added to the garage`);renderAll();if(openVin)updateDetail();
 }
 function setStatus(vin,s){setOv(vin,'status',s);recompute();renderAll();if(openVin)updateDetail();}
+function askLost(vin){
+  const c=carBy(vin);
+  showModal(`<h2 style="margin:0 0 4px">Lost or passed lot ${esc(c.lot)}</h2><p class="hint">${c.year} ${esc(c.make)} ${esc(c.model||'')}. What did it sell for? This trains the model.</p>
+    <input type="number" id="m-h" inputmode="numeric" value="${soldOf(vin)||''}" placeholder="$ sale price" step="25">
+    <p class="hint" id="m-p" style="margin:8px 0 0"></p>
+    <div class="btns" style="display:grid;grid-template-columns:1fr 1fr"><button class="b" id="m-skip">Skip the price</button><button class="b primary" id="m-ok">Save</button></div>`);
+  const upd=()=>{const h=+$('m-h').value||0;$('m-p').textContent=h&&c.mmr?`That is ${(h/c.mmr*100).toFixed(0)}% of MMR${c.max?`, ${h>c.max?money(h-c.max)+' over':money(c.max-h)+' under'} his max bid`:''}.`:'';};
+  $('m-h').oninput=upd;upd();setTimeout(()=>$('m-h').focus(),50);
+  const done=h=>{closeModal();if(h>0)setSold(vin,h);setStatus(vin,'lost');};
+  $('m-skip').onclick=()=>done(0);
+  $('m-ok').onclick=()=>{const h=+$('m-h').value;if(!h){toast('Enter the sale price, or skip');return;}done(h);};
+}
+/* ===== Sold prices: what each car actually hammered for, bought or not ===== */
+function soldOf(vin){const r=(ST.results||{})[vin];return r?r.sold:null;}
+function setSold(vin,v){
+  ST.results=ST.results||{};const c=carBy(vin);
+  if(!(v>0)){delete ST.results[vin];}
+  else{const prev=ST.results[vin]||{};const o=ST.ov[vin]||{};
+    ST.results[vin]=c?{vin:c.realVin||'',lot:c.lot,auction:c.auction||'',saleAt:c.saleAt||'',year:c.year,make:c.make,model:c.model||'',miles:c.miles??null,cond:c.cond??null,mmr:c.mmr,mmrSrc:c.mmrSrc||'',
+      est:Math.round(c.mmr*ST.settings.hammerPct/100),safe:c.safe||null,max:c.max||null,walk:c.walk||null,verdict:c.verdict,sold:v,bought:o.status==='won',at:prev.at||Date.now()}:{...prev,sold:v};}
+  persist();
+  document.querySelectorAll('input[data-sold]').forEach(i=>{if(i.dataset.sold===vin&&document.activeElement!==i)i.value=v>0?v:'';});
+  renderSold();
+}
+function soldStats(){
+  const rs=Object.values(ST.results||{}).filter(r=>r.sold>0&&r.mmr>0&&r.mmrSrc!=='est');
+  const med=a=>{if(!a.length)return null;const b=a.slice().sort((x,y)=>x-y);const m=b.length>>1;return b.length%2?b[m]:(b[m-1]+b[m])/2;};
+  const pct=r=>r.sold/r.mmr*100;
+  const grp=(l,f)=>{const g=rs.filter(f);return {l,n:g.length,med:med(g.map(pct))};};
+  return {all:Object.values(ST.results||{}),n:rs.length,med:med(rs.map(pct)),
+    groups:[grp('CR 2.5 and under',r=>r.cond!=null&&r.cond<=2.5),grp('CR 2.6 to 3.5',r=>r.cond!=null&&r.cond>2.5&&r.cond<=3.5),grp('CR 3.6 and up',r=>r.cond!=null&&r.cond>3.5),grp('No grade',r=>r.cond==null)],
+    bought:rs.filter(r=>r.bought).length};
+}
+function soldCSV(){
+  const q=v=>{v=v==null?'':String(v);return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;};
+  const rows=Object.values(ST.results||{}).sort((a,b)=>a.at-b.at);
+  return ['Logged,Sale Date,Auction,Lot,VIN,Year,Make,Model,Odometer,CR Grade,MMR,Sold For,Sold % of MMR,Model Expected Bid,Safe Bid,Max Bid,Walk-away,Model Call,Bought'].concat(rows.map(r=>[new Date(r.at).toISOString().slice(0,10),r.saleAt?String(r.saleAt).slice(0,10):'',r.auction,r.lot,r.vin,r.year,r.make,r.model,r.miles,r.cond,r.mmr,r.sold,r.mmr?(r.sold/r.mmr*100).toFixed(1):'',r.est,r.safe,r.max,r.walk,r.verdict,r.bought?'yes':'no'].map(q).join(','))).join('\n');
+}
+function renderSold(){
+  const st=soldStats(),S=ST.settings;const sug=st.med!=null?Math.round(st.med):null;
+  const el=$('soldcal');
+  if(el){
+    el.innerHTML=!st.all.length?'':st.n<1?`<div class="callout blue" style="margin:0"><b>${st.all.length} sold price${st.all.length>1?'s':''} logged.</b></div>`
+      :`<div class="callout ${st.n>=10&&Math.abs(sug-S.hammerPct)>=2?'red':'blue'}" style="margin:0"><b>${st.n} sold price${st.n>1?'s':''} logged.</b> Cars sold at a median of ${st.med.toFixed(1)}% of MMR. The model expects ${S.hammerPct}%.${st.n<10?` Log ${10-st.n} more and the app will offer to update the model.`:Math.abs(sug-S.hammerPct)>=1?` <a href="#" id="useHammer" style="color:inherit;text-decoration:underline">Use ${sug}%</a>`:' They agree.'}</div>`;
+    if($('useHammer'))$('useHammer').onclick=e=>{e.preventDefault();ST.settings.hammerPct=sug;persist();recompute();renderAll();toast(`Expected sale price set to ${sug}% of MMR`);};
+  }
+  const lg=$('soldlog');
+  if(lg){
+    lg.innerHTML=`<h2>Sold prices log <span class="mini">${st.all.length} car${st.all.length===1?'':'s'}, ${st.bought} bought</span></h2>
+      <p class="hint">Type what each car sold for on the Run List, whether he bought it or not. This compares real sale prices with MMR so the model's expected bid can be set from results.</p>
+      ${st.n?`<table class="cal"><thead><tr><th>Cars</th><th>Count</th><th>Sold at (median % of MMR)</th><th>Model expects</th></tr></thead><tbody>
+        ${[{l:'All logged cars',n:st.n,med:st.med}].concat(st.groups.filter(g=>g.n)).map(g=>`<tr><td>${g.l}</td><td>${g.n}</td><td>${g.med.toFixed(1)}%</td><td>${S.hammerPct}%</td></tr>`).join('')}</tbody></table>`:'<div class="empty" style="padding:16px">No sold prices logged yet.</div>'}
+      ${st.all.length?'<div class="btns"><button class="b" id="soldExport">Download the log</button></div>':''}`;
+    if($('soldExport'))$('soldExport').onclick=()=>offerFile('sold-prices.csv',soldCSV());
+  }
+}
 function undoStatus(vin){
   const o=ST.ov[vin]||{};
   if(o.flipId&&FLIPS[o.flipId]&&FLIPS[o.flipId].soldPrice==null)deleteFlip(o.flipId);
-  delete o.status;delete o.paid;delete o.flipId;if(!Object.keys(o).length)delete ST.ov[vin];persist();recompute();renderAll();if(openVin)updateDetail();
+  delete o.status;delete o.paid;delete o.flipId;if(!Object.keys(o).length)delete ST.ov[vin];if(ST.results&&ST.results[vin])ST.results[vin].bought=false;persist();recompute();renderAll();if(openVin)updateDetail();
 }
 function showModal(html){$('modal').innerHTML=html;$('modal').classList.add('on');$('mback').classList.add('on');}
 function closeModal(){$('modal').classList.remove('on');$('mback').classList.remove('on');}
@@ -1488,7 +1557,7 @@ function renderLive(){
       <div><div class="veh">${c.year} ${esc(c.make)} ${esc(c.model||'')}</div><div class="vin">${c.status==='won'?`Won ${money(c.paid)} · projected ${money(c.profit)}`:'Lost / passed'}</div></div>
       <button class="b ghost" data-undo="${c.vin}">Undo</button></div>`).join(''):'<div class="empty">Nothing decided yet.</div>';
   $('upnext').querySelectorAll('[data-won]').forEach(b=>b.onclick=()=>askWon(b.dataset.won));
-  $('upnext').querySelectorAll('[data-lost]').forEach(b=>b.onclick=()=>setStatus(b.dataset.lost,'lost'));
+  $('upnext').querySelectorAll('[data-lost]').forEach(b=>b.onclick=()=>askLost(b.dataset.lost));
   $('upnext').querySelectorAll('[data-open]').forEach(b=>b.onclick=()=>openCar(b.dataset.open));
   $('declist').querySelectorAll('[data-undo]').forEach(b=>b.onclick=()=>undoStatus(b.dataset.undo));
 }
@@ -1645,6 +1714,7 @@ $('tmpl').onclick=()=>{$('tmplbox').classList.toggle('on');$('tmpltext').value=T
 $('copytmpl').onclick=()=>copyText(TEMPLATE,'tmplbox','tmpltext');
 async function copyText(txt,box,area){try{await navigator.clipboard.writeText(txt);toast('Copied');}catch(e){$(box).classList.add('on');$(area).value=txt;$(area).select();toast('Select all and copy from the box');}}
 async function offerFile(name,csv){
+  if(!window.claude){try{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download=name;document.body.appendChild(a);a.click();a.remove();toast('Saved '+name);return;}catch(e){}}
   if(DL){try{await DL.save({filename:name,data:csv});toast('Saved '+name);return;}catch(e){if(e&&e.code&&/declin|cancel|abort/i.test(e.code+e.message))return;}}
   copyText(csv,'resbox','restext');
 }
@@ -1690,6 +1760,7 @@ function runBacktest(){
 }
 function pct(x){return x==null?'—':Math.round(x*100)+'%';}
 function renderBacktest(){
+  renderSold();
   const o=btOpts();const S=ST.settings;
   ['reconPt','maxDays','maxMiles','minDays'].forEach(k=>{const el=$('bt_'+k);if(document.activeElement!==el)el.value=o[k];});
   $('btmini').textContent=BT.rows.length?`${BT.rows.length} sales loaded`:'';
