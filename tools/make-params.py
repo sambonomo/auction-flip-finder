@@ -4,7 +4,7 @@ Usage: python3 tools/make-params.py /path/to/model-params.json   then   python3 
 import json,re,sys
 d=json.load(open(sys.argv[1]));src='app-source.html';s=open(src).read()
 val=lambda x:x['value'] if isinstance(x,dict) and 'value' in x else x
-NUM=['sellPct','sellLo','sellHi','sellThru','reconPt','lemonPct','lemonCost','driftMult']
+NUM=['sellPct','sellLo','sellHi','sellThru','reconPt','lemonPct','lemonCost','driftMult','liftMult']
 def block(b):
     o={k:val(b[k]) for k in NUM if k in b}
     if b.get('years'):o['y']=b['years']
@@ -15,6 +15,7 @@ def block(b):
 D=d['default']
 out={'v':d['_meta']['version'],'date':d['_meta']['date'],
  'def':{k:val(D[k]) for k in ['sellPct','sellLo','sellHi','sellThru','reconPt','driftWk','lemonPct','lemonCost']},
+ 'liftByAge':val(D['liftByAge']) if 'liftByAge' in D else None,'liftBase':val(D['liftPct']),
  'months':{m:[x['sellAdj'],x['sellThru'],x['driftWk']] for m,x in d['seasonal']['months'].items()},
  'seg':{k:block(v) for k,v in d['segments'].items()},
  'models':{k:[block(y) for y in v['byYear']] if 'byYear' in v else [block(v)] for k,v in d['models'].items()}}
