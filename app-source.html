@@ -577,7 +577,7 @@ details.s-fold>summary::-webkit-details-marker{display:none}
   <section class="kpis" id="garkpis"></section>
   <div class="card flat">
     <div class="cardhead"><div class="seg" id="gfilter"><button data-g="open" class="on">In progress</button><button data-g="sold">Sold</button><button data-g="all">All</button></div>
-      <div class="acts"><button class="b sm" id="exportFlips">Export</button><button class="b sm primary" id="addFlip">Add car</button></div>
+      <div class="acts"><button class="b sm" id="importFlips">Import from Manheim</button><button class="b sm" id="exportFlips">Export</button><button class="b sm primary" id="addFlip">Add car</button></div>
     </div>
     <div class="list" id="flips"></div>
   </div>
@@ -768,7 +768,7 @@ function carS(S,o){
 
 /* ================= Defaults ================= */
 const DEFAULT_SETTINGS={
-  maxGrade:2.5,sellGrade:4.0,cap:2000,minP:750,target:1500,targetPct:6,floorPct:3,aiUse:'yes',autoTune:'yes',useResearch:'yes',season:'yes',lane:'national',
+  maxGrade:2.5,sellGrade:4.0,cap:2000,minP:750,target:1500,targetPct:6,floorPct:3,haircut:0,aiUse:'yes',autoTune:'yes',useResearch:'yes',season:'yes',lane:'national',
   liftPct:9,panelPenalty:0.2,hammerPct:96,driftWk:0.45,
   exitMode:'auction',auctionDays:21,retailPct:112,retailPrep:400,retailCost:600,retailDays:45,dealerPct:96,dealerDays:10,
   feeMode:'tiered',feeVal:500,tIn:150,tOut:150,sellFee:500,doc:100,perDay:10,apr:9,reserve:150,
@@ -879,7 +879,7 @@ function buildCar(S,book,raw,ov){
   o.gradeAch=Math.round(Math.max(gNow,S.sellGrade-S.panelPenalty*o.bodyPanels)*10)/10;
   o.gradeCapped=o.gradeAch<S.sellGrade-1e-9;
   // hammer
-  o.bidUsed=o.paid??ov.bid??raw.bid??Math.max(Math.round(o.mmr*S.hammerPct/100/100)*100,raw.curBid||0);   // it can't hammer under the bid already on it
+  o.bidUsed=o.paid??ov.bid??raw.bid??Math.max(Math.round(o.mmr*(ov.hammerPct??S.hammerPct)/100/100)*100,raw.curBid||0);o.hamPct=ov.hammerPct??S.hammerPct;o.hamWhy=ov.hamWhy||'';   // it can't hammer under the bid already on it
   o.buyNow=raw.buyNow||null;o.seller=raw.seller||'';o.saleAt=raw.saleAt||'';
   o.bidSrc=o.paid!=null?'paid':(ov.bid!=null||raw.bid!=null)?'list':'assumed';
   const ann=(raw.notes||'').toLowerCase();
@@ -937,7 +937,7 @@ function simStats(S,out){const N=out.length;return {mean:out.reduce((a,b)=>a+b,0
 function simCar(S,o,N,hammer){return simStats(S,simRun(S,o,N,hammer).out);}
 // The profit a bid has to clear. On a pricey car a flat dollar target is too thin for the cash at risk,
 // so the target is the larger of the dollar figure and a share of the cash in the car.
-function needAt(S,o,h,kind){const cash=h+buyerFee(S,h)+S.tIn+o.recon;return kind==='target'?Math.max(S.target,(S.targetPct||0)/100*cash):Math.max(S.minP,(S.floorPct||0)/100*cash);}
+function needAt(S,o,h,kind){const cash=h+buyerFee(S,h)+S.tIn+o.recon;return (S.haircut||0)+(kind==='target'?Math.max(S.target,(S.targetPct||0)/100*cash):Math.max(S.minP,(S.floorPct||0)/100*cash));}   // haircut: how far real flips have run under the forecast
 // Every replay's profit moves down dollar for dollar (plus fee and interest) as the hammer goes up, so one big
 // set of replays prices every bid exactly. q is the share of replays allowed to fall short.
 function bidAt(S,o,sim,q,kind){
@@ -1475,7 +1475,7 @@ async function shareCall2(method,body,qs){
   const r=await fetch('/api/share'+(qs||''),{method,headers:{'Content-Type':'application/json'},credentials:'same-origin',body:body?JSON.stringify(body):undefined});
   if(!r.ok)throw {status:r.status};return r.json();
 }
-const TUNED_KEYS=['hammerPct','reconMult','liftPct','sellPct','sellLo','sellHi'];
+const TUNED_KEYS=['hammerPct','reconMult','liftPct','sellPct','sellLo','sellHi','haircut'];
 function pushTuned(){
   ST.tunedU=Date.now();const values={};TUNED_KEYS.forEach(k=>values[k]=ST.settings[k]);
   kvPut('tuned','current',{values,log:(ST.tuneLog||[]).slice(-60),weekly:(ST.weekly||[]).slice(-12)});
@@ -1493,7 +1493,7 @@ async function shareMore(){
   // tuned numbers and the weekly note
   const t=((await shareCall2('GET',null,'?kind=tuned')).rows||[]).find(r=>r.key==='current'&&!r.gone);let tuned=false;
   if(t&&t.u>(ST.tunedU||0)){ST.tunedU=t.u;const v=t.data.values||{};
-    if(ST.settings.autoTune!=='no')TUNED_KEYS.forEach(k=>{if(v[k]>0&&v[k]!==ST.settings[k])ST.settings[k]=v[k];});
+    if(ST.settings.autoTune!=='no')TUNED_KEYS.forEach(k=>{if((k==='haircut'?v[k]>=0:v[k]>0)&&v[k]!==ST.settings[k])ST.settings[k]=v[k];});
     ST.tuneLog=Array.isArray(t.data.log)?t.data.log:(ST.tuneLog||[]);ST.weekly=Array.isArray(t.data.weekly)?t.data.weekly:[];tuned=true;}
   else if(!t&&(ST.tuneLog||[]).length)pushTuned();
   if(got||tuned){persist();recompute();renderAll();if(tab==='settings')renderSettings();}
@@ -1515,7 +1515,7 @@ async function shareSync(){
 }
 /* ================= Self-tuning from real results ================= */
 // Small, limited steps only, each one logged in Settings with an undo.
-const TUNE={reconMult:{label:'Recon multiplier'},hammerPct:{lo:80,hi:102,step:1.5,n:10,label:'Expected sale price (% of MMR)'},liftPct:{lo:5,hi:14,step:.5,n:10,label:'MMR change per CR point (%)'},sellPct:{label:'Re-run sells at, most likely (% of MMR)'},sellLo:{label:'Re-run sells at, low case (%)'},sellHi:{label:'Re-run sells at, high case (%)'}};
+const TUNE={reconMult:{label:'Recon multiplier'},hammerPct:{lo:80,hi:102,step:1.5,n:10,label:'Expected sale price (% of MMR)'},liftPct:{lo:5,hi:14,step:.5,n:10,label:'MMR change per CR point (%)'},sellPct:{label:'Re-run sells at, most likely (% of MMR)'},sellLo:{label:'Re-run sells at, low case (%)'},sellHi:{label:'Re-run sells at, high case (%)'},haircut:{label:'Extra margin held back ($)'}};
 function tuneSet(key,to,why){
   ST.tuneLog=ST.tuneLog||[];ST.tuneLog.push({at:Date.now(),key,from:ST.settings[key],to,why});if(ST.tuneLog.length>40)ST.tuneLog.shift();ST.settings[key]=to;
 }
@@ -1535,6 +1535,9 @@ function autoTune(){
   const st=soldStats(),g=st.groups[0];
   if(g.n>=TUNE.hammerPct.n)nudge('hammerPct',g.med,g.n,`${g.n} logged sales of CR 2.5 and under cars sold at a median of ${g.med.toFixed(1)}% of MMR`);
   else if(st.n>=TUNE.hammerPct.n)nudge('hammerPct',st.med,st.n,`${st.n} logged sales sold at a median of ${st.med.toFixed(1)}% of MMR`);
+  const SCs=scoreStats();   // real flips running under forecast: hold back that much on every bid
+  if(SCs.n>=5&&ready('haircut')){const want=Math.min(1500,Math.max(0,Math.round(-SCs.med/50)*50)),cur=S.haircut||0;
+    if(Math.abs(want-cur)>=100||(want===0&&cur>0)){tuneSet('haircut',want,`${SCs.n} finished cars came in a median of ${money(Math.abs(SCs.med))} ${SCs.med<0?'under':'over'} forecast`);ch=true;}}
   const RS=resaleStat(S);   // 3 real resales are enough to replace the assumed range
   if(RS.n>=3&&ready('sellPct')){const mid=Math.round(RS.avg);const why=`${RS.n} finished Garage cars re-ran at an average of ${RS.avg.toFixed(1)}% of MMR at their grade`;
     if(mid!==S.sellPct||RS.lo!==S.sellLo||RS.hi!==S.sellHi){if(RS.lo!==S.sellLo)tuneSet('sellLo',RS.lo,why);if(RS.hi!==S.sellHi)tuneSet('sellHi',RS.hi,why);tuneSet('sellPct',mid,why);S.lane='national';ch=true;}}
@@ -1550,9 +1553,27 @@ function renderTuneLog(){
     :'<p class="hint" style="margin:0">Nothing yet. After 10 sold prices are logged, the model starts moving its expected sale price toward what cars really sell for, at most 1.5 points a day. Every Monday morning a retune also checks recon costs and value per grade point against finished flips in the Garage.</p>');
   el.querySelectorAll('[data-undo]').forEach(b=>b.onclick=()=>{const e=ST.tuneLog[+b.dataset.undo];ST.settings[e.key]=e.from;e.undone=true;e.at=Date.now();pushTuned();persist();recompute();renderSettings();renderListSoon();toast('Change undone. The model will leave this number alone for a week.');});
 }
+/* ===== What cars really hammer for, by seller, lane and price band ===== */
+const BANDS=[[5000,'Under $5k'],[10000,'$5k to $10k'],[20000,'$10k to $20k'],[35000,'$20k to $35k'],[1e9,'Over $35k']];
+const bandOf=m=>BANDS.find(b=>m<b[0])[1];
+const laneOf=(auction,lot)=>{const l=String(lot||'').split('-')[0];return l?`${auction||''} lane ${l}`.trim():'';};
+function hammerGroups(){
+  const rs=Object.values(ST.results||{}).filter(r=>r.sold>0&&r.mmr>0&&r.mmrSrc!=='est'&&!soldOdd(r.sold,r.mmr));
+  const med=a=>{const b=a.slice().sort((x,y)=>x-y),m=b.length>>1;return b.length%2?b[m]:(b[m-1]+b[m])/2;};
+  const G={seller:{},lane:{},band:{}};const add=(t,k,v)=>{if(k)(G[t][k]=G[t][k]||[]).push(v);};
+  rs.forEach(r=>{const v=r.sold/r.mmr*100;add('seller',(r.seller||'').trim(),v);add('lane',laneOf(r.auction,r.lot),v);add('band',bandOf(r.mmr),v);});
+  const out={};for(const t in G){out[t]={};for(const k in G[t])out[t][k]={n:G[t][k].length,med:med(G[t][k])};}
+  return out;
+}
+// The expected hammer for one car: the closest group with at least 5 real sales, pulled toward the overall number while it is still small.
+function learnedHammer(H,S,r){
+  const pick=[['seller',(r.seller||'').trim(),'this seller'],['lane',laneOf(r.auction,r.lot),'this lane'],['band',r.mmr>0?bandOf(r.mmr):'','this price range']].map(([t,k,l])=>({g:k&&H[t][k],l})).find(x=>x.g&&x.g.n>=5);
+  if(!pick)return null;const n=pick.g.n,v=(n*pick.g.med+5*S.hammerPct)/(n+5);
+  return {pct:Math.round(Math.min(105,Math.max(60,v))*2)/2,why:`${n} real sales from ${pick.l} at a median of ${pick.g.med.toFixed(0)}% of MMR`};
+}
 function recompute(){
-  const S=ST.settings;
-  CARS=RAW.map((r,i)=>{const k=carKey(r,i);const a=aiFor(k,r);const c=buildCar(S,ST.book,r,aiOv(ST.ov[k],a));c.listId=r._list;applyAi(c,a);return c;});
+  const S=ST.settings;const H=hammerGroups();
+  CARS=RAW.map((r,i)=>{const k=carKey(r,i);const a=aiFor(k,r);const lh=learnedHammer(H,S,r);const c=buildCar(S,ST.book,r,{...aiOv(ST.ov[k],a),...(lh?{hammerPct:lh.pct,hamWhy:lh.why}:{})});c.listId=r._list;applyAi(c,a);return c;});
   const ok=CARS.filter(c=>c.ok);
   ok.sort((a,b)=>score(b)-score(a)).forEach((c,i)=>c.rank=i+1);
   const spent=wonSpend();
@@ -1602,7 +1623,7 @@ const needsResult=c=>c.ok&&c.saleAt&&Date.parse(c.saleAt)<Date.now()-3*3600e3&&!
 function plainWhy(c){   // one short reason, in plain words
   if(c.status==='won')return `You bought it for ${money(c.paid)}`;
   const M=c.research&&c.research.model;
-  if(worthBid(c)){const bits=[`Usually sells near ${money(c.bidUsed)}`];if(M&&M.flag)bits.push('known issue');else if((c.warn||[]).length)bits.push(c.warn[0]);else if(c.est&&c.est.length)bits.push('value is an estimate');return bits.join(' · ');}
+  if(worthBid(c)){const bits=[`Usually sells near ${money(c.bidUsed)}`];if(M&&M.flag&&(M.lemonPct||0)>=25)bits.push('known issue');else if((c.warn||[]).length)bits.push(c.warn[0]);else if(c.est&&c.est.length)bits.push('value is an estimate');return bits.join(' · ');}
   if(c.cond==null)return 'No grade on the list';
   if(c.flag)return `Announced: ${c.flag}`;
   if(M&&M.avoid)return 'Known problem model';
@@ -1797,7 +1818,7 @@ function updateDetail(){
       <div><div class="l">Safe bid</div><div class="v pos">${c.safe?money(c.safe):'—'}</div><div class="s">${S.conf}% odds of ${kf(S.minP)}+</div></div>
       <div class="mx"><div class="l">Max bid</div><div class="v maxbid">${c.max?money(c.max):'—'}</div><div class="s">typically makes ${money(c.tMax||S.target)}${c.pHitMax!=null?` · ${pc100(c.pHitMax)} odds of ${kf(S.minP)}+`:''}</div></div>
       <div><div class="l">Walk-away</div><div class="v warn">${c.walk?money(c.walk):'—'}</div><div class="s">typically makes ${money(c.fWalk||S.minP)}</div></div></div>
-    <p class="expect">Expected bid ${money(c.bidUsed)}${c.bidSrc==='assumed'?` (assumed ${S.hammerPct}% of MMR)`:''} → typically <b class="${pc(c.typ)}">${money(c.typ)}</b> profit (${money(c.profit)} if everything goes to plan), on ${money(c.capital)} cash for about ${c.days} days.</p>${(()=>{if(!c.max||c.exitUsed!=='auction')return '';const cur=S.lane==='curtis';const alt={...CS};for(const k in LANE_UP)alt[k]=CS[k]+(cur?-1:1)*LANE_UP[k];
+    <p class="expect">Expected bid ${money(c.bidUsed)}${c.bidSrc==='assumed'?` (${c.hamWhy?'learned':'assumed'} ${c.hamPct??S.hammerPct}% of MMR${c.hamWhy?': '+esc(c.hamWhy):''})`:''} → typically <b class="${pc(c.typ)}">${money(c.typ)}</b> profit (${money(c.profit)} if everything goes to plan), on ${money(c.capital)} cash for about ${c.days} days.</p>${(()=>{if(!c.max||c.exitUsed!=='auction')return '';const cur=S.lane==='curtis';const alt={...CS};for(const k in LANE_UP)alt[k]=CS[k]+(cur?-1:1)*LANE_UP[k];
       const m=typBidFor(alt,c);
       return `<p class="expect" style="margin-top:6px">${cur?'These bids use Curtis\'s lane numbers. On the national average':'These bids use the national average. If the re-run lane pays like Curtis reports (up to 108% of MMR)'}, the max bid would be <b>${money(m)}</b>. Real resales in the Garage settle which is right.</p>`;})()}`;
   $('d-notes').innerHTML=`${c.est.length?`<div class="callout red"><b>Estimated, not measured:</b> ${esc(c.est.join(', '))}. Fill ${c.est.length>1?'these':'it'} in below before bidding real money.</div>`:''}
@@ -1815,7 +1836,7 @@ function updateDetail(){
   $('d-exits').innerHTML=`${(()=>{const A=c.exitUsed==='auction';const ns=A?c.sellCosts-(S.tOut+S.sellFee+S.doc):0;const m=n=>'-'+money(n);
     return `<table class="brk"><tbody>
       <tr><td><b>Resale</b> at CR ${g1(c.gradeAch)}${A&&(c.S||S).sellPct!==100?` · ${(c.S||S).sellPct}% of ${money(c.mmrAtSell)} MMR`:''}, after ${c.days} days of market drift</td><td><b>${money(c.price)}</b></td></tr>
-      <tr><td>Hammer${c.bidSrc==='assumed'?` (assumed ${S.hammerPct}% of MMR)`:c.bidSrc==='paid'?' (paid)':''}</td><td>${m(c.bidUsed)}</td></tr>
+      <tr><td>Hammer${c.bidSrc==='assumed'?` (${c.hamWhy?'learned':'assumed'} ${c.hamPct??S.hammerPct}% of MMR)`:c.bidSrc==='paid'?' (paid)':''}</td><td>${m(c.bidUsed)}</td></tr>
       <tr><td>Buyer fee${S.onlineFee||S.psi?' + online / PSI':''}</td><td>${m(c.fee)}</td></tr>
       <tr><td>Transport in</td><td>${m(S.tIn)}</td></tr>
       <tr><td>Recon</td><td>${m(c.recon)}</td></tr>
@@ -1946,11 +1967,11 @@ function setSold(vin,v){
   ST.results=ST.results||{};const c=carBy(vin);
   if(!(v>0)){delete ST.results[vin];}
   else{const prev=ST.results[vin]||{};const o=ST.ov[vin]||{};
-    ST.results[vin]=c?{vin:c.realVin||'',lot:c.lot,auction:c.auction||'',saleAt:c.saleAt||'',year:c.year,make:c.make,model:c.model||'',miles:c.miles??null,cond:c.cond??null,mmr:c.mmr,mmrSrc:c.mmrSrc||'',
+    ST.results[vin]=c?{vin:c.realVin||'',lot:c.lot,auction:c.auction||'',seller:c.seller||'',saleAt:c.saleAt||'',year:c.year,make:c.make,model:c.model||'',miles:c.miles??null,cond:c.cond??null,mmr:c.mmr,mmrSrc:c.mmrSrc||'',
       est:Math.round(c.mmr*ST.settings.hammerPct/100),safe:c.safe||null,max:c.max||null,walk:c.walk||null,verdict:c.mVerdict||c.verdict,ai:c.ai?c.ai.call:null,aiValue:c.ai?c.ai.value:null,sold:v,bought:o.status==='won',at:prev.at||Date.now()}:{...prev,sold:v};ST.results[vin].u=Date.now();}
   shareSold(vin);
   if(v>0&&c&&soldOdd(v,c.mmr))setTimeout(()=>toast(`Saved ${money(v)}, but that is ${Math.round(v/c.mmr*100)}% of MMR. Check for a typo. It is left out of the model's math.`),80);
-  persist();if(v>0)autoTune();
+  persist();if(v>0){autoTune();if(!SOLD_BULK){recompute();renderListSoon();}}
   document.querySelectorAll('input[data-sold]').forEach(i=>{if(i.dataset.sold===vin&&document.activeElement!==i)i.value=v>0?v:'';});
   renderSold();
 }
@@ -1993,13 +2014,15 @@ function addLooseSold(r){   // a sold car that is not on a loaded run list: kept
     est:Math.round(r.mmr*ST.settings.hammerPct/100),safe:null,max:null,walk:null,verdict:'',sold:r.price,bought:!!r.bought,manual:true,at:prev.at||Date.now(),u:Date.now()};
   shareSold(key);return key;
 }
+let SOLD_BULK=false;
 function importSold(text){
   const P=parseSoldFile(text);if(P.missing.length){toast('Could not read that file. It needs '+P.missing.join(' and ')+'.');return;}
   const cars=CARS.filter(c=>c.ok);let matched=0,loose=0,skipped=0;const used=new Set();
+  SOLD_BULK=true;
   P.rows.forEach(r=>{const c=matchSoldRow(r,cars.filter(c=>!used.has(c.vin)));
     if(c){used.add(c.vin);setSold(c.vin,r.price);matched++;}
     else if(r.mmr>0&&(r.year||r.model)){addLooseSold(r);loose++;}else skipped++;});
-  persist();autoTune();renderSold();
+  SOLD_BULK=false;persist();autoTune();recompute();renderAll();
   showModal(`<h2 style="margin:0 0 8px">Sold results imported</h2><table class="brk"><tbody>
     <tr><td>Matched to a car on your run lists</td><td><b>${matched}</b></td></tr>
     <tr><td>Added with the MMR from the file</td><td><b>${loose}</b></td></tr>
@@ -2049,6 +2072,8 @@ function renderSold(){
       <p class="hint">Type what each car sold for on the Run List, whether you bought it or not, or import a results file. No VIN is needed: results are matched by lane and run, then by year, make, model and odometer. This compares real sale prices with MMR so the model's expected bid can be set from results.</p>
       ${st.n?`<table class="cal"><thead><tr><th>Cars</th><th>Count</th><th>Sold at (median % of MMR)</th><th>Model expects</th></tr></thead><tbody>
         ${[{l:'All logged cars',n:st.n,med:st.med}].concat(st.groups.filter(g=>g.n)).map(g=>`<tr><td>${g.l}</td><td>${g.n}</td><td>${g.med.toFixed(1)}%</td><td>${S.hammerPct}%</td></tr>`).join('')}</tbody></table>`:'<div class="empty" style="padding:16px">No sold prices logged yet.</div>'}
+      ${(()=>{const H=hammerGroups();const rows=[['Seller',H.seller],['Lane',H.lane],['Price range',H.band]].flatMap(([t,g])=>Object.entries(g).filter(([,v])=>v.n>=3).sort((a,b)=>b[1].n-a[1].n).slice(0,6).map(([k,v])=>`<tr><td>${t}: ${esc(k)}</td><td>${v.n}</td><td>${v.med.toFixed(1)}%</td><td>${v.n>=5?'In use':'Needs '+(5-v.n)+' more'}</td></tr>`));
+        return rows.length?`<div class="l" style="margin-top:14px">What the model has learned</div><table class="cal"><thead><tr><th>Group</th><th>Sales</th><th>Median % of MMR</th><th>Status</th></tr></thead><tbody>${rows.join('')}</tbody></table><p class="hint" style="margin-top:6px">Once a seller, lane or price range has 5 real sales, cars from it use their own expected sale price instead of the overall ${S.hammerPct}%.</p>`:'';})()}
       <div class="btns"><button class="b primary" id="soldImport">Import sold results</button><button class="b" id="soldAdd">Add a sold car</button>${st.all.length?'<button class="b" id="soldExport">Download the log</button>':''}</div>`;
     if($('soldExport'))$('soldExport').onclick=()=>offerFile('sold-prices.csv',soldCSV());
     $('soldAdd').onclick=askLooseSold;
@@ -2142,9 +2167,20 @@ function flipHTML(f){
     <div class="flip-rm"><button class="b ghost sm" data-del="${f.id}">Remove</button></div></div>`;
 }
 function avg(a){return a.length?a.reduce((s,x)=>s+x,0)/a.length:null;}
+function scoreStats(){const fin=Object.values(FLIPS).filter(f=>!f.demo&&f.soldPrice!=null&&f.projProfit!=null).map(f=>({f,act:flipActual(f),miss:flipActual(f)-f.projProfit})).sort((a,b)=>String(b.f.boughtAt||'').localeCompare(String(a.f.boughtAt||'')));
+  const m=fin.filter(x=>x.f.actualRecon!=null).map(x=>x.miss).sort((a,b)=>a-b);return {fin,n:m.length,med:m.length?m[m.length>>1]:0};}   // the haircut only learns from cars with a real repair bill
+function scorecardHTML(all){
+  const S=ST.settings,fin=all.filter(f=>f.soldPrice!=null&&f.projProfit!=null).map(f=>({f,act:flipActual(f),miss:flipActual(f)-f.projProfit}));
+  if(!fin.length)return '';const tot=fin.reduce((a,x)=>a+x.act,0),totP=fin.reduce((a,x)=>a+x.f.projProfit,0);
+  return `<div class="l">Scorecard: forecast against what really happened</div><table class="cal"><thead><tr><th>Car</th><th>Forecast</th><th>Actual</th><th>Miss</th></tr></thead><tbody>
+    ${fin.slice(0,25).map(x=>`<tr><td>${x.f.year||''} ${esc(x.f.model||x.f.make||'')}</td><td>${money(x.f.projProfit)}</td><td class="${pc(x.act)}">${money(x.act)}</td><td class="${pc(x.miss)}">${x.miss>=0?'+':''}${money(x.miss)}</td></tr>`).join('')}
+    <tr class="tot"><td><b>${fin.length} finished car${fin.length>1?'s':''}</b></td><td><b>${money(totP)}</b></td><td class="${pc(tot)}"><b>${money(tot)}</b></td><td class="${pc(tot-totP)}"><b>${tot-totP>=0?'+':''}${money(tot-totP)}</b></td></tr></tbody></table>
+    <p class="hint" style="margin:6px 0 14px">${S.haircut>0?`Real flips have been running under forecast, so every bid now holds back an extra <b>${money(S.haircut)}</b> of margin. It comes off by itself when results catch up.`:fin.length<5?`After 5 finished cars, if they run under forecast the model holds back extra margin on every bid by itself.`:'Finished cars are in line with forecast, so no extra margin is held back.'}</p>`;
+}
 function renderCalib(sold){
   const S=ST.settings;
-  if(sold.length<3){$('calib').innerHTML=`<div class="empty" style="padding:18px">${sold.length?`${sold.length} sold so far. Needs 3 to calibrate.`:'No sold cars yet.'}</div>`;return;}
+  const SC=scorecardHTML(sold);
+  if(sold.length<3){$('calib').innerHTML=SC+`<div class="empty" style="padding:18px">${sold.length?`${sold.length} sold so far. Needs 3 to calibrate.`:'No sold cars yet.'}</div>`;return;}
   const ham=avg(sold.filter(f=>f.mmrBuy).map(f=>f.hammer/f.mmrBuy*100));
   const rr=avg(sold.filter(f=>f.actualRecon!=null&&f.projRecon).map(f=>f.actualRecon/f.projRecon));
   const gs=sold.filter(f=>f.gradeSold!=null);const gAvg=avg(gs.map(f=>f.gradeSold)),gMin=gs.length?Math.min(...gs.map(f=>f.gradeSold)):null;
@@ -2169,7 +2205,7 @@ function renderCalib(sold){
   // how wrong the model has been, in dollars
   const errs=sold.filter(f=>f.projProfit!=null).map(f=>flipActual(f)-f.projProfit);const bias=avg(errs),mae=avg(errs.map(Math.abs));
   const withOdds=sold.filter(f=>f.oddsAtBuy!=null);const expHit=avg(withOdds.map(f=>f.oddsAtBuy)),actHit=withOdds.length?withOdds.filter(f=>flipActual(f)>=S.minP).length/withOdds.length:null;
-  $('calib').innerHTML=`<div class="callout ${Math.abs(bias)<=250?'green':'red'}" style="margin:0 0 10px"><b>Model accuracy on ${errs.length} sold cars:</b> actual profit came in ${money(Math.abs(bias))} ${bias<0?'under':'over'} the projection on average, and a typical car missed by ${money(mae)} either way.${withOdds.length>=5?` The model gave these cars ${pc100(expHit)} odds of ${kf(S.minP)}+ and ${pc100(actHit)} made it.`:''} ${Math.abs(bias)<=250?'That is close.':bias<0?'The model is too optimistic. Apply the corrections below.':'The model is too cautious. Apply the corrections below.'}</div>
+  $('calib').innerHTML=SC+`<div class="callout ${Math.abs(bias)<=250?'green':'red'}" style="margin:0 0 10px"><b>Model accuracy on ${errs.length} sold cars:</b> actual profit came in ${money(Math.abs(bias))} ${bias<0?'under':'over'} the projection on average, and a typical car missed by ${money(mae)} either way.${withOdds.length>=5?` The model gave these cars ${pc100(expHit)} odds of ${kf(S.minP)}+ and ${pc100(actHit)} made it.`:''} ${Math.abs(bias)<=250?'That is close.':bias<0?'The model is too optimistic. Apply the corrections below.':'The model is too cautious. Apply the corrections below.'}</div>
     <table class="cal"><thead><tr><th>Assumption</th><th>Model uses</th><th>Your results</th><th>Suggest</th></tr></thead><tbody>
     ${rows.map(r=>`<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td><b>${r[5](r[4])}</b></td></tr>`).join('')}</tbody></table>
     <div class="btns"><button class="b primary" id="applyCal">Apply all ${rows.length} to the model</button></div>
@@ -2186,6 +2222,70 @@ $('demoFlips').onclick=()=>{
 };
 $('clearFlips').onclick=()=>{showModal(`<h2 style="margin:0 0 6px">Clear the whole garage?</h2><p class="hint">Deletes every car and result. This can't be undone.</p><div class="btns" style="display:grid;grid-template-columns:1fr 1fr"><button class="b" id="m-c">Cancel</button><button class="b bad" id="m-y">Delete all</button></div>`);
   $('m-c').onclick=closeModal;$('m-y').onclick=async()=>{closeModal();for(const id of Object.keys(FLIPS))await deleteFlip(id);renderGarage();};};
+/* ===== Manheim purchase and sales history straight into the Garage ===== */
+function parseHistory(text){
+  const lines=(text||'').replace(/^\uFEFF/,'').split(/\r\n|\r|\n/).map(l=>l.trim()).filter(Boolean);if(lines.length<2)return {rows:[],kind:null,why:'It needs a header row and at least one car.'};
+  const cut=l=>l.includes('\t')&&!l.includes(',')?l.split('\t').map(x=>x.trim()):splitCSV(l);
+  const H=cut(lines[0]).map(x=>x.toLowerCase().trim()),idx={},used=new Set();
+  const find=(k,t)=>{const i=H.findIndex((x,j)=>!used.has(j)&&t(x));if(i>=0){idx[k]=i;used.add(i);}};
+  find('vin',x=>/^vin/.test(x));
+  find('buyPrice',x=>/(purchase|bought|buy|paid).*(price|amount|\$)|^(purchase|bought|buy) ?(price|amount)?$|^paid$/.test(x));
+  find('sellPrice',x=>/(sale|sold|sell|selling|hammer).*(price|amount|\$)|^(sold|sale) ?(price|amount|for)?$/.test(x));
+  find('price',x=>/price|amount/.test(x)&&!/mmr|fee|floor|adj/.test(x));
+  find('buyDate',x=>/(purchase|bought|buy).*date/.test(x));find('sellDate',x=>/(sale|sold|sell).*date/.test(x));find('date',x=>/date/.test(x));
+  find('mmr',x=>/mmr/.test(x));find('grade',x=>/(^cr\b|grade|cond)/.test(x));find('miles',x=>/mile|odo/.test(x));
+  find('year',x=>/^(yr|year)$/.test(x));find('make',x=>/^make$/.test(x));find('model',x=>/^model$/.test(x));find('trim',x=>/^(trim|style|series)$/.test(x));
+  find('lane',x=>/^lane/.test(x));find('run',x=>/^run/.test(x));find('auction',x=>/auction|location|site/.test(x));find('seller',x=>/seller|consignor/.test(x));
+  const head=H.join(' ');let kind=idx.buyPrice!=null&&idx.sellPrice!=null?'both':idx.buyPrice!=null?'buy':idx.sellPrice!=null?'sell':/purchas|bought/.test(head)?'buy':/sold|sale/.test(head)?'sell':null;
+  if(idx.buyPrice==null&&idx.sellPrice==null&&idx.price==null)return {rows:[],kind:null,why:'It needs a price column.'};
+  if(idx.vin==null&&idx.model==null)return {rows:[],kind:null,why:'It needs a VIN, or year, make and model.'};
+  const rows=lines.slice(1).map(l=>{const c=cut(l),g=k=>idx[k]!=null?c[idx[k]]:null;const vin=(g('vin')||'').toUpperCase().replace(/[^A-Z0-9]/g,'');const d=vin.length===17?decodeVin(vin):{};
+    const lane=(g('lane')||'').trim(),run=(g('run')||'').trim();
+    return {vin:vin.length===17?vin:'',year:num(g('year'))||d.year||'',make:(g('make')||d.make||'').trim(),model:[g('model'),g('trim')].filter(Boolean).map(x=>x.trim()).join(' '),miles:num(g('miles')),grade:crGrade(num(g('grade'))),mmr:num(g('mmr')),
+      lot:lane&&run?`${lane}-${run}`:'',auction:(g('auction')||'').trim(),seller:(g('seller')||'').trim(),
+      buy:num(g('buyPrice')),sell:num(g('sellPrice')),price:num(g('price')),buyDate:parseDate(g('buyDate'))??null,sellDate:parseDate(g('sellDate'))??null,date:parseDate(g('date'))??null};});
+  return {rows,kind};
+}
+const flipMatch=(r,open)=>{const fs=Object.values(FLIPS).filter(f=>!f.demo&&(!open||f.soldPrice==null));
+  if(r.vin){const f=fs.find(f=>(f.vin||'').toUpperCase()===r.vin);if(f)return f;}
+  if(!r.model)return null;const m=norm(r.model);
+  const hit=fs.filter(f=>(!r.year||+f.year===+r.year)&&(!r.make||norm(f.make)===norm(r.make))&&(norm(f.model||'').startsWith(m.slice(0,Math.max(3,Math.min(m.length,norm(f.model||'').length))))||m.startsWith(norm(f.model||'~'))));
+  return hit.length===1?hit[0]:null;};
+function applyHistory(P,kind){
+  const S=ST.settings;let bought=0,sold=0,dup=0,miss=0;const iso=t=>t?new Date(t).toISOString().slice(0,10):new Date().toISOString().slice(0,10);
+  SOLD_BULK=true;
+  P.rows.forEach((r,i)=>{
+    const buy=r.buy??(kind==='buy'?r.price:null),sell=r.sell??(kind==='sell'?r.price:null),bd=r.buyDate??(kind==='buy'?r.date:null),sd=r.sellDate??(kind==='sell'?r.date:null);
+    let f=null;
+    if(buy>0){
+      if(flipMatch(r,false)){dup++;f=flipMatch(r,false);}
+      else{const cr=r.grade,mmr=r.mmr||null,recon=Math.round(Math.max(0,S.sellGrade-(cr??S.maxGrade))*S.reconPt*S.reconMult/25)*25;
+        const sellP=mmr?Math.round(mmr*(1+S.liftPct/100*Math.max(0,S.sellGrade-(cr??S.maxGrade)))*S.sellPct/100/50)*50:null;
+        f={id:`flip_imp_${(r.vin||hashStr([r.year,r.model,buy,bd].join('|')).toString(36))}`,vin:r.vin,lot:r.lot,year:r.year,make:r.make,model:r.model,crBuy:cr,mmrBuy:mmr,mmrSellProj:mmr?Math.round(mmr*(1+S.liftPct/100*Math.max(0,S.sellGrade-(cr??S.maxGrade)))):null,gradeProj:S.sellGrade,hammer:buy,fee:buyerFee(S,buy),projRecon:recon,projPrice:sellP,
+          exit:'auction',projDays:S.auctionDays+7,stage:'bought',boughtAt:iso(bd),actualRecon:null,gradeSold:null,soldPrice:null,daysHeld:null,notes:'Imported from Manheim',src:'import'};
+        f.projProfit=sellP?flipActual({...f,soldPrice:sellP}):null;saveFlip(f);bought++;
+        if(mmr>0)addLooseSold({...r,price:buy,date:bd,bought:true});}   // a real hammer against MMR: feeds the expected sale price
+    }
+    if(sell>0){f=f||flipMatch(r,true);
+      if(!f){miss++;return;}
+      f.soldPrice=sell;if(r.grade!=null&&!(buy>0))f.gradeSold=r.grade;if(sd&&f.boughtAt){const d=Math.round((sd-Date.parse(f.boughtAt))/864e5);if(d>=0&&d<400)f.daysHeld=d;}f.stage='sold';f.soldAt=iso(sd);saveFlip(f);sold++;}
+  });
+  SOLD_BULK=false;persist();autoTune();recompute();renderAll();gfilt='all';document.querySelectorAll('#gfilter button').forEach(x=>x.classList.toggle('on',x.dataset.g==='all'));renderGarage();
+  showModal(`<h2 style="margin:0 0 8px">Manheim history imported</h2><table class="brk"><tbody>
+    <tr><td>Cars added to the Garage as bought</td><td><b>${bought}</b></td></tr><tr><td>Cars marked sold</td><td><b>${sold}</b></td></tr>
+    <tr><td>Already in the Garage</td><td><b>${dup}</b></td></tr><tr><td>Sales with no matching purchase</td><td><b>${miss}</b></td></tr></tbody></table>
+    <p class="hint" style="margin-top:8px">${miss?'Load the purchase history first, then the sales history, so each sale finds its car. ':''}Check the repair cost and grade on each sold car when you have them. Those two numbers teach the model the most.</p>
+    <div class="btns"><button class="b primary" id="m-c">Done</button></div>`);$('m-c').onclick=closeModal;
+}
+function importHistory(text){
+  const P=parseHistory(text);if(!P.rows.length){toast('Could not read that file. '+(P.why||''));return;}
+  if(P.kind){applyHistory(P,P.kind);return;}
+  showModal(`<h2 style="margin:0 0 6px">What is in this file?</h2><p class="hint">It has one price column, so tell me which kind of list it is.</p>
+    <div class="morelist"><button class="b" id="ih-b">Cars you bought</button><button class="b" id="ih-s">Cars you sold</button><button class="b ghost" id="m-c">Cancel</button></div>`);
+  $('m-c').onclick=closeModal;$('ih-b').onclick=()=>{closeModal();applyHistory(P,'buy');};$('ih-s').onclick=()=>{closeModal();applyHistory(P,'sell');};
+}
+$('importFlips').onclick=()=>{const f=document.createElement('input');f.type='file';f.accept='.csv,.txt,.tsv,text/csv,text/plain';f.style.display='none';document.body.appendChild(f);
+  f.onchange=async()=>{const x=f.files[0];f.remove();if(x)importHistory(await x.text());};f.click();};
 $('addFlip').onclick=()=>{
   const id=`flip_manual_${Date.now().toString(36)}`;const S=ST.settings;
   showModal(`<h2 style="margin:0 0 8px">Add a car you bought</h2><div class="edits" style="grid-template-columns:1fr 1fr">
@@ -2203,7 +2303,7 @@ $('addFlip').onclick=()=>{
 
 /* ================= Settings ================= */
 const SCHEMA=[
- ['g','Buy box & goals'],['maxGrade','Warn when the CR grade is above',.1],['sellGrade','Target grade after recon',.1],['cap','Warn when repairs are over ($)',100],['minP','Profit floor ($)',100],['target','Profit target ($)',100],['targetPct','Or this share of the cash in the car, if larger (%)',.5],['floorPct','Profit floor as a share of cash, if larger (%)',.5],['conf','Safe bid: odds of the floor needed (%)',5],['needSell','A Buy needs real MMR numbers',[['yes','Yes, no Buy on estimates'],['no','No, allow estimates']]],
+ ['g','Buy box & goals'],['maxGrade','Warn when the CR grade is above',.1],['sellGrade','Target grade after recon',.1],['cap','Warn when repairs are over ($)',100],['minP','Profit floor ($)',100],['target','Profit target ($)',100],['targetPct','Or this share of the cash in the car, if larger (%)',.5],['floorPct','Profit floor as a share of cash, if larger (%)',.5],['haircut','Extra margin when real flips run under forecast ($)',50],['conf','Safe bid: odds of the floor needed (%)',5],['needSell','A Buy needs real MMR numbers',[['yes','Yes, no Buy on estimates'],['no','No, allow estimates']]],
  ['g','Value'],['liftPct','MMR change per CR point (%)',.5],['panelPenalty','Grade lost per repainted panel',.05],['mmrKind','A plain “MMR” column on the list is',[['adj','Already adjusted for this car\'s grade (Manheim export)'],['base','Base MMR (average-condition car)']]],['baseGrade','Grade a base MMR assumes',.1],['hammerPct','Expected hammer if no bid (% of MMR)',1],['lane','Re-run lane',[['national','Cautious: national Manheim average'],['curtis','Curtis\'s lane: about 5 points higher (unverified)']]],['sellPct','Re-run sells at, most likely (% of MMR at its grade)',1],['sellLo','Re-run sells at, low case (%)',1],['sellHi','Re-run sells at, high case (%)',1],['cheapMMR','Warn when as-is MMR is under ($)',500],['driftWk','Market drift (% per week)',.1],
  ['g','Exit'],['exitMode','How you sell',[['auction','Re-run at auction'],['retail','Retail on lot'],['dealer','Sell to a dealer'],['best','Best of the three, per car']]],['auctionDays','Days to re-run at auction',1],['sellThru','Chance it sells each run (%)',5],['rerunDays','Days added per no-sale',1],['noSaleFee','No-sale / re-run fee ($)',5],['rerunCut','Price drop per no-sale (%)',.5],['retailPct','Retail price (% of MMR)',1],['retailPrep','Retail-ready prep ($)',25],['retailCost','Retail selling cost ($)',25],['retailDays','Days to retail',1],['dealerPct','Dealer sale (% of MMR)',1],['dealerDays','Days to dealer sale',1],
  ['g','Costs'],['feeMode','Buyer fee',[['tiered','Typical tiered schedule'],['flat','Flat $ per car'],['pct','% of hammer']]],['feeVal','Fee $ or % (if not tiered)',25],['onlineFee','Online (Simulcast) fee per buy ($)',5],['psi','Post-sale inspection per buy ($)',5],['tIn','Transport in ($)',25],['tOut','Transport out ($)',25],['sellFee','Seller fee + re-grade ($)',25],['doc','Title / doc ($)',25],['perDay','Holding cost per day ($)',1],['apr','Floor-plan interest (APR %)',.25],['fpFee','Floor-plan fee per car ($)',5],['reserve','Surprise reserve per car ($)',25],

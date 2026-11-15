@@ -1,6 +1,7 @@
 // Weekly retune, run by Vercel Cron (see vercel.json). Not behind the team login, so it checks CRON_SECRET itself.
 const { ready, rpc } = require('../lib/db');
 const { retune } = require('../lib/tune');
+const { buildReport, sendReport } = require('../lib/report');
 
 module.exports = async (req, res) => {
   res.setHeader('Cache-Control', 'no-store');
@@ -22,7 +23,12 @@ module.exports = async (req, res) => {
     };
     await rpc('aff_kv_put', { p_user: 'weekly-retune', p_kind: 'tuned', p_rows: [{ key: 'current', u: now, data }] });
     console.log('weekly retune', JSON.stringify({ changes: out.changes.length, sold: sold.length, flips: flipRows.length }));
-    return send(200, { changes: out.changes, text: out.text });
+    let mail = { sent: false, why: 'error' };
+    try {
+      mail = await sendReport(buildReport({ sold: sold.map((r) => ({ sold: +r.sold, u: Date.parse(r.updated_at), data: r.data || {} })), flips: flipRows.filter((r) => !r.gone).map((r) => r.data), changes: out.changes, retuneText: out.text, now }));
+    } catch (e) { console.error('weekly email failed', String((e && e.message) || '').slice(0, 200)); }
+    console.log('weekly email', JSON.stringify(mail));
+    return send(200, { changes: out.changes, text: out.text, email: mail });
   } catch (e) {
     console.error('retune failed', String((e && e.message) || '').slice(0, 300));
     return send(502, { error: 'db' });
