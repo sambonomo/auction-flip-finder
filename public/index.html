@@ -1267,6 +1267,33 @@ function aiBox(c){
     ${fx.map(f=>`<div style="margin-top:6px"><b>Corrected ${f.field==='mmr'?'MMR':f.field==='cond'?'CR grade':esc(f.field)} to ${f.field==='mmr'?money(f.value):f.value}:</b> ${esc(f.why)}${f.field!=='mmr'&&f.field!=='cond'?' (shown only, not applied)':''}</div>`).join('')}
     <div class="mini" style="margin-top:8px">These are the AI's own estimates from general market knowledge. They are not KBB or MMR quotes. <a href="#" id="ai-off" style="color:inherit;text-decoration:underline">Ignore AI for this car</a></div></div>`;
 }
+/* ================= Shared sold-price log ================= */
+// On the website every login reads and writes one shared log. The copy on this device is kept so it still works offline.
+const SHARE={on:AI.on,ok:false};
+const shareRow=k=>{const r=ST.results[k];return {key:k,sold:r.sold,bought:!!r.bought,u:r.u||r.at||Date.now(),data:r};};
+async function shareCall(method,body){
+  const r=await fetch('/api/results',{method,headers:{'Content-Type':'application/json'},credentials:'same-origin',body:body?JSON.stringify(body):undefined});
+  if(!r.ok){let j={};try{j=await r.json();}catch(e){}throw {status:r.status,code:j.error||''};}
+  return r.json();
+}
+async function shareSold(k){
+  if(!SHARE.on||!SHARE.ok)return;
+  try{if(ST.results[k]){await shareCall('POST',{rows:[shareRow(k)]});if(!(ST.sharedKeys||[]).includes(k))(ST.sharedKeys=ST.sharedKeys||[]).push(k);}else{await shareCall('DELETE',{key:k});ST.sharedKeys=(ST.sharedKeys||[]).filter(x=>x!==k);}persist();setSync(true,'Shared log');}
+  catch(e){setSync(false,'Not shared yet');}
+}
+async function shareSync(){
+  if(!SHARE.on)return;
+  try{
+    const j=await shareCall('GET');SHARE.ok=true;ST.results=ST.results||{};
+    const remote={};(j.rows||[]).forEach(r=>remote[r.key]=r);let got=0;
+    for(const k in remote){const r=remote[k],l=ST.results[k];if(!l||(r.u||0)>(l.u||l.at||0)){ST.results[k]={...r.data,sold:r.sold,bought:r.bought,u:r.u,by:r.by};got++;}}
+    (ST.sharedKeys||[]).forEach(k=>{if(!remote[k]&&ST.results[k]){delete ST.results[k];got++;}});   // removed on another device
+    const up=Object.keys(ST.results).filter(k=>ST.results[k].sold>0&&(!remote[k]||(ST.results[k].u||ST.results[k].at||0)>remote[k].u)).map(shareRow);
+    for(let i=0;i<up.length;i+=200)await shareCall('POST',{rows:up.slice(i,i+200)});
+    setSync(true,'Shared log');ST.sharedKeys=Object.keys(ST.results);persist();
+    if(got){autoTune();renderAll();if(typeof renderBacktest==='function'&&tab==='backtest')renderBacktest();}
+  }catch(e){SHARE.ok=false;if(e.code!=='no_db')setSync(false,'Not shared yet');}
+}
 /* ================= Self-tuning from real results ================= */
 // Small, limited steps only, each one logged in Settings with an undo.
 const TUNE={hammerPct:{lo:80,hi:102,step:1.5,n:10,label:'Expected sale price (% of MMR)'},liftPct:{lo:5,hi:14,step:.5,n:10,label:'MMR change per CR point (%)'}};
@@ -1629,7 +1656,8 @@ function setSold(vin,v){
   if(!(v>0)){delete ST.results[vin];}
   else{const prev=ST.results[vin]||{};const o=ST.ov[vin]||{};
     ST.results[vin]=c?{vin:c.realVin||'',lot:c.lot,auction:c.auction||'',saleAt:c.saleAt||'',year:c.year,make:c.make,model:c.model||'',miles:c.miles??null,cond:c.cond??null,mmr:c.mmr,mmrSrc:c.mmrSrc||'',
-      est:Math.round(c.mmr*ST.settings.hammerPct/100),safe:c.safe||null,max:c.max||null,walk:c.walk||null,verdict:c.mVerdict||c.verdict,ai:c.ai?c.ai.call:null,aiValue:c.ai?c.ai.value:null,sold:v,bought:o.status==='won',at:prev.at||Date.now()}:{...prev,sold:v};}
+      est:Math.round(c.mmr*ST.settings.hammerPct/100),safe:c.safe||null,max:c.max||null,walk:c.walk||null,verdict:c.mVerdict||c.verdict,ai:c.ai?c.ai.call:null,aiValue:c.ai?c.ai.value:null,sold:v,bought:o.status==='won',at:prev.at||Date.now()}:{...prev,sold:v};ST.results[vin].u=Date.now();}
+  shareSold(vin);
   persist();if(v>0)autoTune();
   document.querySelectorAll('input[data-sold]').forEach(i=>{if(i.dataset.sold===vin&&document.activeElement!==i)i.value=v>0?v:'';});
   renderSold();
@@ -2013,7 +2041,8 @@ $('btexport').onclick=()=>{
 
 setTab(['list','live','garage','backtest','settings'].includes(startTab)?startTab:'list');
 initCloud();
-setTimeout(()=>{autoTune();aiRun();},600);
+setTimeout(()=>{autoTune();aiRun();shareSync();},600);
+setInterval(()=>{if(document.visibilityState==='visible')shareSync();},5*60*1000);
 
 </script>
 </body>
