@@ -1227,7 +1227,7 @@ async function aiRun(){
   const S=ST.settings,todo=[];
   RAW.forEach((r,i)=>{const c=CARS[i];if(!c||!c.ok||c.cond==null||c.cond>S.maxGrade+1e-9)return;const k=carKey(r,i);const a=(ST.ai||{})[k];if(a&&a.h===aiHash(r))return;todo.push({k,r,c});});
   if(!todo.length)return;
-  todo.splice(300);AI.busy=true;AI.done=0;AI.total=todo.length;AI.err='';AI.fails=0;renderAi();
+  todo.splice(300);AI.busy=true;AI.done=0;AI.total=todo.length;AI.err='';AI.fails=0;AI.missed=0;AI.last='';renderAi();
   const batches=[];for(let i=0;i<todo.length;i+=6)batches.push(todo.slice(i,i+6));
   const worker=async()=>{
     while(batches.length&&!AI.err){
@@ -1237,13 +1237,14 @@ async function aiRun(){
         catch(e){
           if(e.code==='no_key'||e.code==='bad_key'||e.status===401||e.status===302){AI.err=e.message||'AI is not set up yet.';break;}
           if(e.status===429&&tries++<3){await new Promise(r=>setTimeout(r,4000*tries));continue;}
-          if(++AI.fails>=3)AI.err=e.message||'The AI review stopped after several errors.';break;
+          AI.missed+=b.length;AI.last=e.message||'';if(++AI.fails>=3)AI.err=e.message||'The AI review stopped after several errors.';break;
         }
       }
       AI.done+=b.length;persist();recompute();renderAll();
     }
   };
   await Promise.all([worker(),worker(),worker()]);
+  if(!AI.err&&AI.missed)AI.err=`${AI.missed} car${AI.missed>1?'s':''} could not be checked. ${AI.last}`;
   AI.busy=false;persist();recompute();renderAll();
 }
 function renderAi(){
