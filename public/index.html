@@ -473,6 +473,27 @@ table.t .sold-in{width:96px!important;height:36px!important;font-size:14px}
   .modal{top:50%;transform:translate(-50%,-50%)}
 }
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+.lbl-simple,.nav-more{display:none}
+body.simple .lbl-full{display:none}body.simple .lbl-simple{display:inline}
+body.simple #topnav button[data-tab=live],body.simple #topnav button[data-tab=backtest],body.simple #topnav button[data-tab=settings],
+body.simple #botnav button[data-tab=live],body.simple #botnav button[data-tab=backtest],body.simple #botnav button[data-tab=settings]{display:none}
+body.simple .nav-more{display:flex}body.simple #topnav .nav-more{display:inline-block}
+body.simple #kpis,body.simple #strat,body.simple .notices,body.simple .filterbar,body.simple #sortsel,body.simple #exportList,body.simple #cards,body.simple .tbl-wrap,body.simple #loadbox,body.simple #howbox,body.simple #steps{display:none!important}
+body:not(.simple) #simple{display:none}
+#simple{display:grid;gap:10px;margin-top:12px}
+.s-head{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:8px 2px 0}
+.scard{display:flex;align-items:center;gap:12px;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px;cursor:pointer;box-shadow:var(--shadow);-webkit-tap-highlight-color:transparent}
+.scard .sc-l{flex:1;min-width:0}.scard .veh{font-size:16px;line-height:1.25}
+.scard .sc-why{font-size:13px;color:var(--muted);margin-top:3px;line-height:1.35}
+.scard .sc-r{text-align:right;flex:none}.scard .sc-r .l{font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+.scard .sc-r .v{font-size:24px;font-weight:800;letter-spacing:-.02em;color:var(--accent);line-height:1.15}
+.scard.skip{box-shadow:none;background:transparent;padding:10px 14px}.scard.skip .veh{font-size:14.5px;font-weight:600}.scard.skip .sc-r .v{font-size:14px;color:var(--muted);font-weight:700}
+.scard.won .sc-r .v{color:var(--good)}
+.scard .vc-sold{margin-top:8px;display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted)}.scard .vc-sold input{width:120px}
+.s-banner{background:var(--warn-bg);border-radius:14px;padding:12px 14px;font-size:14px;line-height:1.45}.s-banner b{color:var(--warn)}
+details.s-fold{border-top:1px solid var(--line);padding-top:6px}details.s-fold>summary{list-style:none;cursor:pointer;padding:12px 2px;font-weight:700;color:var(--accent);font-size:14.5px}
+details.s-fold>summary::-webkit-details-marker{display:none}
+.morelist{display:grid;gap:8px;margin-top:10px}.morelist .b{justify-content:flex-start;text-align:left;height:52px;font-size:15.5px}
 </style>
 </head>
 <body>
@@ -480,7 +501,7 @@ table.t .sold-in{width:96px!important;height:36px!important;font-size:14px}
   <div class="logo" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 16l5-5 4 4 7-8M20 7h-5M20 7v5"/></svg></div>
   <h1>Flip Finder</h1>
   <nav class="topnav" id="topnav" aria-label="Sections">
-    <button data-tab="list" class="on">Run List</button><button data-tab="live">Live Auction</button><button data-tab="garage">Garage</button><button data-tab="backtest">Backtest</button><button data-tab="settings">Settings</button>
+    <button data-tab="list" class="on"><span class="lbl-full">Run List</span><span class="lbl-simple">Today</span></button><button data-tab="live">Live Auction</button><button data-tab="garage"><span class="lbl-full">Garage</span><span class="lbl-simple">My cars</span></button><button data-tab="backtest">Backtest</button><button data-tab="settings">Settings</button><button class="nav-more" data-more>More</button>
   </nav>
   <div class="hdr-r"><div class="sync" id="sync"><i></i><span>This device</span></div><a class="signout" href="/api/logout" data-site hidden>Sign out</a><button class="ic-btn" id="themeBtn" aria-label="Switch between light and dark"></button></div>
 </header>
@@ -513,6 +534,7 @@ table.t .sold-in{width:96px!important;height:36px!important;font-size:14px}
         <label class="filebtn primary-file" title="Upload a run list">Upload list<input type="file" id="file3" multiple accept=".csv,.txt,text/csv,text/plain,text/comma-separated-values,application/vnd.ms-excel"></label>
         <button class="ic-btn line" id="exportList" title="Export to spreadsheet" aria-label="Export to spreadsheet"><svg viewBox="0 0 24 24"><path d="M12 4v12M7 11l5 5 5-5M5 20h14"/></svg></button>
       </div>
+      <div id="simple"></div>
       <div class="cards" id="cards"></div>
       <div class="tbl-wrap"><table class="t"><thead><tr id="thead"></tr></thead><tbody id="tbody"></tbody></table></div>
       <div class="copybox" id="resbox"><textarea id="restext" readonly style="min-height:110px"></textarea></div>
@@ -620,6 +642,7 @@ table.t .sold-in{width:96px!important;height:36px!important;font-size:14px}
   <div class="pagehead"><h2>Settings</h2><p>Every car re-scores as soon as a number changes.</p></div>
   <div class="card rows">
     <div class="row"><div><b>Appearance</b><div class="hint">Light or dark. Saved on this device.</div></div><div class="seg" id="themeSeg"><button data-th="light">Light</button><button data-th="dark">Dark</button></div></div>
+    <div class="row"><div><b>View</b><div class="hint">Simple shows one bid per car. Full shows every number. Saved on this device.</div></div><div class="seg" id="viewSeg"><button data-vw="simple">Simple</button><button data-vw="full">Full</button></div></div>
     <div class="row" data-site hidden><div><b>Shared data</b><div class="hint" id="syncNote">Checking the shared log…</div></div></div>
     <div class="row" data-site hidden><div><b>Account</b><div class="hint">You stay signed in on this device for 30 days.</div></div><a class="b sm" href="/api/logout">Sign out</a></div>
   </div>
@@ -656,11 +679,12 @@ table.t .sold-in{width:96px!important;height:36px!important;font-size:14px}
 </main>
 
 <nav class="botnav" id="botnav" aria-label="Sections">
-  <button data-tab="list" class="on"><span class="ic"><svg viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg></span>Run List</button>
+  <button data-tab="list" class="on"><span class="ic"><svg viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg></span><span class="lbl-full">Run List</span><span class="lbl-simple">Today</span></button>
   <button data-tab="live"><span class="ic"><svg viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg><span class="cnt" id="livecnt" style="display:none"></span></span>Live</button>
-  <button data-tab="garage"><span class="ic"><svg viewBox="0 0 24 24"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.4-.6-.6-2.4z"/></svg></span>Garage</button>
+  <button data-tab="garage"><span class="ic"><svg viewBox="0 0 24 24"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.4-.6-.6-2.4z"/></svg></span><span class="lbl-full">Garage</span><span class="lbl-simple">My cars</span></button>
   <button data-tab="backtest"><span class="ic"><svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/></svg></span>Backtest</button>
   <button data-tab="settings"><span class="ic"><svg viewBox="0 0 24 24"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg></span>Settings</button>
+  <button class="nav-more" data-more><span class="ic"><svg viewBox="0 0 24 24"><path d="M5 12h.01M12 12h.01M19 12h.01"/></svg></span>More</button>
 </nav>
 
 <div class="backdrop" id="backdrop"></div>
@@ -974,10 +998,8 @@ function evaluate(S,o){
   o.est=[];if(o.mmrSrc==='est')o.est.push('Adj MMR');if(o.mmrSrc==='base')o.est.push('Adj MMR (worked out from base MMR)');if(o.sellSrc==='est')o.est.push(`MMR @ ${S.sellGrade.toFixed(1)}`);if(o.reconSrc==='model')o.est.push('recon');if(!o.condGiven)o.est.push('CR grade');
   const money=n=>(n<0?'-$':'$')+Math.abs(Math.round(n)).toLocaleString();
   if(o.cond==null){o.verdict='pass';o.reason='No CR grade on the list';}
-  else if(o.cond>S.maxGrade+1e-9){o.verdict='skip';o.reason=`CR ${o.cond.toFixed(1)} is above the ${S.maxGrade.toFixed(1)} buy box`;}
   else if(o.flag){o.verdict='pass';o.reason=`Announced: ${o.flag}`;}
   else if(o.research&&o.research.model&&o.research.model.avoid){o.verdict='pass';o.reason='Known problem model for these years. Avoid';}
-  else if(o.recon>S.cap){o.verdict='pass';o.reason=`Recon ${money(o.recon)} is over the ${money(S.cap)} cap`;}
   else if(o.typ>=S.target&&S.needSell==='yes'&&o.mmrSrc==='est'){o.verdict='maybe';o.reason='Looks like a buy, but the Adj MMR is a guess from the VIN. Get the real one first';}
   else if(o.typ>=S.target&&S.needSell==='yes'&&o.sellSrc==='est'){o.verdict='maybe';o.reason=`Looks like a buy, but needs the real MMR @ ${S.sellGrade.toFixed(1)} first`;}
   else if(o.typ>=S.target&&o.pHit<.5){o.verdict='maybe';o.reason=`Clears ${money(S.target)} in a typical replay, but only ${Math.round(o.pHit*100)}% odds of ${money(S.minP)}+`;}
@@ -987,6 +1009,12 @@ function evaluate(S,o){
   else{o.verdict='pass';o.reason=o.typ<0?'Typically loses money at the expected bid':`Typically only ${money(o.typ)} profit, under the ${money(S.minP)} floor`;}
   o.risk=(o.verdict==='buy'||o.verdict==='maybe')&&(o.down<0||o.pLoss>.25);
   if(o.gradeCapped&&(o.verdict==='buy'||o.verdict==='maybe'))o.reason+=` · paint caps it at CR ${o.gradeAch.toFixed(1)}`;
+  // No price, grade or recon limit: any car that pays gets a bid. These are warnings, not passes.
+  o.warn=[];
+  o.hard=o.cond==null||!!o.flag||!!(o.research&&o.research.model&&o.research.model.avoid);   // the only reasons a car is ruled out outright
+  if(o.cond!=null&&o.cond>S.maxGrade+1e-9)o.warn.push(`CR ${o.cond.toFixed(1)} is above your usual ${S.maxGrade.toFixed(1)}`);
+  if(o.recon>S.cap)o.warn.push(`repairs ${money(o.recon)} are over your usual ${money(S.cap)}`);
+  if(o.warn.length&&(o.verdict==='buy'||o.verdict==='maybe'))o.reason+=' · '+o.warn.join(' · ');
   if(o.research&&o.research.model&&o.research.model.flag&&(o.verdict==='buy'||o.verdict==='maybe'))o.reason+=' · known issue, check notes';
   if(o.cheap&&(o.verdict==='buy'||o.verdict==='maybe'))o.reason+=` · under ${money(S.cheapMMR)} MMR, thin margin`;
 }
@@ -1378,7 +1406,7 @@ function aiStore(k,r,a){
 async function aiRun(){
   if(!AI.on||AI.busy||ST.settings.aiUse==='no')return;
   const S=ST.settings,todo=[];
-  RAW.forEach((r,i)=>{const c=CARS[i];if(!c||!c.ok||c.cond==null||c.cond>S.maxGrade+1e-9)return;const k=carKey(r,i);const a=(ST.ai||{})[k];if(a&&a.h===aiHash(r))return;todo.push({k,r,c});});
+  RAW.forEach((r,i)=>{const c=CARS[i];if(!c||!c.ok||c.cond==null||(c.cond>S.maxGrade+1e-9&&c.verdict!=='buy'&&c.verdict!=='maybe'))return;const k=carKey(r,i);const a=(ST.ai||{})[k];if(a&&a.h===aiHash(r))return;todo.push({k,r,c});});
   if(!todo.length)return;
   todo.splice(300);AI.busy=true;AI.done=0;AI.total=todo.length;AI.err='';AI.fails=0;AI.missed=0;AI.last='';renderAi();
   const batches=[];for(let i=0;i<todo.length;i+=6)batches.push(todo.slice(i,i+6));
@@ -1544,7 +1572,7 @@ function setTab(t){
   if(t==='live')renderLive();if(t==='garage')renderGarage();if(t==='settings')renderSettings();if(t==='list')renderList();if(t==='backtest'&&typeof renderBacktest==='function')renderBacktest();
   try{history.replaceState(null,'','#'+t);}catch(e){}window.scrollTo(0,0);
 }
-document.querySelectorAll('#topnav button,#botnav button').forEach(b=>b.onclick=()=>setTab(b.dataset.tab));
+document.querySelectorAll('#topnav button,#botnav button').forEach(b=>b.onclick=()=>{if(b.hasAttribute('data-more')){showMore();return;}setTab(b.dataset.tab);applyView(VIEW);});
 
 /* ================= Run list ================= */
 const VL={buy:'Buy',maybe:'Maybe',pass:'Pass',skip:'Out of box'};
@@ -1562,7 +1590,48 @@ function badges(c){
 function renderStrat(){
   const S=ST.settings;
   const k=n=>'$'+(n>=1000?(Math.round(n/100)/10)+'k':n);
-  $('strat').textContent=`Buy CR ≤ ${g1(S.maxGrade)} · fix under ${k(S.cap)} · sell at CR ${g1(S.sellGrade)}+ · make ${k(S.minP)}–${k(S.target).slice(1)}`;
+  $('strat').textContent=`Any car that pays, at any price · sell at CR ${g1(S.sellGrade)}+ · make ${k(S.minP)}–${k(S.target).slice(1)}`;
+}
+/* ===== Simple view: one line per car, "Bid up to $X" or "Skip" ===== */
+let VIEW='simple';try{VIEW=localStorage.getItem('aff_view')==='full'?'full':'simple';}catch(e){}
+function applyView(v){VIEW=v;try{localStorage.setItem('aff_view',v);}catch(e){}document.body.classList.toggle('simple',v==='simple');
+  document.querySelectorAll('#viewSeg button').forEach(x=>x.classList.toggle('on',x.dataset.vw===v));
+  if(v==='simple'&&(tab==='live'||tab==='backtest'||tab==='settings'))document.querySelectorAll('[data-more]').forEach(b=>b.classList.add('on'));else document.querySelectorAll('[data-more]').forEach(b=>b.classList.remove('on'));}
+const worthBid=c=>c.ok&&c.max>0&&!c.hard&&c.status!=='lost';   // in the lane, any car is a buy if the bidding stalls under its number
+const needsResult=c=>c.ok&&c.saleAt&&Date.parse(c.saleAt)<Date.now()-3*3600e3&&!(soldOf(c.vin)>0);
+function plainWhy(c){   // one short reason, in plain words
+  if(c.status==='won')return `You bought it for ${money(c.paid)}`;
+  const M=c.research&&c.research.model;
+  if(worthBid(c)){const bits=[`Usually sells near ${money(c.bidUsed)}`];if(M&&M.flag)bits.push('known issue');else if((c.warn||[]).length)bits.push(c.warn[0]);else if(c.est&&c.est.length)bits.push('value is an estimate');return bits.join(' · ');}
+  if(c.cond==null)return 'No grade on the list';
+  if(c.flag)return `Announced: ${c.flag}`;
+  if(M&&M.avoid)return 'Known problem model';
+  if(!c.max)return 'No price makes the profit target';
+  return `Only pays at ${money(c.max)} or less`;
+}
+function simpleCard(c){
+  if(!c.ok)return `<div class="scard skip"><div class="sc-l"><div class="veh">Run ${esc(c.lot)}</div><div class="sc-why">Could not read this row</div></div><div class="sc-r"><div class="v">Check</div></div></div>`;
+  const sub=`Run ${esc(c.lot)}${c.cond!=null?' · grade '+g1(c.cond):''}${c.miles!=null?' · '+Math.round(c.miles/1000)+'k mi':''}`;
+  const won=c.status==='won',bid=worthBid(c);
+  return `<div class="scard${won?' won':bid?'':' skip'}" data-vin="${c.vin}"><div class="sc-l"><div class="veh">${c.year} ${esc(c.make)} ${esc(c.model||'')}</div><div class="vin">${sub}</div><div class="sc-why">${esc(plainWhy(c))}</div>${needsResult(c)?soldInput(c):''}</div>
+    <div class="sc-r">${won?`<div class="l">Won</div><div class="v">${money(c.paid)}</div>`:bid?`<div class="l">Bid up to</div><div class="v">${money(c.max)}</div>`:`<div class="v">Skip</div>`}</div></div>`;
+}
+function renderSimple(list){
+  const el=$('simple');if(!el)return;if(VIEW!=='simple'||!RAW.length){el.innerHTML='';return;}
+  const byRun=(a,b)=>{const x=lotKey(a),y=lotKey(b);return x>y?1:x<y?-1:0;};
+  const need=CARS.filter(needsResult),bids=list.filter(c=>worthBid(c)||c.status==='won').sort(byRun),skips=list.filter(c=>!(worthBid(c)||c.status==='won')).sort(byRun);
+  el.innerHTML=`${need.length?`<div class="s-banner"><b>${need.length} car${need.length>1?'s':''} from a past sale need${need.length>1?'':'s'} a result.</b> Type what each one sold for, or import the results file under More. That is how the bids get sharper.</div>`:''}
+    <div class="s-head">${bids.length?`${bids.length} car${bids.length>1?'s':''} worth a bid, in run order`:'No cars worth a bid on this list'}</div>
+    ${bids.map(simpleCard).join('')}
+    ${skips.length?`<details class="s-fold"${bids.length?'':' open'}><summary>Show ${skips.length} car${skips.length>1?'s':''} to skip</summary><div style="display:grid;gap:2px">${skips.map(simpleCard).join('')}</div></details>`:''}`;
+  el.querySelectorAll('.scard[data-vin]').forEach(x=>x.onclick=e=>{if(e.target.closest('.vc-sold,.sold-in'))return;openCar(x.dataset.vin);});
+}
+function showMore(){
+  showModal(`<h2 style="margin:0 0 2px">More</h2><div class="morelist">
+    <button class="b" data-go="live">Live auction</button><button class="b" data-go="backtest">Results and sold prices</button><button class="b" data-go="settings">Settings</button>
+    <button class="b" id="mv-full">Switch to the full view</button><button class="b ghost" id="m-c">Close</button></div>`);
+  $('m-c').onclick=closeModal;$('mv-full').onclick=()=>{closeModal();applyView('full');renderAll();toast('Full view. Switch back in Settings.');};
+  $('modal').querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>{closeModal();setTab(b.dataset.go);applyView(VIEW);});
 }
 function renderList(){
   renderStrat();
@@ -1571,12 +1640,12 @@ function renderList(){
   $('dropzone').classList.toggle('has',!!RAW.length);$('tab-list').classList.toggle('nolist',!RAW.length);
   $('dzT').textContent=RAW.length?`${RAW.length} cars loaded`:'Drop the Manheim export here';
   $('dzS').textContent=RAW.length?'Add list':'or tap to choose the file';renderChips();
-  const inBox=ok.filter(c=>c.verdict!=='skip'),buys=ok.filter(c=>c.verdict==='buy'),maybes=ok.filter(c=>c.verdict==='maybe');
+  const inBox=ok.filter(c=>c.max>0),buys=ok.filter(c=>c.verdict==='buy'),maybes=ok.filter(c=>c.verdict==='maybe');
   const plan=ok.filter(c=>c.inPlan),bad=CARS.length-ok.length;
   const pP=plan.reduce((s,c)=>s+c.profit,0),pC=plan.reduce((s,c)=>s+c.allIn,0),pD=plan.reduce((s,c)=>s+c.down,0);
   $('kpis').innerHTML=RAW.length?[
     ['Cars',`${CARS.length}`,bad?`${bad} unreadable row${bad>1?'s':''}`:'on this list'],
-    ['In buy box',`${inBox.length}`,`CR ≤ ${g1(S.maxGrade)}`],
+    ['Have a bid',`${inBox.length}`,'any grade or price'],
     ['Buy · Maybe',`${buys.length}<span class="of"> · ${maybes.length}</span>`,`${ok.filter(c=>c.risk).length} high-risk`]
   ].map(([l,v,s])=>`<div class="kpi"><div class="l">${l}</div><div class="v">${v}</div><div class="s">${s}</div></div>`).join(''):'';
   const inList=listFilt?CARS.filter(c=>c.listId===listFilt):CARS;
@@ -1606,6 +1675,7 @@ function renderList(){
     $('cards').innerHTML=list.map(cardHTML).join('');
     $('tbody').innerHTML=list.map(rowHTML).join('');
   }
+  renderSimple(list);
   $('thead').innerHTML=['','Lot','Vehicle','CR','MMR → resale','Recon','Safe bid','Max bid','Typical profit','Odds','Call','Sold for'].map((h,i)=>`<th class="${i>2&&i<10||i===11?'num':''}">${h}</th>`).join('');
   document.querySelectorAll('#cards .vcard[data-vin],#tbody tr[data-vin]').forEach(el=>el.onclick=e=>{if(e.target.closest('.star,.vc-sold,.sold-in'))return;openCar(el.dataset.vin);});
   document.querySelectorAll('input[data-sold]').forEach(i=>{i.onchange=()=>{const v=+i.value||0;setSold(i.dataset.sold,v);toast(v>0?`Sold price saved: ${money(v)}`:'Sold price cleared');};i.onkeydown=e=>{if(e.key==='Enter')i.blur();};});
@@ -1734,6 +1804,7 @@ function updateDetail(){
     ${c.buyNow?`<div class="callout ${c.buyNow<=c.safe?'green':'blue'}">Buy Now is ${money(c.buyNow)}${c.buyNow<=c.safe?', under the safe bid.':c.buyNow<=c.max?', between the safe bid and the max bid.':', over the max bid.'}</div>`:''}
     ${c.mmrSrc==='base'?`<div class="callout blue">The list's MMR of ${money(c.mmrBase)} is treated as a base MMR for a CR ${g1(S.baseGrade)} car, so this car's as-is value is ${money(c.mmr)}. If the list's MMR is already adjusted for grade, change that in Settings.</div>`:''}
     ${RM&&RM.flag?`<div class="callout ${RM.avoid?'red':'amber'}"><b>${RM.avoid?'Avoid this model.':'Known issue on this model.'}</b> ${esc(RM.flag)} The odds here assume a ${CS.lemonPct}% chance of a ${money(CS.lemonCost)} hidden problem.</div>`:''}
+    ${(c.warn||[]).length?`<div class="callout amber"><b>Outside your usual range.</b> ${esc(c.warn.join(', and '))}. It is still ranked on profit alone.</div>`:''}
     ${c.cheap&&c.verdict!=='skip'?`<div class="callout amber"><b>Under ${money(S.cheapMMR)} MMR.</b> Fees, transport and holding cost about ${money(c.allIn-c.bidUsed-c.recon)} no matter what the car is worth, so cheap cars need a very low hammer to work.</div>`:''}
     ${!c.max?'<div class="callout red"><b>No bid clears the target.</b> Pass unless the numbers change.</div>':c.bidUsed>c.walk?`<div class="callout red"><b>The expected bid is above walk-away.</b> Let it go unless it stalls under ${money(c.walk)}.</div>`:''}`.trim();
   if($('d-won'))$('d-won').onclick=()=>askWon(c.vin);
@@ -2132,7 +2203,7 @@ $('addFlip').onclick=()=>{
 
 /* ================= Settings ================= */
 const SCHEMA=[
- ['g','Buy box & goals'],['maxGrade','Max CR grade to buy',.1],['sellGrade','Target grade after recon',.1],['cap','Recon cap per car ($)',100],['minP','Profit floor ($)',100],['target','Profit target ($)',100],['conf','Safe bid: odds of the floor needed (%)',5],['needSell','A Buy needs real MMR numbers',[['yes','Yes, no Buy on estimates'],['no','No, allow estimates']]],
+ ['g','Buy box & goals'],['maxGrade','Warn when the CR grade is above',.1],['sellGrade','Target grade after recon',.1],['cap','Warn when repairs are over ($)',100],['minP','Profit floor ($)',100],['target','Profit target ($)',100],['conf','Safe bid: odds of the floor needed (%)',5],['needSell','A Buy needs real MMR numbers',[['yes','Yes, no Buy on estimates'],['no','No, allow estimates']]],
  ['g','Value'],['liftPct','MMR change per CR point (%)',.5],['panelPenalty','Grade lost per repainted panel',.05],['mmrKind','A plain “MMR” column on the list is',[['adj','Already adjusted for this car\'s grade (Manheim export)'],['base','Base MMR (average-condition car)']]],['baseGrade','Grade a base MMR assumes',.1],['hammerPct','Expected hammer if no bid (% of MMR)',1],['lane','Re-run lane',[['national','Cautious: national Manheim average'],['curtis','Curtis\'s lane: about 5 points higher (unverified)']]],['sellPct','Re-run sells at, most likely (% of MMR at its grade)',1],['sellLo','Re-run sells at, low case (%)',1],['sellHi','Re-run sells at, high case (%)',1],['cheapMMR','Warn when as-is MMR is under ($)',500],['driftWk','Market drift (% per week)',.1],
  ['g','Exit'],['exitMode','How you sell',[['auction','Re-run at auction'],['retail','Retail on lot'],['dealer','Sell to a dealer'],['best','Best of the three, per car']]],['auctionDays','Days to re-run at auction',1],['sellThru','Chance it sells each run (%)',5],['rerunDays','Days added per no-sale',1],['noSaleFee','No-sale / re-run fee ($)',5],['rerunCut','Price drop per no-sale (%)',.5],['retailPct','Retail price (% of MMR)',1],['retailPrep','Retail-ready prep ($)',25],['retailCost','Retail selling cost ($)',25],['retailDays','Days to retail',1],['dealerPct','Dealer sale (% of MMR)',1],['dealerDays','Days to dealer sale',1],
  ['g','Costs'],['feeMode','Buyer fee',[['tiered','Typical tiered schedule'],['flat','Flat $ per car'],['pct','% of hammer']]],['feeVal','Fee $ or % (if not tiered)',25],['onlineFee','Online (Simulcast) fee per buy ($)',5],['psi','Post-sale inspection per buy ($)',5],['tIn','Transport in ($)',25],['tOut','Transport out ($)',25],['sellFee','Seller fee + re-grade ($)',25],['doc','Title / doc ($)',25],['perDay','Holding cost per day ($)',1],['apr','Floor-plan interest (APR %)',.25],['fpFee','Floor-plan fee per car ($)',5],['reserve','Surprise reserve per car ($)',25],
@@ -2237,6 +2308,8 @@ function applyTheme(t){document.documentElement.dataset.theme=t;try{localStorage
   const b=$('themeBtn');b.innerHTML=t==='dark'?TH_SUN:TH_MOON;b.title=t==='dark'?'Switch to light mode':'Switch to dark mode';}
 $('themeBtn').onclick=()=>applyTheme(document.documentElement.dataset.theme==='dark'?'light':'dark');
 document.querySelectorAll('#themeSeg button').forEach(x=>x.onclick=()=>applyTheme(x.dataset.th));
+document.querySelectorAll('#viewSeg button').forEach(x=>x.onclick=()=>{applyView(x.dataset.vw);renderAll();});
+applyView(VIEW);
 // parts that only make sense on the website (sign out, shared data)
 if(AI.on)document.querySelectorAll('[data-site]').forEach(e=>e.hidden=false);
 // phone: drag the top of a car's page down to close it
