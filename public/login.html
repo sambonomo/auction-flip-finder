@@ -7,35 +7,42 @@
 <meta name="theme-color" content="#ffffff">
 <title>Sign in · Auction Flip Finder</title>
 <link rel="icon" href="/icon.svg">
+<link rel="apple-touch-icon" href="/icon.svg">
 <script>try{document.documentElement.dataset.theme=localStorage.getItem('aff_theme')==='dark'?'dark':'light'}catch(e){document.documentElement.dataset.theme='light'}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#f6f8fb;--panel:#fff;--line:#dfe5ee;--line2:#c3ccd9;--text:#0f1b2d;--muted:#566275;--accent:#2f6fed;--on-accent:#fff;--bad:#c4282f;--bad-bg:#fde8e9;--bad-line:#f2b9bc;color-scheme:light}
-:root[data-theme=dark]{--bg:#0d1117;--panel:#161c24;--line:#2e3a49;--line2:#46556a;--text:#f2f5f9;--muted:#a7b3c2;--accent:#6aa5ff;--on-accent:#08111f;--bad:#ff8a8f;--bad-bg:#401c1f;--bad-line:#6a2e32;color-scheme:dark}
+:root{--bg:#f5f6f8;--panel:#fff;--line:#e5e8ee;--line2:#d0d5de;--text:#0f172a;--muted:#5a6475;--accent:#2f6fed;--on-accent:#fff;--bad:#c42b32;--bad-bg:#fdecec;color-scheme:light}
+:root[data-theme=dark]{--bg:#0b0d11;--panel:#14171c;--line:#242932;--line2:#39404b;--text:#f1f3f6;--muted:#a2aab6;--accent:#6ea6ff;--on-accent:#06142b;--bad:#ff8b8f;--bad-bg:#321a1c;color-scheme:dark}
 *{box-sizing:border-box}
 html,body{height:100%}
-body{margin:0;background:var(--bg);color:var(--text);font:16px/1.4 Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;display:flex;align-items:center;justify-content:center;padding:16px}
-form{width:100%;max-width:360px;background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:28px 22px;box-shadow:0 1px 2px rgba(15,27,45,.05)}
-.brand{display:flex;align-items:center;gap:12px;margin-bottom:22px}
-.logo{width:42px;height:42px;border-radius:11px;background:#f5a524;color:#1a1300;font-weight:800;font-size:24px;display:flex;align-items:center;justify-content:center}
-h1{font-size:18px;margin:0;font-weight:700}
-.sub{font-size:13px;color:var(--muted)}
-label{display:block;font-size:13px;font-weight:600;color:var(--muted);margin:14px 0 6px}
-input{width:100%;padding:13px 12px;font-size:16px;color:var(--text);background:var(--panel);border:1px solid var(--line2);border-radius:10px;outline:none}
-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 25%,transparent)}
-button{width:100%;margin-top:22px;padding:14px;font-size:16px;font-weight:700;color:var(--on-accent);background:var(--accent);border:0;border-radius:10px;cursor:pointer}
-.err{display:none;margin-top:14px;padding:10px 12px;font-size:14px;color:var(--bad);background:var(--bad-bg);border:1px solid var(--bad-line);border-radius:10px}
+body{margin:0;background:var(--bg);color:var(--text);font:16px/1.45 Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;display:flex;align-items:center;justify-content:center;padding:20px 16px calc(20px + env(safe-area-inset-bottom))}
+form{width:100%;max-width:380px;background:var(--panel);border:1px solid var(--line);border-radius:24px;padding:32px 24px 28px;box-shadow:0 1px 2px rgba(15,23,42,.05)}
+.logo{width:52px;height:52px;border-radius:15px;background:#2f6fed;display:grid;place-items:center;margin:0 auto 16px}
+.logo svg{width:30px;height:30px;stroke:#fff;fill:none;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+h1{font-size:24px;margin:0;font-weight:700;letter-spacing:-.02em;text-align:center}
+.sub{font-size:15px;color:var(--muted);text-align:center;margin:4px 0 22px}
+label{display:block;font-size:13px;font-weight:600;color:var(--muted);margin:16px 0 6px}
+input{width:100%;height:52px;padding:0 14px;font:inherit;color:var(--text);background:var(--panel);border:1px solid var(--line2);border-radius:14px;outline:none;-webkit-appearance:none}
+input:focus{border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 22%,transparent)}
+button{width:100%;height:54px;margin-top:24px;font:inherit;font-weight:700;color:var(--on-accent);background:var(--accent);border:0;border-radius:14px;cursor:pointer}
+button:active{opacity:.9}
+.err{display:none;margin-top:16px;padding:11px 13px;font-size:14px;color:var(--bad);background:var(--bad-bg);border-radius:12px}
 .err.on{display:block}
 </style>
 </head>
 <body>
 <form method="post" action="/api/login" autocomplete="on">
-  <div class="brand"><div class="logo">$</div><div><h1>Auction Flip Finder</h1><div class="sub">Team sign in</div></div></div>
+  <div class="logo" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 16l5-5 4 4 7-8M20 7h-5M20 7v5"/></svg></div>
+  <h1>Flip Finder</h1>
+  <div class="sub">Sign in to see the run list</div>
   <label for="u">Username</label>
   <input id="u" name="username" type="text" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" required>
   <label for="p">Password</label>
   <input id="p" name="password" type="password" autocomplete="current-password" required>
   <div class="err" id="err" role="alert">That username or password is not right. Try again.</div>
-  <button type="submit">Login</button>
+  <button type="submit">Sign in</button>
 </form>
 <script>if(/[?&]e=1/.test(location.search))document.getElementById('err').classList.add('on');</script>
 </body>

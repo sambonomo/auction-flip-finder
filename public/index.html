@@ -8,442 +8,518 @@
 <meta name="theme-color" content="#ffffff">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Flip Finder">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23f5a524'/%3E%3Ctext x='32' y='45' font-size='38' font-weight='800' text-anchor='middle' font-family='Arial' fill='%231a1300'%3E$%3C/text%3E%3C/svg%3E">
+<link rel="icon" href="/icon.svg">
+<link rel="apple-touch-icon" href="/icon.svg">
 <link rel="manifest" href="/manifest.webmanifest">
 <script>try{document.documentElement.dataset.theme=localStorage.getItem('aff_theme')==='dark'?'dark':'light'}catch(e){document.documentElement.dataset.theme='light'}</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#f6f8fb;--panel:#fff;--panel2:#f2f5f9;--panel3:#e6ebf2;--line:#dfe5ee;--line2:#c3ccd9;--text:#0f1b2d;--muted:#566275;--faint:#9aa5b5;--accent:#2f6fed;--on-accent:#fff;--good:#0b7a4b;--warn:#8f5400;--bad:#c4282f;--blue:#1f5ad6;--good-bg:#e3f5ec;--warn-bg:#fdf1d7;--bad-bg:#fde8e9;--blue-bg:#e6effe;--neutral-bg:#eaeef4;--good-line:#a9dcc3;--bad-line:#f2b9bc;--blue-line:#b8d0fb;--star:#e0a100;--hdr:rgba(255,255,255,.92);--veil:rgba(246,248,251,.93);--shadow:0 1px 2px rgba(15,27,45,.05);--nav:64px;color-scheme:light}
-:root[data-theme=dark]{--bg:#0d1117;--panel:#161c24;--panel2:#1d2530;--panel3:#2a3545;--line:#2e3a49;--line2:#46556a;--text:#f2f5f9;--muted:#a7b3c2;--faint:#6b7889;--accent:#6aa5ff;--on-accent:#08111f;--good:#4fdc9f;--warn:#fbc24d;--bad:#ff8a8f;--blue:#84bbff;--good-bg:#11362a;--warn-bg:#3b2f10;--bad-bg:#401c1f;--blue-bg:#16314f;--neutral-bg:#2a323d;--good-line:var(--good-line);--bad-line:#6a2e32;--blue-line:#2a5c8f;--star:#fbc24d;--hdr:rgba(13,17,23,.92);--veil:rgba(13,17,23,.9);--shadow:none;color-scheme:dark}
+/* ===== tokens ===== */
+:root{--bg:#f5f6f8;--panel:#fff;--panel2:#f3f5f8;--panel3:#e7eaf0;--line:#e5e8ee;--line2:#d0d5de;--text:#0f172a;--muted:#5a6475;--faint:#99a1ae;--accent:#2f6fed;--on-accent:#fff;--good:#0a7a4b;--warn:#8a5300;--bad:#c42b32;--blue:#1f5ad6;--good-bg:#e7f6ee;--warn-bg:#fdf3dc;--bad-bg:#fdecec;--blue-bg:#eaf1fe;--neutral-bg:#eef0f4;--good-line:#b5e0c9;--bad-line:#f3c2c4;--blue-line:#c2d6fb;--warn-line:#f0d9a3;--star:#e5a100;--hdr:rgba(255,255,255,.88);--veil:rgba(245,246,248,.94);--shadow:0 1px 2px rgba(15,23,42,.05);--pop:0 24px 60px rgba(15,23,42,.22);--scrim:rgba(15,23,42,.4);--hd:56px;--nav:60px;color-scheme:light}
+:root[data-theme=dark]{--bg:#0b0d11;--panel:#14171c;--panel2:#1b1f26;--panel3:#272c35;--line:#242932;--line2:#39404b;--text:#f1f3f6;--muted:#a2aab6;--faint:#6a7381;--accent:#6ea6ff;--on-accent:#06142b;--good:#4ed69c;--warn:#f7c053;--bad:#ff8b8f;--blue:#8dbcff;--good-bg:#10291f;--warn-bg:#2e2510;--bad-bg:#321a1c;--blue-bg:#14263f;--neutral-bg:#222731;--good-line:#1f4d3a;--bad-line:#5c2a2d;--blue-line:#264a78;--warn-line:#57451a;--star:#f7c053;--hdr:rgba(11,13,17,.84);--veil:rgba(11,13,17,.92);--shadow:none;--pop:0 24px 60px rgba(0,0,0,.6);--scrim:rgba(0,0,0,.62);color-scheme:dark}
+
+/* ===== base ===== */
 *{box-sizing:border-box}
-html,body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,sans-serif;font-size:14px;line-height:1.45;-webkit-text-size-adjust:100%}
-button,input,select,textarea{font-family:inherit}
-header{position:sticky;top:0;z-index:15;padding:calc(10px + env(safe-area-inset-top)) 16px 10px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:12px;background:var(--hdr);backdrop-filter:blur(8px)}
-.logo{width:34px;height:34px;border-radius:9px;background:var(--accent);display:grid;place-items:center;color:#1a1300;font-weight:800;font-size:17px;flex:none}
-h1{font-size:17px;margin:0;font-weight:800;letter-spacing:-.01em}
-.sub{color:var(--muted);font-size:12px}
-.sync{margin-left:auto;font-size:11.5px;color:var(--muted);display:flex;align-items:center;gap:6px;white-space:nowrap}
-.sync i{width:8px;height:8px;border-radius:50%;background:var(--muted);display:inline-block}
+[hidden]{display:none!important}
+html,body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.45;-webkit-text-size-adjust:100%;-webkit-font-smoothing:antialiased}
+body{overflow-x:hidden}
+button,input,select,textarea{font-family:inherit;color:inherit}
+button{-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+a{color:var(--accent)}
+h2{font-size:16px;margin:0 0 4px;font-weight:700;letter-spacing:-.01em}
+.hint{color:var(--muted);font-size:13.5px;margin:0 0 12px;line-height:1.5}
+.hint b{color:var(--text);font-weight:600}
+.mini{color:var(--muted);font-size:12.5px;font-weight:500;margin-left:6px}
+.l,.fl{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;font-weight:700}
+.fl{display:block;margin-bottom:6px}
+.num,.v{font-variant-numeric:tabular-nums}
+.pos{color:var(--good);font-weight:700}.neg{color:var(--bad);font-weight:700}.warn{color:var(--warn);font-weight:700}.maxbid{color:var(--blue);font-weight:700}
+.dim{opacity:.55}
+.empty{padding:32px 16px;text-align:center;color:var(--muted);font-size:14px}
+.scrollx{overflow-x:auto}
+
+/* ===== header and navigation ===== */
+header{position:sticky;top:0;z-index:15;display:flex;align-items:center;gap:10px;height:calc(var(--hd) + env(safe-area-inset-top));padding:env(safe-area-inset-top) 10px 0 16px;background:var(--hdr);-webkit-backdrop-filter:saturate(180%) blur(14px);backdrop-filter:saturate(180%) blur(14px);border-bottom:1px solid var(--line)}
+.logo{width:30px;height:30px;border-radius:9px;background:#2f6fed;display:grid;place-items:center;flex:none}
+.logo svg{width:18px;height:18px;stroke:#fff;fill:none;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+h1{font-size:17px;margin:0;font-weight:700;letter-spacing:-.015em;white-space:nowrap}
+.topnav{display:none;gap:2px;margin-left:20px}
+.topnav button{background:transparent;border:0;color:var(--muted);height:36px;padding:0 13px;border-radius:999px;font-weight:600;font-size:14px;cursor:pointer}
+.topnav button:hover{color:var(--text)}
+.topnav button.on{background:var(--panel3);color:var(--text)}
+.hdr-r{margin-left:auto;display:flex;align-items:center;gap:6px}
+.sync{font-size:12.5px;color:var(--muted);display:flex;align-items:center;gap:6px;white-space:nowrap;padding-right:4px}
+.sync i{width:8px;height:8px;border-radius:50%;background:var(--faint);display:inline-block}
 .sync.on i{background:var(--good)}
-.topnav{display:flex;gap:4px;margin-left:18px}
-.topnav button{background:transparent;border:0;color:var(--muted);padding:8px 12px;border-radius:9px;font:600 13.5px Inter;cursor:pointer}
-.topnav button.on{background:var(--panel2);color:var(--text)}
-.botnav{display:none}
-main{max-width:1280px;margin:0 auto;padding:16px 16px 60px}
-main>section{display:none;gap:14px}
+.sync:not(.on){display:none}
+.signout{display:none;font-size:13.5px;font-weight:600;color:var(--muted);text-decoration:none;padding:0 8px;white-space:nowrap}
+.ic-btn{width:44px;height:44px;border-radius:50%;border:0;background:transparent;color:var(--text);display:inline-grid;place-items:center;cursor:pointer;flex:none;padding:0}
+.ic-btn:hover{background:var(--panel3)}
+.ic-btn.line{border:1px solid var(--line2);border-radius:12px;background:var(--panel)}
+.ic-btn svg,.botnav svg,.search svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.botnav{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:20;background:var(--hdr);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom);-webkit-backdrop-filter:saturate(180%) blur(14px);backdrop-filter:saturate(180%) blur(14px)}
+.botnav button{flex:1;min-width:0;height:var(--nav);background:none;border:0;color:var(--muted);font-weight:600;font-size:10.5px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;cursor:pointer}
+.botnav .ic{line-height:0;position:relative}
+.botnav svg{width:23px;height:23px}
+.botnav button.on{color:var(--accent)}
+.botnav .cnt{position:absolute;top:-5px;left:14px;background:var(--accent);color:var(--on-accent);border-radius:9px;min-width:17px;height:17px;padding:0 5px;font-size:10.5px;line-height:17px;font-weight:700}
+
+/* ===== page ===== */
+main{max-width:1320px;margin:0 auto;padding:14px 12px calc(var(--nav) + 28px + env(safe-area-inset-bottom))}
+main>section{display:none;gap:12px}
 main>section.on{display:grid}
-main>section>*,.grid2>*{min-width:0}
-.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px}
-.card h2{font-size:14px;margin:0 0 4px;font-weight:700}
-.hint{color:var(--muted);font-size:12.5px;margin:0 0 12px}
-.grid2{display:grid;grid-template-columns:1.2fr 1fr;gap:14px}
-textarea,input[type=text],input[type=number],input[type=search],select{background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:9px;padding:9px 10px;font-size:13.5px;width:100%}
-textarea{min-height:120px;font-family:"JetBrains Mono",monospace;font-size:12px;resize:vertical}
-input:focus,select:focus,textarea:focus{outline:2px solid color-mix(in srgb,var(--accent) 35%,transparent);border-color:var(--accent)}
-.btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
-button.b,.filebtn{background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:9px;padding:9px 13px;font:600 13px Inter;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px}
-button.b:hover,.filebtn:hover{border-color:var(--line2)}
-button.primary{background:var(--accent);color:var(--on-accent);border-color:var(--accent)}
-button.good{background:var(--good-bg);color:var(--good);border-color:var(--good-line)}
-button.bad{background:var(--bad-bg);color:var(--bad);border-color:var(--bad-line)}
-button.ghost{background:transparent}
-.filebtn input{display:none}
-details.card>summary{list-style:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:8px}
-details.card>summary::-webkit-details-marker{display:none}
+main>section>*,.grid2>*,#listbody>*{min-width:0}
+.pagehead{padding:4px 4px 0}
+.pagehead h2{font-size:24px;letter-spacing:-.02em;margin:0}
+.pagehead p{margin:2px 0 0;color:var(--muted);font-size:14px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px;box-shadow:var(--shadow)}
+.card.flat{background:none;border:0;box-shadow:none;padding:0}
+.cardhead{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;min-height:40px}
+.cardhead h2{margin:0;padding-left:4px}
+.cardhead .acts{display:flex;gap:8px;margin-left:auto}
+.grid2{display:grid;gap:12px}
+details>summary{list-style:none;cursor:pointer}
+details>summary::-webkit-details-marker{display:none}
+details.card>summary{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:-16px;padding:16px;min-height:52px}
 details.card>summary h2{margin:0}
-.chev{color:var(--muted);font-size:12px;transition:.2s}
-details[open]>summary .chev{transform:rotate(180deg)}
-details.card[open]>summary{margin-bottom:10px}
-.mini{color:var(--muted);font-size:12px;font-weight:500;margin-left:6px}
-.strat{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;padding:12px 16px;background:var(--panel)}
-.strat .l{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;font-weight:700}
-.strat .v{font-size:17px;font-weight:800;color:var(--accent)}
-.strat .arrow{color:var(--muted)}
-.kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
-.kpi{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:13px 14px}
-.kpi .l{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.05em;font-weight:700}
-.kpi .v{font-size:22px;font-weight:800;margin-top:3px;letter-spacing:-.02em}
-.kpi .v .of{font-size:14px;color:var(--muted);font-weight:600}
-.kpi .s{color:var(--muted);font-size:12px;margin-top:1px}
-.toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
-.seg{display:flex;border:1px solid var(--line);border-radius:9px;overflow:hidden;background:var(--panel)}
-.seg button{border:0;background:transparent;padding:8px 12px;color:var(--muted);font:600 13px Inter;cursor:pointer}
-.seg button.on{background:var(--panel3);color:var(--text)}
-.toggle{display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer;user-select:none}
-.toggle input{display:none}
-.toggle .sw{width:36px;height:20px;border-radius:20px;background:var(--panel3);position:relative;transition:.2s;flex:none}
-.toggle .sw:after{content:"";position:absolute;width:16px;height:16px;border-radius:50%;background:#fff;top:2px;left:2px;transition:.2s}
-.toggle input:checked+.sw{background:var(--accent)}
-.toggle input:checked+.sw:after{left:18px;background:#fff}
-.tbl-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px}
-table.t{width:100%;border-collapse:collapse;min-width:1080px}
-table.t th,table.t td{padding:10px 11px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}
-table.t th{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;font-weight:700;background:var(--panel2);cursor:pointer;user-select:none}
-table.t .num{text-align:right;font-variant-numeric:tabular-nums}
+details.card[open]>summary{margin-bottom:0}
+.chev{width:9px;height:9px;border-right:2px solid var(--faint);border-bottom:2px solid var(--faint);transform:rotate(45deg);transition:transform .2s;flex:none;margin:0 6px 4px 0}
+details[open]>summary .chev{transform:rotate(225deg);margin-bottom:-4px}
+.card.quiet{background:none;border:0;box-shadow:none;padding:0 4px}
+.card.quiet>summary{margin:0;padding:6px 0;min-height:40px;justify-content:center;gap:10px}
+.card.quiet>summary h2{font-size:13.5px;font-weight:600;color:var(--muted)}
+.card.quiet[open]{background:var(--panel);border:1px solid var(--line);padding:4px 16px 16px;box-shadow:var(--shadow)}
+details.inl{margin-top:12px;border-top:1px solid var(--line);padding-top:10px}
+details.inl>summary{font-size:13.5px;font-weight:600;color:var(--accent)}
+
+/* ===== controls ===== */
+textarea,input[type=text],input[type=number],input[type=search],select{background:var(--panel);color:var(--text);border:1px solid var(--line2);border-radius:12px;padding:0 12px;height:44px;font-size:16px;width:100%;min-width:0;-webkit-appearance:none;appearance:none}
+select{padding-right:34px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238a93a2' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;background-size:16px;text-overflow:ellipsis}
+textarea{height:auto;min-height:110px;padding:10px 12px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px;resize:vertical}
+input::placeholder,textarea::placeholder{color:var(--faint)}
+input:focus,select:focus,textarea:focus{outline:0;border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 22%,transparent)}
+button:focus-visible,a:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.btns{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+.btns>:only-child,.btns>.primary:first-child{grid-column:1/-1}
+button.b,a.b,.filebtn{background:var(--panel);color:var(--text);border:1px solid var(--line2);border-radius:12px;min-height:44px;padding:8px 14px;font-weight:600;font-size:14.5px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px;text-decoration:none;text-align:center;line-height:1.2}
+button.b:hover,.filebtn:hover{border-color:var(--faint)}
+button.b:active,.filebtn:active{background:var(--panel2)}
+button.b.sm,a.b.sm{min-height:38px;padding:6px 14px;font-size:13.5px;border-radius:999px;white-space:nowrap;flex:none}
+button.b.primary{background:var(--accent);color:var(--on-accent);border-color:var(--accent)}
+button.b.good{background:var(--good);color:var(--panel);border-color:var(--good)}
+button.b.bad{background:var(--panel);color:var(--bad);border-color:var(--bad-line)}
+button.b.danger{color:var(--bad)}
+button.b.ghost{background:transparent;border-color:transparent;color:var(--muted)}
+button.b:disabled{opacity:.55}
+.filebtn input,.dropzone input{display:none}
+.primary-file{display:none}
+.seg{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.seg::-webkit-scrollbar{display:none}
+.seg button{flex:none;height:38px;padding:0 14px;border-radius:999px;border:1px solid var(--line2);background:var(--panel);color:var(--muted);font-weight:600;font-size:14px;cursor:pointer;white-space:nowrap}
+.seg button.on{background:var(--text);border-color:var(--text);color:var(--bg)}
+.seg .n{margin-left:6px;font-weight:600;opacity:.6;font-variant-numeric:tabular-nums}
+.seg .n:empty{display:none}
+.toggle{display:inline-flex;align-items:center;gap:10px;font-size:14.5px;font-weight:600;cursor:pointer;user-select:none;min-height:44px}
+.toggle input{position:absolute;opacity:0;pointer-events:none}
+.toggle .sw{width:46px;height:28px;border-radius:28px;background:var(--panel3);position:relative;transition:.2s;flex:none}
+.toggle .sw:after{content:"";position:absolute;width:24px;height:24px;border-radius:50%;background:#fff;top:2px;left:2px;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.25)}
+.toggle input:checked+.sw{background:var(--good)}
+.toggle input:checked+.sw:after{left:20px}
+.money-in{position:relative}
+.money-in span{position:absolute;left:14px;top:50%;transform:translateY(-50%);font-size:20px;font-weight:700;color:var(--muted)}
+.money-in input{height:52px;font-size:22px;font-weight:700;padding-left:32px}
+.copybox{display:none;margin-top:10px}.copybox.on{display:block}
+
+/* ===== badges and notices ===== */
+.badge{display:inline-flex;align-items:center;height:24px;padding:0 10px;border-radius:999px;font-size:12px;font-weight:700;white-space:nowrap}
+.b-buy,.b-won{background:var(--good-bg);color:var(--good)}.b-maybe{background:var(--warn-bg);color:var(--warn)}.b-pass,.b-risk{background:var(--bad-bg);color:var(--bad)}.b-skip,.b-err,.b-lost,.b-odo{background:var(--neutral-bg);color:var(--muted)}
+.b-ai,.b-plan,.b-vin{background:var(--blue-bg);color:var(--blue)}
+.b-ai{white-space:normal;height:auto;min-height:24px;padding:3px 10px;line-height:1.3}
+.reason{font-size:13px;color:var(--muted);line-height:1.35}
+.src{font-size:10.5px;color:var(--muted);border:1px solid var(--line2);border-radius:5px;padding:0 5px;margin-left:5px;font-weight:600;vertical-align:1px}
+.callout{border-radius:12px;padding:11px 13px;font-size:13.5px;line-height:1.5;margin-top:8px;background:var(--blue-bg);color:var(--text)}
+.callout b:first-child{color:var(--blue)}
+.callout.red{background:var(--bad-bg)}.callout.red b:first-child{color:var(--bad)}
+.callout.green{background:var(--good-bg)}.callout.green b:first-child{color:var(--good)}
+.callout.amber{background:var(--warn-bg)}.callout.amber b:first-child{color:var(--warn)}
+.callout a{color:var(--accent)!important;font-weight:600;text-decoration:none!important;white-space:nowrap}
+.callout .mini{margin-left:0}
+.notices{display:grid;gap:8px}
+.notices>div:empty{display:none}
+.notices .callout{margin:0;font-size:13px;padding:9px 12px 0;border-bottom:9px solid transparent;cursor:pointer;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
+.notices .callout.open{display:block}
+.note{font-size:13px;color:var(--muted);background:var(--panel2);border-radius:12px;padding:10px 12px}
+
+/* ===== run list: top ===== */
+.listbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.chips{display:contents}
+.chip{display:inline-flex;align-items:center;gap:6px;height:40px;min-width:0;padding:0 6px 0 14px;border:1px solid var(--line2);border-radius:999px;background:var(--panel);color:var(--text);font-weight:600;font-size:14px;cursor:pointer;max-width:100%}
+.listbar .chip{max-width:calc(100% - 118px)}
+.chip>span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+button.chip{padding:0 14px}
+.chip.on{background:var(--blue-bg);border-color:var(--blue-line);color:var(--blue)}
+.chip button{width:28px;height:28px;border-radius:50%;border:0;background:var(--panel3);color:var(--muted);font-size:11px;cursor:pointer;display:grid;place-items:center;padding:0;flex:none}
+.dropzone{display:inline-flex;align-items:center;gap:6px;height:40px;padding:0 14px 0 10px;border:1px dashed var(--line2);border-radius:999px;color:var(--accent);font-weight:600;font-size:14px;cursor:pointer;background:transparent}
+.dropzone .dz-ic{display:grid;place-items:center}
+.dropzone .dz-ic svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.dropzone b{display:none}
+.steps{display:none}
+.nolist #listbody,.nolist #howbox{display:none}
+#tab-list.nolist{max-width:560px;margin:4vh auto 0;width:100%}
+.nolist .listbar{display:block}
+.nolist .dropzone{display:flex;flex-direction:column;justify-content:center;gap:6px;height:auto;min-height:250px;padding:28px 20px;border:1.5px dashed var(--line2);border-radius:22px;background:var(--panel);text-align:center;color:var(--text);transition:border-color .15s,background .15s}
+.nolist .dropzone:hover{border-color:var(--accent);background:var(--blue-bg)}
+.nolist .dropzone .dz-ic{width:60px;height:60px;border-radius:50%;background:var(--blue-bg);color:var(--accent);margin:0 auto 10px}
+.nolist .dropzone .dz-ic svg{width:26px;height:26px}
+.nolist .dropzone b{display:block;font-size:20px;font-weight:700;letter-spacing:-.015em}
+.nolist .dropzone span{font-size:14.5px;font-weight:500;color:var(--muted);max-width:300px;margin:0 auto}
+.nolist .steps{display:grid;gap:12px;list-style:none;margin:6px 0 0;padding:4px 8px}
+.steps li{display:flex;gap:12px;align-items:flex-start;font-size:14px;color:var(--muted)}
+.steps i{flex:none;width:24px;height:24px;border-radius:50%;background:var(--panel3);color:var(--text);font-style:normal;font-weight:700;font-size:12.5px;display:grid;place-items:center}
+#listbody{display:grid;gap:12px}
+.kpis{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.kpis.three,#kpis{grid-template-columns:repeat(3,1fr)}
+.kpis:empty{display:none}
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:11px 12px;box-shadow:var(--shadow);min-width:0}
+.kpi .v{font-size:22px;font-weight:700;margin-top:2px;letter-spacing:-.02em;line-height:1.2}
+.kpi .v .of{color:var(--muted);font-weight:600}
+.kpi .s{color:var(--muted);font-size:12px;margin-top:2px;line-height:1.3}
+.kpis:not(.three):not(#kpis) .kpi:last-child:nth-child(odd){grid-column:1/-1}
+.kpis:not(#kpis) .kpi{padding:9px 12px 10px}.kpis:not(#kpis) .kpi .v{font-size:19px}
+.kpis.three .kpi{padding:10px}.kpis.three .kpi .v{font-size:17px}
+#kpis{gap:0;background:var(--panel);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);overflow:hidden}
+#kpis .kpi{border:0;border-radius:0;box-shadow:none;background:none;padding:9px 12px 10px}
+#kpis .kpi+.kpi{border-left:1px solid var(--line)}
+#kpis .kpi .v{font-size:20px}
+.rules{margin:-4px 2px 0;color:var(--muted);font-size:12px;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* ===== run list: filter, cards, table ===== */
+#listcard{background:none;border:0;padding:0;box-shadow:none}
+.filterbar{position:sticky;top:calc(var(--hd) + env(safe-area-inset-top));z-index:5;margin:0 -12px;padding:8px 12px;background:var(--veil);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
+.toolbar{display:flex;gap:8px;align-items:center;margin:2px 0 12px}
+.search{position:relative;flex:1 1 0;min-width:0}
+.search svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);width:18px;height:18px;color:var(--faint);pointer-events:none}
+.search input{padding-left:38px}
+.toolbar>select{flex:0 0 134px;width:134px}
+.cards{display:grid;gap:10px}
+.vcard{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px 14px 12px;cursor:pointer;-webkit-tap-highlight-color:transparent;box-shadow:var(--shadow)}
+.vcard:active{background:var(--panel2)}
+.vc-top{display:flex;gap:8px;align-items:flex-start}
+.vc-title{flex:1;min-width:0}
+.veh{font-weight:700;letter-spacing:-.01em}
+.vc-title .veh{font-size:16.5px;line-height:1.25}
+.vc-sub{font-size:13.5px;color:var(--muted);margin-top:2px}
+.vin{font-size:12.5px;color:var(--muted)}
+.star{background:none;border:0;color:var(--line2);font-size:22px;cursor:pointer;padding:0;line-height:1;width:40px;height:40px;margin:-8px -8px -8px 0;flex:none;border-radius:50%}
+.star.on{color:var(--star)}
+.vc-call{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:8px}
+.vc-call .reason{flex:1 1 180px;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
+.vc-bid{display:grid;grid-template-columns:repeat(3,1fr);margin-top:12px;background:var(--panel2);border-radius:12px;overflow:hidden}
+.vc-bid>div{padding:9px 6px 10px;text-align:center;min-width:0}
+.vc-bid>div+div{border-left:1px solid var(--line)}
+.vc-bid .v{font-size:18px;font-weight:700;margin-top:1px;letter-spacing:-.02em}
+.vc-bid .mx{background:var(--blue-bg)}
+.vc-bid .mx .l{color:var(--blue)}
+.vc-foot{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:10px}
+.vc-profit .v{font-size:15px;font-weight:700}
+.vc-sold{display:flex;align-items:center;gap:8px;font-size:12.5px;font-weight:600;color:var(--muted);cursor:text}
+.sold-in{width:112px!important;height:40px!important;text-align:right;border-radius:10px!important}
+.vcard.slim{padding:11px 14px;box-shadow:none;background:transparent}
+.vcard.slim .veh{font-size:15px;font-weight:600;color:var(--muted)}
+.vcard.slim .vc-foot{margin-top:6px}
+.tbl-wrap{display:none;overflow-x:auto;border:1px solid var(--line);border-radius:16px;background:var(--panel);box-shadow:var(--shadow)}
+table.t{width:100%;border-collapse:collapse;min-width:900px;font-size:14px}
+table.t th,table.t td{padding:11px 12px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}
+table.t th{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;font-weight:700;background:var(--panel2);position:sticky;top:0;z-index:1}
+table.t .num{text-align:right}
 table.t tbody tr{cursor:pointer}
 table.t tbody tr:hover{background:var(--panel2)}
-.dim{opacity:.5}
-.veh{font-weight:700}
-.vin{font-family:"JetBrains Mono",monospace;font-size:11px;color:var(--muted)}
-.badge{display:inline-block;padding:3px 9px;border-radius:999px;font-size:11.5px;font-weight:700;white-space:nowrap}
-.b-buy{background:var(--good-bg);color:var(--good)}.b-maybe{background:var(--warn-bg);color:var(--warn)}.b-pass{background:var(--bad-bg);color:var(--bad)}.b-skip,.b-err{background:var(--neutral-bg);color:var(--muted)}
-.b-risk{background:var(--bad-bg);color:var(--bad)}.b-ai{background:var(--blue-bg);color:var(--blue);white-space:normal}.b-plan{background:var(--blue-bg);color:var(--blue)}.b-won{background:var(--good-bg);color:var(--good)}.b-lost{background:var(--neutral-bg);color:var(--muted)}
-.pos{color:var(--good);font-weight:700}.neg{color:var(--bad);font-weight:700}.warn{color:var(--warn);font-weight:700}.maxbid{color:var(--blue);font-weight:800}
-.rank{color:var(--muted);font-weight:700}
-.src{font-size:10px;color:var(--muted);border:1px solid var(--line);border-radius:5px;padding:0 5px;margin-left:5px;font-weight:600;vertical-align:1px}
-.reason{font-size:11.5px;margin-top:3px;font-weight:600;white-space:normal}
-.r-buy{color:var(--good)}.r-maybe{color:var(--warn)}.r-pass{color:var(--bad)}.r-skip{color:var(--muted)}
-.star{background:none;border:0;color:var(--faint);font-size:19px;cursor:pointer;padding:0 4px;line-height:1}
-.star.on{color:var(--star)}
-.cards{display:none;gap:10px}
-.vcard{background:var(--panel2);border:1px solid var(--line);border-radius:14px;padding:13px 14px;cursor:pointer;-webkit-tap-highlight-color:transparent}
-.vcard:active{background:var(--panel3)}
-.vc-top{display:flex;gap:10px;align-items:flex-start}
-.vc-rank{min-width:28px;height:28px;border-radius:8px;background:var(--panel);display:grid;place-items:center;font-weight:800;font-size:13px;color:var(--muted)}
-.vc-title{flex:1;min-width:0}
-.vc-title .veh{font-size:15px;line-height:1.25}
-.vc-badges{display:flex;flex-direction:column;align-items:flex-end;gap:4px}
-.vc-nums{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:11px}
-.vc-nums>div{background:var(--panel);border-radius:10px;padding:8px 9px}
-.l{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;font-weight:700}
-.vc-nums .v{font-size:16px;font-weight:800;margin-top:1px}
-.vc-meta{margin-top:9px;font-size:12px;color:var(--muted)}
-.empty{padding:36px 16px;text-align:center;color:var(--muted)}
-.settings{display:grid;grid-template-columns:repeat(4,1fr);gap:10px 12px}
-.settings label{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--muted)}
-.settings .full{grid-column:1/-1}
-.grp{grid-column:1/-1;font-size:11px;color:var(--accent);text-transform:uppercase;letter-spacing:.06em;font-weight:800;margin-top:8px;padding-top:12px;border-top:1px solid var(--line)}
-.grp:first-child{border-top:0;margin-top:0;padding-top:0}
-.book{width:100%;border-collapse:collapse}
-.book td{padding:5px 4px;border-bottom:1px solid var(--line)}
-.book input[type=text]{padding:7px 8px}
-.book input[type=number]{width:100px;padding:7px 8px}
-/* sheet */
-.backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:30}
-.backdrop.on{display:block}
-.sheet{display:none;position:fixed;z-index:31;left:50%;top:4vh;transform:translateX(-50%);width:min(980px,96vw);max-height:92vh;overflow-y:auto;background:var(--bg);border:1px solid var(--line);border-radius:18px;padding:16px;box-shadow:0 20px 60px rgba(0,0,0,.6)}
-.sheet.on{display:block}
-.sh-head{display:flex;align-items:flex-start;gap:10px;position:sticky;top:-16px;background:var(--bg);padding:4px 0 10px;margin-top:-4px;z-index:2}
-.sh-head h2{font-size:17px;margin:0}
-.x{width:36px;height:36px;border-radius:50%;flex:none;margin-left:auto;font-size:16px;padding:0}
-.sh-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.sh-grid>.card{background:var(--panel2);padding:14px}
-.lift{display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:var(--panel);border-radius:12px;padding:12px 14px}
-.lift .v{font-size:20px;font-weight:800}
-.lift>div:last-child{margin-left:auto;text-align:right}
-.edits{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:10px;align-items:end}
-.edits label{display:flex;flex-direction:column;gap:3px;font-size:11px;color:var(--muted);font-weight:600}
-.brk{width:100%;border-collapse:collapse}
-.brk td{padding:6px 0;border-bottom:1px dashed var(--line)}
-.brk td:last-child{text-align:right;font-variant-numeric:tabular-nums}
-.brk tr.tot td{border-bottom:0;font-weight:800;font-size:15px;padding-top:9px}
-.rline{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px dashed var(--line)}
-.rline .nm{flex:1;font-size:13px}
-.rline .nm small{color:var(--bad);font-weight:700;margin-left:4px}
-.rline .c{width:70px;text-align:right;font-variant-numeric:tabular-nums;font-weight:600}
-.step{display:flex;align-items:center;border:1px solid var(--line);border-radius:8px;overflow:hidden}
-.step button{width:30px;height:28px;border:0;background:var(--panel);color:var(--text);font-size:16px;cursor:pointer}
-.step span{width:28px;text-align:center;font-weight:700}
+table.t tbody tr:last-child td{border-bottom:0}
+table.t td:nth-child(3){white-space:normal;min-width:190px;max-width:270px}
+table.t td:nth-child(11){white-space:normal}table.t td:nth-child(11) .badge{margin:1px 2px 1px 0}
+table.t .star{margin:-6px 0;font-size:19px}
+table.t .sold-in{width:96px!important;height:36px!important;font-size:14px}
+
+/* ===== car sheet ===== */
+.backdrop,.mback{display:none;position:fixed;inset:0;background:var(--scrim);z-index:30}
+.mback{z-index:40}
+.backdrop.on,.mback.on{display:block;animation:fade .18s ease-out}
+.sheet{display:none;position:fixed;z-index:31;left:0;right:0;bottom:0;top:calc(env(safe-area-inset-top) + 18px);background:var(--bg);border-radius:22px 22px 0 0;box-shadow:var(--pop);flex-direction:column;overflow:hidden}
+.sheet.on{display:flex;animation:up .24s cubic-bezier(.2,.8,.2,1)}
+@keyframes up{from{transform:translateY(40px);opacity:.4}to{transform:none;opacity:1}}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+.sh-head{flex:none;background:var(--panel);border-bottom:1px solid var(--line);padding:8px 8px 12px 16px;touch-action:none}
+.handle{width:38px;height:5px;border-radius:5px;background:var(--line2);margin:0 auto 8px}
+.sh-row{display:flex;align-items:flex-start;gap:4px}
+.sh-t{flex:1;min-width:0;padding-top:2px}
+.sh-t h2{font-size:20px;letter-spacing:-.02em;line-height:1.2;margin:0}
+.sh-head .star{margin:0;width:44px;height:44px;font-size:25px}
+.x{font-size:17px;background:var(--panel2)!important}
+.sh-body{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding:14px 12px 24px}
+.sh-body>*{margin:0 0 12px}
+.sh-body>*:last-child{margin-bottom:0}
+.sh-body>div:empty{display:none}
+#d-aibox .callout{background:var(--panel);border:1px solid var(--line)}
+.sh-body>.callout,#d-notes .callout:first-child,#d-aibox .callout,#d-lift .callout:first-child{margin-top:0}
+#d-lift .lift+.callout{margin-top:8px}
+.sh-foot{flex:none;display:grid;grid-template-columns:1fr 1.25fr;gap:10px;padding:10px 12px calc(10px + env(safe-area-inset-bottom));background:var(--panel);border-top:1px solid var(--line)}
+.sh-foot button.b{min-height:52px;font-size:16px;border-radius:14px}
+.sh-foot .done{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:14.5px;font-weight:600;min-height:52px}
+.vline{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.vline .reason{font-size:14px;flex:1 1 220px}
 .ladder{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-.ladder>div{background:var(--panel);border-radius:12px;padding:10px 11px}
-.ladder .v{font-size:21px;font-weight:800;margin-top:2px}
-.ladder .s{font-size:11.5px;color:var(--muted)}
-.exits{width:100%;border-collapse:collapse;font-size:13px}
+.ladder>div{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:11px 8px 10px;text-align:center;min-width:0}
+.ladder>div.mx{background:var(--blue-bg);border-color:var(--blue-line)}
+.ladder>div.mx .l{color:var(--blue)}
+.ladder .v{font-size:23px;font-weight:700;margin-top:2px;letter-spacing:-.025em;line-height:1.15}
+.ladder .s{font-size:11.5px;color:var(--muted);margin-top:3px;line-height:1.3}
+.expect{font-size:13.5px;color:var(--muted);margin:10px 2px 0;line-height:1.5}
+.hero{display:grid;grid-template-columns:repeat(3,1fr);background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.hero>div{padding:11px 10px;min-width:0}
+.hero>div+div{border-left:1px solid var(--line)}
+.hero .v{font-size:18px;font-weight:700;margin-top:2px;letter-spacing:-.02em}
+.hero .s{font-size:11.5px;color:var(--muted);margin-top:1px}
+.meta{display:grid;gap:0;font-size:14px}
+.meta>div{display:flex;justify-content:space-between;gap:14px;padding:9px 0;border-bottom:1px solid var(--line)}
+.meta>div:last-child{border-bottom:0;padding-bottom:0}.meta>div:first-child{padding-top:0}
+.meta span:first-child{color:var(--muted);flex:none}
+.meta span:last-child{text-align:right;font-weight:500;overflow-wrap:anywhere}
+.lift{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:8px 10px;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px 14px}
+.lift .v{font-size:19px;font-weight:700;letter-spacing:-.02em}
+.lift .arr{color:var(--faint);font-size:18px}
+.lift>div:last-child{grid-column:1/-1;display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--line);padding-top:9px}
+.sec-l{font-size:15px;font-weight:700;margin:0 0 10px}
+.edits{display:grid;grid-template-columns:1fr 1fr;gap:10px;align-items:end}
+.edits label,.fgrid label,.settings label{display:flex;flex-direction:column;gap:5px;font-size:12.5px;color:var(--muted);font-weight:600;line-height:1.3;min-width:0}
+.edits .wide{grid-column:1/-1}
+.sh-grid{display:grid;gap:12px;align-items:start}
+.sheet .card{box-shadow:none}
+.brk{width:100%;border-collapse:collapse;font-size:14px}
+.brk td{padding:8px 0;border-bottom:1px solid var(--line)}
+.brk td:last-child{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap;padding-left:10px;vertical-align:top}
+.brk tr.tot td{font-weight:700;font-size:16px;padding:11px 0}
+.brk tr:last-child td{border-bottom:0}
+.rline{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line)}
+.rline .nm{flex:1;font-size:14px;min-width:0}
+.rline .nm small{color:var(--bad);font-weight:700;margin-left:6px;font-size:11px;text-transform:uppercase;letter-spacing:.04em}
+.rline .c{width:68px;text-align:right;font-variant-numeric:tabular-nums;font-weight:600}
+.step{display:flex;align-items:center;border:1px solid var(--line2);border-radius:10px;overflow:hidden;flex:none}
+.step button{width:40px;height:38px;border:0;background:var(--panel);color:var(--text);font-size:19px;cursor:pointer}
+.step button:active{background:var(--panel3)}
+.step span{width:28px;text-align:center;font-weight:700}
+.exits{width:100%;border-collapse:collapse;font-size:13.5px;margin-top:6px}
 .exits th{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;text-align:right;padding:4px 6px;font-weight:700}
 .exits th:first-child,.exits td:first-child{text-align:left}
-.exits td{padding:7px 6px;text-align:right;border-top:1px solid var(--line);font-variant-numeric:tabular-nums}
+.exits td{padding:9px 6px;text-align:right;border-top:1px solid var(--line);font-variant-numeric:tabular-nums}
 .exits tr.use td{background:var(--good-bg)}
-.exits tr.use td:first-child{box-shadow:inset 3px 0 var(--good)}
-.bar{height:10px;border-radius:6px;background:var(--panel);overflow:hidden;display:flex;margin:10px 0 4px}
-.bar span{display:block;height:100%}
-.legend{display:flex;gap:10px;flex-wrap:wrap;font-size:11px;color:var(--muted)}
-.legend i{display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:4px;vertical-align:-1px}
-.note{font-size:12px;color:var(--muted);background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
-.callout{border-radius:10px;padding:9px 11px;font-size:12.5px;font-weight:600;margin-top:8px}
-.callout.blue{background:var(--blue-bg);color:var(--blue)}.callout.red{background:var(--bad-bg);color:var(--bad)}.callout.green{background:var(--good-bg);color:var(--good)}
-/* live */
-.budget{display:grid;grid-template-columns:1.1fr 2fr;gap:14px;align-items:center}
-.bbar{height:14px;border-radius:8px;background:var(--panel2);overflow:hidden;display:flex}
+.exits tr.use td:first-child{box-shadow:inset 3px 0 var(--good);font-weight:600}
+
+/* ===== live ===== */
+.budget{display:grid;gap:16px}
+.bbar{height:10px;border-radius:8px;background:var(--panel3);overflow:hidden;display:flex}
 .bbar span{display:block;height:100%}
-.live-row{display:grid;grid-template-columns:60px 1fr auto auto;gap:12px;align-items:center;padding:12px;border:1px solid var(--line);border-radius:12px;background:var(--panel2)}
-.live-row .lot{font-size:20px;font-weight:800;color:var(--accent);text-align:center}
-.live-row .lot small{display:block;font-size:10px;color:var(--muted);font-weight:700;letter-spacing:.05em}
-.lad-mini{display:flex;gap:6px}
-.lad-mini>div{background:var(--panel);border-radius:9px;padding:6px 9px;min-width:84px}
-.lad-mini .v{font-weight:800;font-size:15px}
-.live-btns{display:flex;gap:6px}
-.live-btns button{padding:10px 14px}
-.list{display:grid;gap:8px}
-/* garage */
-.flip{background:var(--panel2);border:1px solid var(--line);border-radius:14px;padding:13px 14px}
-.flip-top{display:flex;gap:10px;align-items:flex-start;cursor:pointer}
-.stages{display:flex;gap:4px;margin-top:10px;flex-wrap:wrap}
-.stages button{border:1px solid var(--line);background:var(--panel);color:var(--muted);border-radius:999px;padding:5px 11px;font:600 12px Inter;cursor:pointer}
+.legend{display:flex;gap:12px;flex-wrap:wrap;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+.list{display:grid;gap:10px}
+.live-row{display:grid;grid-template-columns:auto 1fr;gap:10px 12px;align-items:center;padding:14px;border:1px solid var(--line);border-radius:16px;background:var(--panel);box-shadow:var(--shadow)}
+.live-row .lot{font-size:17px;font-weight:700;color:var(--accent);text-align:center;background:var(--blue-bg);border-radius:12px;padding:6px 10px;min-width:58px;line-height:1.15}
+.live-row .lot small{display:block;font-size:9.5px;color:var(--blue);font-weight:700;letter-spacing:.06em}
+.live-row .veh{font-size:16px}
+.live-row .tags{margin-top:5px;display:flex;gap:5px;flex-wrap:wrap}
+.live-row .tags:empty{display:none}
+.lad-mini{grid-column:1/-1;display:grid;grid-template-columns:repeat(3,1fr);background:var(--panel2);border-radius:12px;overflow:hidden}
+.lad-mini>div{padding:8px 6px;text-align:center}
+.lad-mini>div+div{border-left:1px solid var(--line)}
+.lad-mini .v{font-weight:700;font-size:18px;letter-spacing:-.02em}
+.live-btns{grid-column:1/-1;display:grid;grid-template-columns:1fr 1.25fr;gap:8px}
+.live-btns button{min-height:50px!important;font-size:16px!important}
+.live-row.dec{grid-template-columns:auto 1fr auto;box-shadow:none}
+
+/* ===== garage ===== */
+.flip{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px;box-shadow:var(--shadow)}
+.flip-top{display:flex;gap:10px;align-items:flex-start}
+.flip-top .veh{font-size:16px}
+.flip-p{text-align:right;flex:none}
+.flip-p .v{font-size:19px;font-weight:700;letter-spacing:-.02em}
+.stages{display:flex;gap:6px;margin-top:12px;overflow-x:auto;scrollbar-width:none}
+.stages button{flex:1;border:1px solid var(--line2);background:var(--panel);color:var(--muted);border-radius:999px;height:36px;padding:0 8px;font-weight:600;font-size:13px;cursor:pointer;white-space:nowrap}
 .stages button.on{background:var(--blue-bg);border-color:var(--blue-line);color:var(--blue)}
-.fgrid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:10px}
-.fgrid label:last-child{grid-column:span 1}
-.fgrid label{display:flex;flex-direction:column;gap:3px;font-size:11px;color:var(--muted);font-weight:600}
-.cal{width:100%;border-collapse:collapse;font-size:13px}
-.cal td,.cal th{padding:8px 6px;border-bottom:1px solid var(--line);text-align:right}
-.cal th{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
-.cal td:first-child,.cal th:first-child{text-align:left}
-/* modal */
-.modal{display:none;position:fixed;z-index:41;left:50%;top:50%;transform:translate(-50%,-50%);width:min(420px,92vw);background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px;box-shadow:0 20px 60px rgba(0,0,0,.6)}
-.modal.on{display:block}
-.mback{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:40}
-.mback.on{display:block}
-.modal input{font-size:22px;font-weight:800;padding:12px}
-.toast{position:fixed;bottom:calc(var(--nav) + 20px);left:50%;transform:translateX(-50%);background:var(--text);color:var(--bg);border:0;padding:10px 16px;border-radius:10px;font-weight:600;opacity:0;transition:.25s;pointer-events:none;z-index:50;white-space:nowrap}
-.toast.on{opacity:1}
-.copybox{display:none;margin-top:10px}.copybox.on{display:block}
-.dropzone{display:flex;flex-direction:column;align-items:center;gap:3px;padding:20px 12px;margin-bottom:10px;border:2px dashed var(--line2);border-radius:12px;background:var(--panel2);cursor:pointer;text-align:center}
-.dropzone.has{flex-direction:row;justify-content:center;flex-wrap:wrap;gap:4px 10px;padding:10px 12px}.dropzone.has b{font-size:13px}
-.dropzone b{font-size:15px;color:var(--accent)}.dropzone span{font-size:12px;color:var(--muted)}.dropzone input{display:none}
-.primary-file{background:var(--accent);color:var(--on-accent);border-color:var(--accent);height:40px}
+.fgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+.fgrid label:last-child{grid-column:1/-1}
+.flip-rm{text-align:right;margin-top:6px}
+.cal{width:100%;border-collapse:collapse;font-size:13.5px}
+.cal td,.cal th{padding:9px 6px;border-bottom:1px solid var(--line);text-align:right}
+.cal th{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;font-weight:700}
+.cal td:first-child,.cal th:first-child{text-align:left;padding-left:0}
+.cal tr:last-child td{border-bottom:0}
+
+/* ===== backtest ===== */
+.pair{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center;padding:13px 14px;border:1px solid var(--line);border-radius:16px;background:var(--panel);box-shadow:var(--shadow)}
+.pair>.veh-cell{grid-column:1/-1}
+.pair .sale .v{font-weight:700;font-size:16px}
+.pair .sale .s{font-size:12px;color:var(--muted)}
+.pair .arrow{color:var(--faint)}
+.pair>.num{text-align:left;font-weight:700}
+.pair>.num:last-child{grid-column:span 2;text-align:right}
+.headline{font-size:15.5px;line-height:1.55}
+
+/* ===== settings ===== */
+.rows{padding:4px 16px}
+.row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1px solid var(--line);min-height:60px}
+.row:last-child{border-bottom:0}
+.row .hint{margin:1px 0 0;font-size:13px}
+.row>div:first-child{flex:1;min-width:0}
+.row .seg{flex:none;overflow:visible}
+.row .seg button{height:36px}
+.sgroup{border-top:1px solid var(--line)}
+.sgroup:last-child{border-bottom:1px solid var(--line)}
+.sgroup>summary{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:50px;font-weight:600;font-size:15px}
+.sgroup>summary>span:first-child{flex:1;min-width:0}
+.sgroup>summary small{color:var(--muted);font-weight:500;font-size:12.5px;margin-right:6px;white-space:nowrap}
+.settings{display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:end}
+.sgroup .settings{padding:2px 0 16px}
+.settings .full{grid-column:1/-1}
+.book{width:100%;border-collapse:collapse}
+.book td{padding:5px 8px 5px 0;border-bottom:1px solid var(--line)}
+.book td:last-child{padding-right:0}
+.book tr:first-child td{padding-bottom:8px}
+.book input[type=number]{width:104px}
+.book input[type=checkbox]{width:22px;height:22px;accent-color:var(--accent)}
+.tline{display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid var(--line)}
+.tline:last-child{border-bottom:0;padding-bottom:0}
+.tline .nm{flex:1;min-width:0;font-size:14.5px;font-weight:600}
+.tline small{display:block;color:var(--muted);font-weight:500;font-size:12.5px;margin-top:2px;line-height:1.4}
+
+/* ===== modal, toast, drag ===== */
+.modal{display:none;position:fixed;z-index:41;left:50%;top:max(12vh,calc(env(safe-area-inset-top) + 24px));transform:translateX(-50%);width:min(430px,calc(100vw - 24px));max-height:80vh;overflow-y:auto;background:var(--panel);border-radius:22px;padding:20px;box-shadow:var(--pop)}
+.modal.on{display:block;animation:fade .18s ease-out}
+.modal h2{font-size:19px;letter-spacing:-.02em}
+.modal input[type=number]#m-h{font-size:28px;font-weight:700;height:60px;text-align:center;letter-spacing:-.02em}
+.modal .btns button{min-height:50px;font-size:16px}
+.toast{position:fixed;bottom:calc(var(--nav) + 16px + env(safe-area-inset-bottom));left:50%;transform:translate(-50%,8px);max-width:calc(100vw - 24px);background:var(--text);color:var(--bg);padding:11px 16px;border-radius:14px;font-weight:600;font-size:14px;opacity:0;transition:.22s;pointer-events:none;z-index:50;text-align:center;box-shadow:var(--pop)}
+.toast.on{opacity:1;transform:translate(-50%,0)}
 .dropveil{display:none;position:fixed;inset:0;z-index:60;background:var(--veil);align-items:center;justify-content:center;padding:24px}
-.dropveil.on{display:flex}.dropveil div{border:3px dashed var(--accent);border-radius:18px;padding:40px 28px;font-size:20px;font-weight:800;color:var(--accent);text-align:center}
-
-/* ===== polish ===== */
-.logo{background:linear-gradient(135deg,#ffd57a,#f5a524);box-shadow:0 4px 14px rgba(245,165,36,.35)}
-.card,.kpi{box-shadow:var(--shadow)}
-.num,.kpi .v,.vc-nums .v,.ladder .v,.lift .v{font-variant-numeric:tabular-nums}
-.strat{display:grid;grid-template-columns:repeat(4,1fr);gap:0;padding:0;overflow:hidden}
-.strat>div{padding:12px 16px;position:relative}
-.strat>div+div{border-left:1px solid var(--line)}
-.strat>div+div:before{content:"›";position:absolute;left:-7px;top:50%;transform:translateY(-50%);width:14px;height:14px;border-radius:50%;background:var(--panel3);color:var(--muted);font-size:11px;line-height:13px;text-align:center}
-.vcard{border-left:3px solid var(--line);transition:transform .15s,border-color .15s;background:var(--panel)}
-.vcard.v-buy{border-left-color:var(--good)}.vcard.v-maybe{border-left-color:var(--warn)}.vcard.v-pass{border-left-color:var(--bad)}.vcard.v-won{border-left-color:var(--blue)}
-@media(hover:hover){.vcard:hover{transform:translateY(-1px)}}
-table.t tbody tr td:first-child{box-shadow:inset 3px 0 transparent}
-table.t tbody tr.v-buy td:first-child{box-shadow:inset 3px 0 var(--good)}table.t tbody tr.v-maybe td:first-child{box-shadow:inset 3px 0 var(--warn)}table.t tbody tr.v-pass td:first-child{box-shadow:inset 3px 0 var(--bad)}
-table.t{min-width:900px}
-table.t td:nth-child(4){white-space:normal;min-width:190px}
-table.t td:nth-child(4) .veh{white-space:nowrap}
-table.t th{position:sticky;top:0;z-index:1}
-table.t td:last-child{white-space:normal}table.t td:last-child .badge{margin:1px 0}
-.ic-btn{width:40px;height:40px;padding:0!important;flex:none}
-.ic-btn svg,.botnav svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-.hero{display:grid;grid-template-columns:1.1fr 1fr 1fr 1fr;gap:8px;margin:2px 0 12px}
-.hero>div{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:11px 12px}
-.hero>div.big{background:var(--blue-bg);border-color:var(--blue-line)}
-.hero .v{font-size:24px;font-weight:800;margin-top:2px;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
-.hero .s{font-size:11.5px;color:var(--muted);margin-top:1px}
-.lift{display:grid;grid-template-columns:1fr auto 1fr 1fr;align-items:center}
-.lift>div:last-child{margin-left:0}
-.handle{display:none}
-.sheet{background:var(--bg)}
-.sh-head{background:var(--bg)}
-.badge{letter-spacing:.01em}
-.toolbar .grow{flex:1}
-.live-row{background:var(--panel)}
-.flip{background:var(--panel)}
-@media(max-width:1000px){.kpis{grid-template-columns:repeat(3,1fr)}.settings{grid-template-columns:repeat(2,1fr)}.fgrid{grid-template-columns:repeat(3,1fr)}}
-@media(max-width:760px){
-  header{padding:calc(10px + env(safe-area-inset-top)) 12px 10px}
-  .topnav{display:none}
-  .sub{display:none}
-  .botnav{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:20;background:var(--hdr);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom);backdrop-filter:blur(8px)}
-  .botnav button{flex:1;background:none;border:0;color:var(--muted);padding:9px 0 8px;font:600 11px Inter;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer}
-  .botnav button .ic{line-height:0}
-  .botnav button.on{color:var(--accent)}
-  .botnav .cnt{background:var(--accent);color:var(--on-accent);border-radius:9px;padding:0 5px;font-size:10px;margin-left:2px}
-  main{padding:12px 10px calc(var(--nav) + 30px + env(safe-area-inset-bottom))}
-  .card{padding:13px}
-  .grid2,.sh-grid,.budget{grid-template-columns:1fr}
-  .kpis{grid-template-columns:1fr 1fr;gap:8px}
-  .kpi{padding:11px 12px}.kpi .v{font-size:19px}
-  .kpi:last-child:nth-child(odd){grid-column:1/-1}
-  .strat{padding:10px 12px}.strat .v{font-size:14px}
-  textarea,input[type=text],input[type=number],input[type=search],select{font-size:16px}
-  textarea{min-height:100px}
-  .btns{display:grid;grid-template-columns:1fr 1fr}
-  .btns .primary{grid-column:1/-1;padding:13px}
-  .btns .b,.btns .filebtn{padding:11px 8px}
-  .toolbar .seg{flex:1 1 100%}.seg button{flex:1;padding:10px 2px}
-  .toolbar>input,.toolbar>select{flex:1 1 45%}
-  .tbl-wrap{display:none}.cards{display:grid}
-  .settings{grid-template-columns:1fr 1fr}
-  .sheet{top:auto;bottom:0;left:0;right:0;transform:none;width:auto;max-height:90vh;border-radius:18px 18px 0 0;padding:14px 12px calc(24px + env(safe-area-inset-bottom))}
-  .sh-head{top:-14px}
-  .edits{grid-template-columns:1fr 1fr}
-  .ladder .v{font-size:18px}
-  .live-row{grid-template-columns:52px 1fr;gap:10px}
-  .live-row .lad-mini{grid-column:1/-1}.live-row .lad-mini>div{flex:1;min-width:0}
-  .live-row .live-btns{grid-column:1/-1}.live-btns button{flex:1;padding:12px}
-  .fgrid{grid-template-columns:1fr 1fr}
-  .fgrid label:last-child{grid-column:1/-1}
-  .exits{font-size:12px}
-}
-
-@media(max-width:760px){
-  header{gap:10px}
-  h1{font-size:16px}
-  .strat>div{padding:9px 8px}
-  .strat .l{font-size:9px;letter-spacing:.04em}
-  .strat .v{font-size:13px}
-  .strat>div+div:before{display:none}
-  #kpis,#garkpis{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;gap:8px;margin:0 -10px;padding:0 10px 2px;scrollbar-width:none}
-  #kpis::-webkit-scrollbar,#garkpis::-webkit-scrollbar{display:none}
-  #kpis .kpi,#garkpis .kpi{flex:0 0 46%;scroll-snap-align:start}
-  #livekpis{grid-template-columns:1fr 1fr 1fr!important}
-  #livekpis .kpi:last-child{grid-column:auto!important}
-  #livekpis .kpi{padding:10px}#livekpis .kpi .v{font-size:16px}#livekpis .kpi .s{font-size:11px}
-  .toolbar>input[type=search]{flex:1 1 0;max-width:none!important}
-  .toolbar>select{flex:0 0 42%;max-width:none!important}
-  .toolbar .grow{display:none}
-  .toolbar>div:last-child{margin-left:0!important}
-  .hero{grid-template-columns:repeat(3,1fr)}
-  .hero>div{padding:9px 10px}
-  .hero .s{font-size:10.5px}
-  .hero>div.big{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between}
-  .hero>div.big .v{font-size:30px}
-  .hero .v{font-size:20px}
-  .lift{grid-template-columns:1fr auto 1fr;row-gap:8px}
-  .lift>div:last-child{grid-column:1/-1;display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--line);padding-top:8px;text-align:left}
-  .handle{display:block;width:40px;height:5px;border-radius:5px;background:var(--line2);margin:0 auto 8px}
-}
-
-.pair{display:grid;grid-template-columns:1.4fr 1fr auto 1fr .9fr .9fr;gap:12px;align-items:center;padding:11px 13px;border:1px solid var(--line);border-radius:12px;background:var(--panel);border-left:3px solid var(--line)}
-.pair.p-good{border-left-color:var(--good)}.pair.p-bad{border-left-color:var(--bad)}.pair.p-mid{border-left-color:var(--warn)}
-.pair .sale .v{font-weight:800;font-size:15px;font-variant-numeric:tabular-nums}
-.pair .sale .s{font-size:11.5px;color:var(--muted)}
-.pair .arrow{color:var(--muted)}
-.pair .num{text-align:right}
-.headline{font-size:16px;line-height:1.5}
-.headline b{color:var(--text)}
-.b-vin{background:var(--blue-bg);color:var(--blue)}.b-odo{background:var(--neutral-bg);color:var(--muted)}
-@media(max-width:760px){
-  .pair{grid-template-columns:1fr auto 1fr;gap:8px}
-  .pair>.veh-cell{grid-column:1/-1}
-  .pair>.num{grid-column:span 1;text-align:left}
-  .pair>.num:last-child{grid-column:span 2;text-align:right}
-  .headline{font-size:14.5px}
-  #btkpis{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;gap:8px;margin:0 -10px;padding:0 10px 2px;scrollbar-width:none}
-  #btkpis .kpi{flex:0 0 46%;scroll-snap-align:start}
-  .botnav button{font-size:10px}
-}
-
-/* ===== clean theme ===== */
-h1{font-weight:700}.kpi .v,.ladder .v,.hero .v,.lift .v,.vc-nums .v{font-weight:700}
-.sub{display:none}
-.hdr-r{margin-left:auto;display:flex;align-items:center;gap:8px}
-.sync{margin-left:0}.sync:not(.on){display:none}
-.topnav button.on{background:var(--panel3)}
-.card,.kpi{border-radius:16px}
-button.b,.filebtn{background:var(--panel);border-color:var(--line2)}
-button.b.primary{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
-button.b.good{background:var(--good-bg);border-color:var(--good-line);color:var(--good)}button.b.bad{background:var(--bad-bg);border-color:var(--bad-line);color:var(--bad)}
-.x,.ic-btn{background:var(--panel)}
-.logo{box-shadow:none}
-.rules{margin:0;color:var(--muted);font-size:13px;text-align:center}
-.dropzone{padding:44px 16px;margin:0;border:2px dashed var(--line2);border-radius:18px;background:var(--panel);gap:4px;transition:border-color .15s,background .15s}
-.dropzone:hover{border-color:var(--accent);background:var(--blue-bg)}
-.dropzone .dz-ic{width:48px;height:48px;border-radius:50%;background:var(--blue-bg);color:var(--accent);display:grid;place-items:center;margin-bottom:8px}
-.dropzone .dz-ic svg{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-.dropzone b{font-size:18px;color:var(--text);font-weight:700}.dropzone span{font-size:14px;color:var(--muted)}
-.dropzone.has{padding:12px 14px;border:1px solid var(--line);flex-direction:row;justify-content:space-between;gap:4px 12px}
-.dropzone.has .dz-ic{display:none}.dropzone.has b{font-size:14px}.dropzone.has span{font-size:13px;font-weight:600;color:var(--accent)}
-#tab-list.nolist{max-width:640px;margin:6vh auto 0}
-.nolist #listchips,.nolist #strat,.nolist #kpis,.nolist #liftcal,.nolist #soldcal,.nolist #aistat,.nolist #listcard,.nolist #howbox{display:none}
-#kpis{grid-template-columns:repeat(3,1fr)}
-#loadbox,#howbox{background:none;border:0;box-shadow:none;padding:0 4px}
-#loadbox>summary,#howbox>summary{justify-content:center;gap:6px;color:var(--muted)}
-#loadbox>summary h2,#howbox>summary h2{font-size:13px;font-weight:600;color:var(--muted)}
-#loadbox[open],#howbox[open]{background:var(--panel);border:1px solid var(--line);padding:16px;border-radius:16px}
-.toolbar .primary-file{display:none}
-.callout{font-weight:500;line-height:1.45}.callout b{font-weight:700}
-.vcard{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px}
-.vcard.v-buy,.vcard.v-maybe,.vcard.v-pass,.vcard.v-won{border-left-color:var(--line)}
-.vcard:active{background:var(--panel2)}
-.vc-top{align-items:flex-start}
-.vc-title .veh{font-size:16px}
-.vc-sub{font-size:13px;color:var(--muted);margin-top:2px}
-.vc-bid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}
-.vc-bid .v{font-size:18px;font-weight:700;margin-top:1px;font-variant-numeric:tabular-nums}
-.vc-bid>div:first-child .v{color:var(--blue)}
-.vc-foot{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:10px}
-.vc-foot .reason{margin:0;font-weight:500}
-table.t{min-width:860px}
-table.t th{background:var(--panel2)}
-table.t tbody tr.v-buy td:first-child,table.t tbody tr.v-maybe td:first-child,table.t tbody tr.v-pass td:first-child{box-shadow:none}
-table.t td:nth-child(4){white-space:nowrap;min-width:0}
-table.t td:nth-child(3){white-space:normal;min-width:210px}table.t td:nth-child(3) .veh{white-space:nowrap}
-table.t .reason{font-weight:500}
-table.t tbody tr:last-child td{border-bottom:0}
-.hero{grid-template-columns:repeat(3,1fr)}
-.hero>div{background:var(--panel2);border:0}
-.ladder>div{background:var(--panel2)}
-.sheet .card{box-shadow:none}
-.sh-grid>.card{background:var(--panel);padding:14px}
-.sh-grid>details.card>summary h2{font-size:15px}
-.sh-grid{align-items:start}
-.sec-l{font-size:13px;font-weight:700;margin:16px 0 0}
-.lift{background:var(--panel2)}
-.vc-nums>div,.lad-mini>div,.vc-rank{background:var(--panel2)}
-.live-row,.flip,.pair{background:var(--panel)}
-.botnav button.on{color:var(--accent)}
-.live-row .lot,.grp{color:var(--accent)}
-@media(max-width:760px){
-  #listcard{background:none;border:0;padding:0;box-shadow:none}
-  #kpis{display:grid;margin:0;padding:0;overflow:visible;gap:8px}
-  #kpis{grid-template-columns:repeat(3,1fr)}
-  #kpis .kpi{flex:none;padding:10px 12px;grid-column:auto!important}#kpis .kpi .v{font-size:20px}
-  .toolbar>input[type=search]{min-width:0}
-  .hero{grid-template-columns:repeat(3,1fr)}.hero .v{font-size:18px}
-  .dropzone{padding:36px 14px}
-  #tab-list.nolist{margin-top:3vh}
-}
-.sold-in{width:96px!important;padding:7px 8px!important;text-align:right;background:var(--panel)!important;border-color:var(--line2)!important}
-.vc-sold{display:flex;align-items:center;gap:10px;margin-top:12px;padding-top:12px;border-top:1px solid var(--line);font-size:13px;font-weight:600;color:var(--muted)}
-.vc-sold .sold-in{flex:1;width:auto!important;padding:10px 12px!important;text-align:left}
-.chips{display:flex;gap:8px;flex-wrap:wrap}
-.chip{display:inline-flex;align-items:center;gap:6px;padding:6px 6px 6px 12px;border:1px solid var(--line2);border-radius:999px;background:var(--panel);color:var(--text);font:600 13px Inter,system-ui,sans-serif;cursor:pointer}
-button.chip{padding:6px 12px}
-.chip.on{background:var(--blue-bg);border-color:var(--blue-line);color:var(--blue)}
-.chip button{width:24px;height:24px;border-radius:50%;border:0;background:var(--panel3);color:var(--muted);font-size:11px;cursor:pointer;display:grid;place-items:center;padding:0}
+.dropveil.on{display:flex}.dropveil div{border:2px dashed var(--accent);border-radius:24px;padding:48px 32px;font-size:20px;font-weight:700;color:var(--accent);text-align:center;background:var(--blue-bg)}
 #sample,#demoFlips,#btdemo{display:none!important}   /* real data only */
+
+/* ===== small phones ===== */
+@media(max-width:359px){
+  .vc-bid .v{font-size:16px}.ladder .v{font-size:19px}.kpi .v{font-size:19px}
+  .toolbar>select{flex-basis:112px;width:112px}
+}
+/* ===== wider screens ===== */
+@media(min-width:560px){
+  .sync:not(.on){display:flex}
+  .edits{grid-template-columns:repeat(3,1fr)}
+  .fgrid{grid-template-columns:repeat(3,1fr)}
+  .settings{grid-template-columns:repeat(3,1fr)}
+  .btns{display:flex;flex-wrap:wrap}
+  .kpis{grid-template-columns:repeat(3,1fr)}
+  .kpis:not(.three):not(#kpis) .kpi:last-child:nth-child(odd){grid-column:auto}
+}
+@media(min-width:900px){
+  :root{--hd:60px}
+  html,body{font-size:14.5px}
+  header{padding:0 20px}
+  .topnav{display:flex}
+  .botnav{display:none}
+  .signout{display:block}
+  main{padding:22px 24px 64px}
+  main>section{gap:16px}
+  .toast{bottom:28px}
+  .cards{display:none}.tbl-wrap{display:block}
+  #listcard{background:var(--panel);border:1px solid var(--line);padding:16px;box-shadow:var(--shadow)}
+  #listcard .tbl-wrap{box-shadow:none}
+  .filterbar{position:static;margin:0;padding:0;background:none;backdrop-filter:none;-webkit-backdrop-filter:none}
+  #listcard{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center}
+  #listcard>.tbl-wrap,#listcard>.copybox,#listcard>.cards{grid-column:1/-1}
+  .toolbar{margin:0}
+  .search{flex:0 0 250px}
+  .toolbar>select{flex:0 0 190px;width:190px}
+  .kpis{grid-template-columns:repeat(5,1fr)}
+  #kpis,.kpis.three{grid-template-columns:repeat(3,1fr)}
+  .kpis:not(#kpis) .kpi,.kpi{padding:14px 16px}.kpis:not(#kpis) .kpi .v,.kpi .v{font-size:24px}
+  #kpis .kpi{padding:12px 16px}#kpis .kpi .v{font-size:22px}
+  .notices .callout{display:block;cursor:auto}
+  table.t th,table.t td{padding:11px 8px}
+  table.t td:first-child,table.t th:first-child{padding-left:12px;padding-right:0}
+  table.t td:nth-child(3){min-width:190px}
+  .grid2{grid-template-columns:1fr 1fr}
+  .budget{grid-template-columns:1fr 1.6fr;align-items:center}
+  .settings{grid-template-columns:repeat(4,1fr)}
+  .fgrid{grid-template-columns:repeat(6,1fr)}.fgrid label:last-child{grid-column:auto}
+  .edits{grid-template-columns:repeat(5,1fr)}
+  #tab-settings,#tab-live{max-width:860px;margin:0 auto;width:100%}
+  .live-row{grid-template-columns:auto 1fr 300px 230px}
+  .lad-mini,.live-btns{grid-column:auto}
+  .live-row.dec{grid-template-columns:auto 1fr auto}
+  .pair{grid-template-columns:1.5fr 1fr auto 1fr .9fr .9fr;gap:14px}
+  .pair>.veh-cell,.pair>.num:last-child{grid-column:auto}
+  .pair>.num{text-align:right}
+  .sheet{left:50%;right:auto;top:4vh;bottom:auto;transform:translateX(-50%);width:min(960px,94vw);max-height:92vh;border-radius:22px}
+  .sheet.on{animation:fade .18s ease-out}
+  .handle{display:none}
+  .sh-head{padding:16px 14px 14px 22px;touch-action:auto}
+  .sh-body{padding:18px 22px 24px}
+  .sh-foot{padding:12px 22px;grid-template-columns:1fr 1fr}
+  .sh-grid{grid-template-columns:1fr 1fr}
+  .ladder .v{font-size:28px}
+  .lift{grid-template-columns:1fr auto 1fr 1fr}
+  .lift>div:last-child{grid-column:auto;display:block;border:0;padding:0;text-align:right}
+  .modal{top:50%;transform:translate(-50%,-50%)}
+}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
 <body>
 <header>
-  <div class="logo">$</div>
-  <div><h1>Auction Flip Finder</h1><div class="sub">Buy rough · recon smart · sell clean</div></div>
-  <nav class="topnav" id="topnav">
+  <div class="logo" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 16l5-5 4 4 7-8M20 7h-5M20 7v5"/></svg></div>
+  <h1>Flip Finder</h1>
+  <nav class="topnav" id="topnav" aria-label="Sections">
     <button data-tab="list" class="on">Run List</button><button data-tab="live">Live Auction</button><button data-tab="garage">Garage</button><button data-tab="backtest">Backtest</button><button data-tab="settings">Settings</button>
   </nav>
-  <div class="hdr-r"><div class="sync" id="sync"><i></i><span>This device</span></div><a href="/api/logout" style="font-size:13px;font-weight:600;color:var(--muted);white-space:nowrap;text-decoration:none;padding:0 4px">Sign out</a><button class="b ic-btn" id="themeBtn" aria-label="Switch between light and dark"></button></div>
+  <div class="hdr-r"><div class="sync" id="sync"><i></i><span>This device</span></div><a class="signout" href="/api/logout" data-site hidden>Sign out</a><button class="ic-btn" id="themeBtn" aria-label="Switch between light and dark"></button></div>
 </header>
 
 <main>
 <!-- ============ RUN LIST ============ -->
 <section id="tab-list" class="on">
-  <label class="dropzone" id="dropzone"><input type="file" id="file2" multiple accept=".csv,.txt,text/csv,text/plain,text/comma-separated-values,application/vnd.ms-excel"><div class="dz-ic"><svg viewBox="0 0 24 24"><path d="M12 15V3M7 8l5-5 5 5M5 21h14"/></svg></div><b id="dzT">Drop the Manheim export here</b><span id="dzS">or tap to choose the file</span></label>
-  <div class="chips" id="listchips"></div>
-  <p class="rules" id="strat"></p>
-  <section class="kpis" id="kpis"></section>
-  <div id="liftcal"></div>
-  <div id="soldcal"></div>
-  <div id="aistat"></div>
-  <div class="card" id="listcard">
-    <div class="toolbar">
-      <div class="seg" id="filter">
-        <button data-f="all" class="on">All</button><button data-f="buy">Buy</button><button data-f="maybe">Maybe</button><button data-f="star">★</button><button data-f="pass">Pass</button><button data-f="ai" id="f-ai">AI flags</button>
-      </div>
-      <input type="search" id="search" placeholder="Search" style="max-width:200px">
-      <select id="sortsel" style="max-width:200px">
-        <option value="rank">Best first</option><option value="profit">Most profit</option><option value="ppd">Profit per day</option><option value="odds">Best odds</option><option value="down">Safest (stress test)</option><option value="lift">Biggest grade lift</option><option value="lot">Lot / run order</option>
-      </select>
-      <div class="grow"></div><div style="display:flex;gap:8px"><label class="filebtn primary-file" title="Upload a run list"><svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M12 15V3M7 8l5-5 5 5M5 21h14"/></svg>Upload list<input type="file" id="file3" multiple accept=".csv,.txt,text/csv,text/plain,text/comma-separated-values,application/vnd.ms-excel"></label><button class="b ic-btn" id="exportList" title="Export to spreadsheet" aria-label="Export"><svg viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg></button></div>
-    </div>
-    <div class="cards" id="cards"></div>
-    <div class="tbl-wrap"><table class="t"><thead><tr id="thead"></tr></thead><tbody id="tbody"></tbody></table></div>
-    <div class="copybox" id="resbox"><textarea id="restext" readonly style="min-height:110px"></textarea></div>
+  <div class="listbar">
+    <div class="chips" id="listchips"></div>
+    <label class="dropzone" id="dropzone"><input type="file" id="file2" multiple accept=".csv,.txt,text/csv,text/plain,text/comma-separated-values,application/vnd.ms-excel"><div class="dz-ic"><svg viewBox="0 0 24 24"><path d="M12 16V4M7 9l5-5 5 5M5 20h14"/></svg></div><b id="dzT">Drop the Manheim export here</b><span id="dzS">or tap to choose the file</span></label>
   </div>
-  <details class="card" id="loadbox">
-    <summary><h2>Paste a list instead <span class="mini" id="loadmini" style="display:none"></span></h2><span class="chev">▼</span></summary>
+  <ol class="steps" id="steps">
+    <li><i>1</i><span>Export the run list from Manheim. The Export.csv file loads as it is.</span></li>
+    <li><i>2</i><span>Drop it above, or tap to pick it. Several lists can be loaded together.</span></li>
+    <li><i>3</i><span>Every car gets a safe bid, a max bid and a walk-away number.</span></li>
+  </ol>
+  <div id="listbody">
+    <section class="kpis" id="kpis"></section>
+    <p class="rules" id="strat"></p>
+    <div class="notices"><div id="liftcal"></div><div id="soldcal"></div><div id="aistat"></div></div>
+    <div class="card" id="listcard">
+      <div class="filterbar"><div class="seg" id="filter" role="tablist" aria-label="Filter cars">
+        <button data-f="all" class="on">All<span class="n" id="n-all"></span></button><button data-f="buy">Buy<span class="n" id="n-buy"></span></button><button data-f="maybe">Maybe<span class="n" id="n-maybe"></span></button><button data-f="star" aria-label="Starred">★<span class="n" id="n-star"></span></button><button data-f="pass">Pass<span class="n" id="n-pass"></span></button><button data-f="ai" id="f-ai">AI flags<span class="n" id="n-ai"></span></button>
+      </div></div>
+      <div class="toolbar">
+        <div class="search"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input type="search" id="search" placeholder="Search lot, make or model" aria-label="Search"></div>
+        <select id="sortsel" aria-label="Sort">
+          <option value="rank">Best first</option><option value="profit">Most profit</option><option value="ppd">Profit per day</option><option value="odds">Best odds</option><option value="down">Safest (stress test)</option><option value="lift">Biggest grade lift</option><option value="lot">Lot / run order</option>
+        </select>
+        <label class="filebtn primary-file" title="Upload a run list">Upload list<input type="file" id="file3" multiple accept=".csv,.txt,text/csv,text/plain,text/comma-separated-values,application/vnd.ms-excel"></label>
+        <button class="ic-btn line" id="exportList" title="Export to spreadsheet" aria-label="Export to spreadsheet"><svg viewBox="0 0 24 24"><path d="M12 4v12M7 11l5 5 5-5M5 20h14"/></svg></button>
+      </div>
+      <div class="cards" id="cards"></div>
+      <div class="tbl-wrap"><table class="t"><thead><tr id="thead"></tr></thead><tbody id="tbody"></tbody></table></div>
+      <div class="copybox" id="resbox"><textarea id="restext" readonly style="min-height:110px"></textarea></div>
+    </div>
+  </div>
+  <details class="card quiet" id="loadbox">
+    <summary><h2>Paste a list instead <span class="mini" id="loadmini" style="display:none"></span></h2><span class="chev"></span></summary>
     <p class="hint">Paste or upload the auction list. A Manheim export file (Export.csv) loads as it is. Best columns: <b>Auction, Lane, Run (or Lot / Work Order), Year, Make, Model, CR Grade, Adj MMR, MMR @ 4.0, Est Bid, Announcements</b>. The real <b>MMR @ 4.0</b> from the MMR tool matters most: without it the sell value is a guess. VIN is optional. Column order doesn't matter, and the app turns announcements into a repair estimate automatically.</p>
     <textarea id="input" spellcheck="false" placeholder="Lot,VIN,Model,Odometer,CR Grade,Adj MMR,MMR @ 4.0,Est Bid,Recon Est,Announcements"></textarea>
     <div class="btns">
@@ -454,58 +530,60 @@ button.chip{padding:6px 12px}
     </div>
     <div class="copybox" id="tmplbox"><p class="hint" style="margin:8px 0 6px">Copy into Excel or Google Sheets, fill it in, save as CSV, then upload it.</p><textarea id="tmpltext" readonly style="min-height:80px"></textarea><div class="btns"><button class="b" id="copytmpl">Copy template</button></div></div>
   </details>
-  <details class="card" id="howbox"><summary><h2>How a car is scored</h2><span class="chev">▼</span></summary><p class="hint" style="margin:0">Repair cost is priced line by line from the announcements, using your price book (Settings). Each repainted panel lowers the grade the car can realistically reach, since AutoGrade deducts for previous repairs. The sell value is MMR at that reachable grade, using your “MMR @ 4.0” number when you have one or the % per grade point when you don't, then lowered for market drift over the days held. Costs include buyer fee, transport, recon, a surprise reserve, the exit's selling costs, holding cost and floor-plan interest. <b>Max bid</b> hits your target on paper; <b>walk-away</b> hits your floor; <b>safe bid</b> is the highest bid that still makes your floor in 7 of 10 replays. The stress test re-runs each car with recon over budget and a lower grade. <b>Odds</b> replays each flip 300 times with the things that go wrong (grade lands short, recon runs over, a no-sale, a soft sale price, a hidden problem) and shows how often it still makes your profit floor. A car that clears the target on paper but has under 50% odds is a Maybe, not a Buy. Tap any car to adjust its numbers.</p></details>
+  <details class="card quiet" id="howbox"><summary><h2>How a car is scored</h2><span class="chev"></span></summary><p class="hint" style="margin:0">Repair cost is priced line by line from the announcements, using your price book (Settings). Each repainted panel lowers the grade the car can realistically reach, since AutoGrade deducts for previous repairs. The sell value is MMR at that reachable grade, using your “MMR @ 4.0” number when you have one or the % per grade point when you don't, then lowered for market drift over the days held. Costs include buyer fee, transport, recon, a surprise reserve, the exit's selling costs, holding cost and floor-plan interest. <b>Max bid</b> hits your target on paper; <b>walk-away</b> hits your floor; <b>safe bid</b> is the highest bid that still makes your floor in 7 of 10 replays. The stress test re-runs each car with recon over budget and a lower grade. <b>Odds</b> replays each flip 300 times with the things that go wrong (grade lands short, recon runs over, a no-sale, a soft sale price, a hidden problem) and shows how often it still makes your profit floor. A car that clears the target on paper but has under 50% odds is a Maybe, not a Buy. Tap any car to adjust its numbers.</p></details>
 </section>
 
 <!-- ============ LIVE ============ -->
 <section id="tab-live">
+  <div class="pagehead"><h2>Live Auction</h2><p>Your plan and starred cars, in lot order.</p></div>
   <div class="card">
     <div class="budget">
       <div>
-        <h2>Auction-day budget</h2>
-        <p class="hint" style="margin-bottom:8px">The cash he can put into cars today, all-in including fees and recon.</p>
-        <input type="number" id="budget" step="5000" inputmode="numeric">
-        <label class="toggle" style="margin-top:10px"><input type="checkbox" id="incMaybe"><span class="sw"></span>Let the plan include Maybes</label>
+        <label class="fl" for="budget">Auction-day budget</label>
+        <div class="money-in"><span>$</span><input type="number" id="budget" step="5000" inputmode="numeric"></div>
+        <p class="hint" style="margin:6px 0 0">The cash you can put into cars today, all-in including fees and recon.</p>
+        <label class="toggle" style="margin-top:12px"><input type="checkbox" id="incMaybe"><span class="sw"></span>Let the plan include Maybes</label>
       </div>
       <div>
-        <div class="kpis" id="livekpis" style="grid-template-columns:repeat(3,1fr)"></div>
-        <div class="bbar" id="bbar" style="margin-top:10px"></div>
-        <div class="legend" style="margin-top:6px"><span><i style="background:var(--good)"></i>Won (all-in)</span><span><i style="background:var(--blue)"></i>Planned</span><span><i style="background:var(--panel3)"></i>Unused</span></div>
+        <div class="kpis three" id="livekpis"></div>
+        <div class="bbar" id="bbar" style="margin-top:12px"></div>
+        <div class="legend" style="margin-top:8px"><span><i style="background:var(--good)"></i>Won (all-in)</span><span><i style="background:var(--accent)"></i>Planned</span><span><i style="background:var(--panel3)"></i>Unused</span></div>
       </div>
     </div>
   </div>
-  <div class="card">
-    <div class="toolbar"><h2 style="margin:0">Up next <span class="mini">plan + starred, in lot order</span></h2><button class="b" id="replan" style="margin-left:auto">Re-plan with cash left</button></div>
+  <div class="card flat">
+    <div class="cardhead"><h2>Up next</h2><button class="b sm" id="replan">Reset today</button></div>
     <div class="list" id="upnext"></div>
   </div>
-  <details class="card" id="decided"><summary><h2>Decided today <span class="mini" id="decmini"></span></h2><span class="chev">▼</span></summary><div class="list" id="declist"></div></details>
+  <details class="card" id="decided"><summary><h2>Decided today <span class="mini" id="decmini"></span></h2><span class="chev"></span></summary><div class="list" id="declist"></div></details>
 </section>
 
 <!-- ============ GARAGE ============ -->
 <section id="tab-garage">
+  <div class="pagehead"><h2>Garage</h2><p>Cars you won, from purchase to sale. Shared with everyone who signs in.</p></div>
   <section class="kpis" id="garkpis"></section>
-  <div class="card">
-    <div class="toolbar"><h2 style="margin:0">Cars in the garage</h2>
-      <div class="seg" id="gfilter" style="margin-left:8px"><button data-g="open" class="on">In progress</button><button data-g="sold">Sold</button><button data-g="all">All</button></div>
-      <div style="margin-left:auto;display:flex;gap:8px"><button class="b" id="addFlip">+ Add car</button><button class="b" id="exportFlips">Export</button></div>
+  <div class="card flat">
+    <div class="cardhead"><div class="seg" id="gfilter"><button data-g="open" class="on">In progress</button><button data-g="sold">Sold</button><button data-g="all">All</button></div>
+      <div class="acts"><button class="b sm" id="exportFlips">Export</button><button class="b sm primary" id="addFlip">Add car</button></div>
     </div>
     <div class="list" id="flips"></div>
   </div>
   <div class="card">
-    <h2>What the results say <span class="mini">compares his actual results with the model</span></h2>
+    <h2>What the results say</h2>
     <p class="hint">Once 3 or more cars are sold, the app compares what actually happened with what the model predicted and suggests corrections. One tap applies them to every future score.</p>
     <div id="calib"></div>
-    <div class="btns"><button class="b" id="demoFlips">Load demo history</button><button class="b ghost" id="clearFlips">Clear all garage data</button></div>
+    <div class="btns"><button class="b" id="demoFlips">Load demo history</button><button class="b ghost danger" id="clearFlips">Clear all garage data</button></div>
   </div>
 </section>
 
 
 <!-- ============ BACKTEST ============ -->
 <section id="tab-backtest">
-  <div class="card" style="background:var(--panel)"><div class="l" style="color:var(--accent)">Backtest</div><div style="font-size:15px;font-weight:700;margin-top:2px">Who already ran this play at this auction, and did it pay?</div><div class="hint" style="margin:4px 0 0">Load the auction's sales history. The app finds cars that sold twice, bought rough and re-sold, and runs each pair through the same cost model. Recon isn't known, so each pair shows the most the buyer could have spent and still broken even, plus estimated profit using your recon $ per grade point.</div></div>
+  <div class="pagehead"><h2>Backtest</h2><p>Who already ran this play at this auction, and did it pay?</p></div>
   <div class="card" id="soldlog"></div>
   <details class="card" id="btload">
-    <summary><h2>Load sales history <span class="mini" id="btmini"></span></h2><span class="chev">▼</span></summary>
+    <summary><h2>Load sales history <span class="mini" id="btmini"></span></h2><span class="chev"></span></summary>
+    <p class="hint">Load the auction's sales history. The app finds cars that sold twice, bought rough and re-sold, and runs each pair through the same cost model. Recon isn't known, so each pair shows the most the buyer could have spent and still broken even, plus estimated profit using your recon $ per grade point.</p>
     <p class="hint">One row per sale: <b>Sale Date, Sale Price, Grade, Odometer</b>, plus <b>VIN</b> if available. Add an <b>Auction</b> column (Dallas or DFW) to compare the two lanes. Without VINs it matches on Year / Make / Model / Trim / Color and mileage.</p>
     <textarea id="btinput" spellcheck="false" placeholder="VIN,Sale Date,Sale Price,Grade,Odometer,Year,Make,Model,Trim,Color"></textarea>
     <div class="btns">
@@ -516,70 +594,80 @@ button.chip{padding:6px 12px}
     </div>
     <div class="copybox" id="bttmplbox"><textarea id="bttmpltext" readonly style="min-height:60px"></textarea><div class="btns"><button class="b" id="btcopytmpl">Copy template</button></div></div>
     <div class="settings" style="margin-top:14px">
-      <label>Assumed recon $ per grade point<input type="number" id="bt_reconPt" step="50"></label>
-      <label>Max days between sales<input type="number" id="bt_maxDays" step="5"></label>
-      <label>Max miles between sales (no-VIN match)<input type="number" id="bt_maxMiles" step="100"></label>
-      <label>Min days between sales<input type="number" id="bt_minDays" step="1"></label>
+      <label>Assumed recon $ per grade point<input type="number" id="bt_reconPt" step="50" inputmode="numeric"></label>
+      <label>Max days between sales<input type="number" id="bt_maxDays" step="5" inputmode="numeric"></label>
+      <label>Max miles between sales (no-VIN match)<input type="number" id="bt_maxMiles" step="100" inputmode="numeric"></label>
+      <label>Min days between sales<input type="number" id="bt_minDays" step="1" inputmode="numeric"></label>
     </div>
   </details>
   <section class="kpis" id="btkpis"></section>
   <div class="card" id="btheadline"></div>
-  <div class="grid2">
-    <div class="card"><h2>By buy grade</h2><p class="hint">Where the money was made, grouped by the grade the car was bought at.</p><div id="btbuckets"></div></div>
-    <div class="card"><h2>By model</h2><p class="hint">Models with 2+ repeat sales, best first.</p><div id="btmodels"></div></div>
+  <div class="grid2" id="btgrid">
+    <div class="card"><h2>By buy grade</h2><p class="hint">Where the money was made, grouped by the grade the car was bought at.</p><div class="scrollx" id="btbuckets"></div></div>
+    <div class="card"><h2>By model</h2><p class="hint">Models with 2+ repeat sales, best first.</p><div class="scrollx" id="btmodels"></div></div>
   </div>
-  <div class="card" id="btlanecard" style="display:none"><h2>Lane to lane</h2><p class="hint">Where each flip was bought and where it was re-sold. Shows whether carrying a car between Manheim Dallas and Dallas-Fort Worth paid better than re-running it in the same lane.</p><div id="btlanes"></div></div>
-  <div class="card"><h2>Calibrate the model from the market</h2><div id="btcal"></div></div>
-  <div class="card">
-    <div class="toolbar"><h2 style="margin:0">Repeat sales</h2>
-      <div class="seg" id="btfilter" style="margin-left:8px"><button data-b="box" class="on">His buy box</button><button data-b="recon">Reconditioned</button><button data-b="all">All</button></div>
-      <div class="grow"></div><button class="b ic-btn" id="btexport" title="Export" aria-label="Export"><svg viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg></button></div>
+  <div class="card" id="btlanecard" style="display:none"><h2>Lane to lane</h2><p class="hint">Where each flip was bought and where it was re-sold. Shows whether carrying a car between Manheim Dallas and Dallas-Fort Worth paid better than re-running it in the same lane.</p><div class="scrollx" id="btlanes"></div></div>
+  <div class="card" id="btcalcard"><h2>Calibrate the model from the market</h2><div id="btcal"></div></div>
+  <div class="card flat" id="btpaircard">
+    <div class="cardhead"><div class="seg" id="btfilter"><button data-b="box" class="on">Your buy box</button><button data-b="recon">Reconditioned</button><button data-b="all">All</button></div>
+      <button class="ic-btn line" id="btexport" title="Export" aria-label="Export"><svg viewBox="0 0 24 24"><path d="M12 4v12M7 11l5 5 5-5M5 20h14"/></svg></button></div>
     <div class="list" id="btpairs"></div>
   </div>
 </section>
 
 <!-- ============ SETTINGS ============ -->
 <section id="tab-settings">
-  <div class="card">
-    <h2>Model assumptions</h2>
-    <p class="hint">Saved to his account. Every car re-scores when a number changes.</p>
-    <div class="callout blue" style="margin:0 0 12px">New in this version: a re-run is assumed to sell at 98% of MMR with a 60% chance each run, and every car gets odds. These are estimates until real sales are loaded. To get the old numbers back, set “Re-run sells at” and “Chance it sells each run” to 100 and the no-sale fee to 0. The Garage and the Run List now measure these numbers from real results and offer to apply them.</div>
-    <div class="settings" id="settingsForm"></div>
+  <div class="pagehead"><h2>Settings</h2><p>Every car re-scores as soon as a number changes.</p></div>
+  <div class="card rows">
+    <div class="row"><div><b>Appearance</b><div class="hint">Light or dark. Saved on this device.</div></div><div class="seg" id="themeSeg"><button data-th="light">Light</button><button data-th="dark">Dark</button></div></div>
+    <div class="row" data-site hidden><div><b>Shared data</b><div class="hint" id="syncNote">Checking the shared log…</div></div></div>
+    <div class="row" data-site hidden><div><b>Account</b><div class="hint">You stay signed in on this device for 30 days.</div></div><a class="b sm" href="/api/logout">Sign out</a></div>
   </div>
   <div class="card">
     <h2>Changes the model made on its own</h2>
     <p class="hint">Each change is small, based on real logged results, and can be undone here.</p>
     <div id="tunelog"></div>
   </div>
-  <div class="card">
-    <h2>Buyer fee table <span class="mini">used when Buyer fee is set to the tiered schedule</span></h2>
-    <p class="hint">Manheim doesn't publish one national buyer fee schedule; each location sets its own. These rows are placeholders. Copy the real numbers from the Manheim Dallas and Dallas-Fort Worth fee sheets (they are in the Manheim account under each location). If the two lanes differ, enter the higher one.</p>
-    <table class="book" id="tiers"></table>
-    <div class="btns"><button class="b" id="resetTiers">Reset fee table</button><button class="b" id="presetDFW">Dallas ↔ DFW local transport ($150 each way)</button></div>
-    <p class="hint" style="margin:10px 0 0">Manheim Dallas (W Kiest Blvd) and Manheim Dallas-Fort Worth (Euless) are about 20 miles apart, so a local shuttle or driving the car costs far less than a long haul. Transport is set to $150 per trip (in and out) for local cars; put in what he actually pays.</p>
+  <div class="card" id="assumcard">
+    <h2>Model assumptions</h2>
+    <p class="hint">Tap a group to open it.</p>
+    <div id="settingsForm"></div>
+    <details class="inl"><summary>About the re-run and odds numbers</summary><p class="hint" style="margin:8px 0 0">A re-run is assumed to sell at 98% of MMR with a 60% chance each run, and every car gets odds. These are estimates until real sales are loaded. To get the old numbers back, set “Re-run sells at” and “Chance it sells each run” to 100 and the no-sale fee to 0. The Garage and the Run List measure these numbers from real results and offer to apply them.</p></details>
   </div>
-  <div class="card">
-    <h2>Recon price book</h2>
-    <p class="hint">What each repair costs <i>his</i> shop. “Paint” items count as repainted panels, which lowers the grade a car can reach after repair.</p>
+  <details class="card">
+    <summary><h2>Buyer fee table</h2><span class="chev"></span></summary>
+    <p class="hint">Used when Buyer fee is set to the tiered schedule. Manheim doesn't publish one national buyer fee schedule; each location sets its own. These rows are placeholders. Copy the real numbers from the Manheim Dallas and Dallas-Fort Worth fee sheets (they are in the Manheim account under each location). If the two lanes differ, enter the higher one.</p>
+    <table class="book" id="tiers"></table>
+    <div class="btns"><button class="b" id="resetTiers">Reset fee table</button><button class="b" id="presetDFW">Local transport: $150 each way</button></div>
+    <p class="hint" style="margin:10px 0 0">Manheim Dallas (W Kiest Blvd) and Manheim Dallas-Fort Worth (Euless) are about 20 miles apart, so a local shuttle or driving the car costs far less than a long haul. Transport is set to $150 per trip (in and out) for local cars; put in what you actually pay.</p>
+  </details>
+  <details class="card">
+    <summary><h2>Recon price book</h2><span class="chev"></span></summary>
+    <p class="hint">What each repair costs at your shop. “Paint” items count as repainted panels, which lowers the grade a car can reach after repair.</p>
     <table class="book" id="book"></table>
-    <div class="btns"><button class="b" id="resetBook">Reset price book</button><button class="b" id="resetSettings">Reset all assumptions</button><button class="b bad" id="clearAll">Clear all cars on this device</button></div>
+    <div class="btns"><button class="b" id="resetBook">Reset price book</button></div>
+  </details>
+  <div class="card">
+    <h2>Reset</h2>
+    <p class="hint">Resetting assumptions puts every number back to its default. Clearing cars removes the lists, edits and garage on this device only.</p>
+    <div class="btns"><button class="b" id="resetSettings">Reset all assumptions</button><button class="b danger" id="clearAll">Clear all cars on this device</button></div>
   </div>
 </section>
 </main>
 
-<nav class="botnav" id="botnav">
+<nav class="botnav" id="botnav" aria-label="Sections">
   <button data-tab="list" class="on"><span class="ic"><svg viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg></span>Run List</button>
-  <button data-tab="live"><span class="ic"><svg viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg></span><span>Live<span class="cnt" id="livecnt" style="display:none"></span></span></button>
+  <button data-tab="live"><span class="ic"><svg viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg><span class="cnt" id="livecnt" style="display:none"></span></span>Live</button>
   <button data-tab="garage"><span class="ic"><svg viewBox="0 0 24 24"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.4-.6-.6-2.4z"/></svg></span>Garage</button>
   <button data-tab="backtest"><span class="ic"><svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/></svg></span>Backtest</button>
   <button data-tab="settings"><span class="ic"><svg viewBox="0 0 24 24"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg></span>Settings</button>
 </nav>
 
 <div class="backdrop" id="backdrop"></div>
-<div class="sheet" id="sheet"></div>
+<div class="sheet" id="sheet" role="dialog" aria-modal="true"></div>
 <div class="mback" id="mback"></div>
-<div class="modal" id="modal"></div>
-<div class="toast" id="toast"></div>
+<div class="modal" id="modal" role="dialog" aria-modal="true"></div>
+<div class="toast" id="toast" role="status"></div>
 <div class="dropveil" id="dropveil"><div>Drop the run list to load it</div></div>
 
 <script>
@@ -1150,7 +1238,8 @@ async function deleteFlip(id,localOnly){
   delete FLIPS[id];if(!localOnly)kvPut('flip',id,null);try{localStorage.setItem('aff3_flips',JSON.stringify(FLIPS));}catch(e){}
   if(DB&&UID){try{await DB.doc(`data/users/${UID}/${id}`).delete();}catch(e){}}
 }
-function setSync(on,label){const el=$('sync');el.classList.toggle('on',!!on);el.querySelector('span').textContent=label||(on?'Saved to account':'This device');}
+function setSync(on,label){const el=$('sync');const t=label||(on?'Saved to account':'This device');el.classList.toggle('on',!!on);el.querySelector('span').textContent=t;
+  const n=$('syncNote');if(n)n.textContent=on?'On. Sold prices, the Garage, AI results and the tuned numbers are shared with everyone who signs in.':t==='Not shared yet'?'The shared log cannot be reached right now. Changes are kept on this device and sent when it is back.':t;}
 async function initCloud(){
   if(!window.claude||!window.claude.use)return;
   try{
@@ -1356,7 +1445,7 @@ function renderTuneLog(){
   const el=$('tunelog');if(!el)return;const log=(ST.tuneLog||[]).slice().reverse();
   const wk=(ST.weekly||[]).slice(-1)[0];
   const wkH=wk?`<div class="callout blue" style="margin:0 0 10px"><b>Weekly retune, ${new Date(wk.at).toLocaleDateString([], {weekday:'short',month:'short',day:'numeric'})}.</b> ${esc(wk.text)}</div>`:'';
-  el.innerHTML=wkH+(log.length?log.map((e,i)=>`<div class="rline"><div class="nm">${esc(TUNE[e.key]?TUNE[e.key].label:e.key)}: ${e.from} to ${e.to}${e.undone?' <span class="mini">undone</span>':''}<small style="display:block;color:var(--muted);font-weight:500">${new Date(e.at).toLocaleDateString([], {month:'short',day:'numeric'})} · ${esc(e.why)}</small></div>${e.undone?'':`<button class="b" data-undo="${log.length-1-i}">Undo</button>`}</div>`).join('')
+  el.innerHTML=wkH+(log.length?log.map((e,i)=>`<div class="tline"><div class="nm">${esc(TUNE[e.key]?TUNE[e.key].label:e.key)}: ${e.from} → ${e.to}${e.undone?' <span class="mini">undone</span>':''}<small>${new Date(e.at).toLocaleDateString([], {month:'short',day:'numeric'})} · ${esc(e.why)}</small></div>${e.undone?'':`<button class="b sm" data-undo="${log.length-1-i}">Undo</button>`}</div>`).join('')
     :'<p class="hint" style="margin:0">Nothing yet. After 10 sold prices are logged, the model starts moving its expected sale price toward what cars really sell for, at most 1.5 points a day. Every Monday morning a retune also checks recon costs and value per grade point against finished flips in the Garage.</p>');
   el.querySelectorAll('[data-undo]').forEach(b=>b.onclick=()=>{const e=ST.tuneLog[+b.dataset.undo];ST.settings[e.key]=e.from;e.undone=true;e.at=Date.now();pushTuned();persist();recompute();renderSettings();renderListSoon();toast('Change undone. The model will leave this number alone for a week.');});
 }
@@ -1408,7 +1497,7 @@ function renderList(){
   $('loadmini').textContent=RAW.length?`${RAW.length} cars loaded`:'';
   $('dropzone').classList.toggle('has',!!RAW.length);$('tab-list').classList.toggle('nolist',!RAW.length);
   $('dzT').textContent=RAW.length?`${RAW.length} cars loaded`:'Drop the Manheim export here';
-  $('dzS').textContent=RAW.length?'Add another list':'or tap to choose files. Several lists can be loaded together.';renderChips();
+  $('dzS').textContent=RAW.length?'Add list':'or tap to choose the file';renderChips();
   const inBox=ok.filter(c=>c.verdict!=='skip'),buys=ok.filter(c=>c.verdict==='buy'),maybes=ok.filter(c=>c.verdict==='maybe');
   const plan=ok.filter(c=>c.inPlan),bad=CARS.length-ok.length;
   const pP=plan.reduce((s,c)=>s+c.profit,0),pC=plan.reduce((s,c)=>s+c.allIn,0),pD=plan.reduce((s,c)=>s+c.down,0);
@@ -1417,6 +1506,10 @@ function renderList(){
     ['In buy box',`${inBox.length}`,`CR ≤ ${g1(S.maxGrade)}`],
     ['Buy · Maybe',`${buys.length}<span class="of"> · ${maybes.length}</span>`,`${ok.filter(c=>c.risk).length} high-risk`]
   ].map(([l,v,s])=>`<div class="kpi"><div class="l">${l}</div><div class="v">${v}</div><div class="s">${s}</div></div>`).join(''):'';
+  const inList=listFilt?CARS.filter(c=>c.listId===listFilt):CARS;
+  const cnt={all:inList.length,buy:0,maybe:0,star:0,pass:0,ai:0};
+  inList.forEach(c=>{if(c.ok&&(c.verdict==='buy'||c.verdict==='maybe'))cnt[c.verdict]++;else cnt.pass++;if(c.star)cnt.star++;if(c.aiDis||c.aiFixed)cnt.ai++;});
+  for(const k in cnt){const e=$('n-'+k);if(e)e.textContent=RAW.length?cnt[k]:'';}
   // value per grade point, read straight from the MMR tool numbers on this list
   const LL=listLift(S,CARS);const sug=LL.n>=3?Math.round(LL.med*2)/2:null;
   $('liftcal').innerHTML=LL.n>=3?`<div class="callout ${Math.abs(sug-S.liftPct)>=1?'red':'green'}" style="margin:0"><b>Value per grade point on this list: ${LL.med.toFixed(1)}%</b> (median of ${LL.n} cars with both Adj MMR and MMR @ ${g1(S.sellGrade)}; range ${LL.lo.toFixed(1)}% to ${LL.hi.toFixed(1)}%). The model uses ${S.liftPct}% for cars without an MMR @ ${g1(S.sellGrade)}.${Math.abs(sug-S.liftPct)>=.5?` <a href="#" id="useLift" style="color:inherit;text-decoration:underline">Use ${sug}%</a>`:' They agree.'}</div>`
@@ -1448,19 +1541,23 @@ function renderList(){
   renderLiveCount();
 }
 const kf=n=>'$'+(n>=1000?(Math.round(n/100)/10)+'k':n);
+function soldInput(c){return `<label class="vc-sold"><span>Sold for</span><input class="sold-in" type="number" inputmode="numeric" step="25" min="0" data-sold="${c.vin}" value="${soldOf(c.vin)||''}" placeholder="$" aria-label="Sold for"></label>`;}
 function cardHTML(c){
-  if(!c.ok)return `<div class="vcard"><div class="vc-top"><div class="vc-title"><div class="veh" style="color:var(--bad)">Lot ${esc(c.lot)} · Can't read row</div><div class="vc-sub">${esc(c.vin)}</div><div class="vc-sub">${c.err}</div></div><span class="badge b-err">Check</span></div></div>`;
-  return `<div class="vcard v-${c.status==='won'?'won':c.verdict}${c.verdict==='skip'||c.status==='lost'?' dim':''}" data-vin="${c.vin}">
-    <div class="vc-top">
+  if(!c.ok)return `<div class="vcard slim"><div class="vc-top"><div class="vc-title"><div class="veh" style="color:var(--bad)">Lot ${esc(c.lot)} · Can't read row</div><div class="vc-sub">${esc(c.vin)}</div><div class="vc-sub">${c.err}</div></div><span class="badge b-err">Check</span></div></div>`;
+  const top=`<div class="vc-top">
       <div class="vc-title"><div class="veh">${c.year} ${esc(c.make)} ${esc(c.model||'')}</div><div class="vc-sub">Lot ${esc(c.lot)} · CR ${g1(c.cond)}${c.miles!=null?' · '+Math.round(c.miles/1000)+'k mi':''}</div></div>
-      <button class="star${c.star?' on':''}" data-star="${c.vin}" aria-label="Star">★</button></div>
+      <button class="star${c.star?' on':''}" data-star="${c.vin}" aria-label="Star">★</button></div>`;
+  // cars outside the buy box take one short row; the full numbers are one tap away
+  if(c.verdict==='skip'&&c.status!=='won')return `<div class="vcard slim" data-vin="${c.vin}">${top}
+    <div class="vc-foot"><div class="vc-call" style="margin:0">${badges(c)}</div>${soldInput(c)}</div></div>`;
+  return `<div class="vcard v-${c.status==='won'?'won':c.verdict}${c.status==='lost'?' dim':''}" data-vin="${c.vin}">${top}
+    <div class="vc-call">${badges(c)}<span class="reason">${esc(c.reason)}</span></div>
     <div class="vc-bid">
-      <div><div class="l">Max bid</div><div class="v">${c.max?money(c.max):'—'}</div></div>
-      <div><div class="l">Safe bid</div><div class="v">${c.safe?money(c.safe):'—'}</div></div>
-      <div><div class="l">Profit at est. bid</div><div class="v ${pc(c.profit)}">${money(c.profit)}</div></div>
+      <div><div class="l">Safe</div><div class="v pos">${c.safe?money(c.safe):'—'}</div></div>
+      <div class="mx"><div class="l">Max</div><div class="v maxbid">${c.max?money(c.max):'—'}</div></div>
+      <div><div class="l">Walk away</div><div class="v warn">${c.walk?money(c.walk):'—'}</div></div>
     </div>
-    <div class="vc-foot">${badges(c)}<span class="reason r-${c.verdict}">${esc(c.reason)}</span></div>
-    <label class="vc-sold"><span>Sold for</span><input class="sold-in" type="number" inputmode="numeric" step="25" min="0" data-sold="${c.vin}" value="${soldOf(c.vin)||''}" placeholder="$ sale price"></label></div>`;
+    <div class="vc-foot"><div class="vc-profit"><div class="l">Profit at est. bid</div><div class="v ${pc(c.profit)}">${money(c.profit)}</div></div>${soldInput(c)}</div></div>`;
 }
 const tg=t=>`<span class="src">${t}</span>`;
 function fmtWhen(s){const d=new Date(s);return isNaN(d)?s:d.toLocaleString([], {weekday:'short',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});}
@@ -1487,37 +1584,42 @@ function toggleStar(vin){const c=CARS.find(x=>x.vin===vin);setOv(vin,'star',c&&c
 function carBy(vin){return CARS.find(c=>c.vin===vin);}
 function openCar(vin){
   openVin=vin;const c=carBy(vin);if(!c)return;const S=ST.settings;const o=ST.ov[vin]||{};
-  $('sheet').innerHTML=`<div class="handle"></div>
-  <div class="sh-head">
-    <div style="flex:1;min-width:0"><h2>${c.year} ${esc(c.make)} ${esc(c.model||'')}</h2>
-    <div class="vin">${c.auction?esc(c.auction)+' · ':''}Lot ${esc(c.lot)}${c.realVin?' · '+esc(c.realVin):''}${c.miles!=null?' · '+c.miles.toLocaleString()+' mi':''}</div><div id="d-badges" style="margin-top:6px;display:flex;gap:4px;flex-wrap:wrap"></div></div>
-    <button class="star${c.star?' on':''}" id="d-star" style="font-size:24px">★</button>
-    <button class="b x" id="d-close" aria-label="Close">✕</button>
+  const metaRows=[c.auction?['Auction',esc(c.auction)]:null,c.saleAt?['Sells',esc(fmtWhen(c.saleAt))]:null,c.seller?['Seller',esc(c.seller)]:null,c.realVin?['VIN',esc(c.realVin)]:null].filter(Boolean);
+  $('sheet').innerHTML=`<div class="sh-head" id="sh-head"><div class="handle"></div>
+    <div class="sh-row"><div class="sh-t"><h2>${c.year} ${esc(c.make)} ${esc(c.model||'')}</h2>
+      <div class="vc-sub">Lot ${esc(c.lot)} · CR <span id="d-cr">${g1(c.cond)}</span>${c.miles!=null?' · '+c.miles.toLocaleString()+' mi':''}</div></div>
+    <button class="star${c.star?' on':''}" id="d-star" aria-label="Star">★</button>
+    <button class="ic-btn x" id="d-close" aria-label="Close">✕</button></div>
   </div>
-  ${c.seller||c.saleAt?`<p class="hint" style="margin:0 0 8px">${[c.seller?'Seller: '+esc(c.seller):'',c.saleAt?'Sells '+esc(fmtWhen(c.saleAt)):''].filter(Boolean).join(' · ')}</p>`:''}
-  ${c.notes?`<p class="hint" style="margin:0 0 10px;color:${c.flag?'var(--bad)':'var(--muted)'}"><b>Announcements:</b> ${esc(c.notes)}</p>`:'<p class="hint" style="margin:0 0 10px;color:var(--warn)"><b>No announcements on the list.</b> Recon below is a grade-gap guess. Paste the condition report into the AI estimate, or add the repair lines by hand.</p>'}
-  <div id="d-ladder" style="margin-bottom:12px"></div>
+  <div class="sh-body" id="sh-body">
+  <div id="d-badges" class="vline"></div>
+  <div id="d-ladder"></div>
   <div class="hero" id="d-hero"></div>
+  <div id="d-notes"></div>
   <div id="d-aibox"></div>
+  ${c.notes?`<div class="callout ${c.flag?'red':'blue'}"><b>Announcements:</b> ${esc(c.notes)}</div>`:'<div class="callout amber"><b>No announcements on the list.</b> Recon is a grade-gap guess. Paste the condition report into the AI estimate under Recon, or add the repair lines by hand.</div>'}
   <div id="d-lift"></div>
-  <div class="sec-l">Change the numbers</div>
+  <div class="card"><div class="sec-l">Change the numbers</div>
   <div class="edits">
-    <label>CR grade now<input type="number" step="0.1" id="e-cond" value="${o.cond??c.raw.cond??''}" placeholder="—"></label>
-    <label>Adj MMR (as-is)<input type="number" step="50" id="e-mmr" value="${o.mmr??c.raw.mmr??''}" placeholder="${c.mmrSrc==='est'?'est '+c.mmr:''}"></label>
-    <label>Resale MMR (from the MMR tool)<input type="number" step="50" id="e-sell" value="${o.mmrSell??c.raw.mmrSell??''}" placeholder="e.g. 15350"></label>
-    <label>…that MMR is at CR<input type="number" step="0.1" id="e-sellat" value="${o.sellAt??c.raw.sellAt??''}" placeholder="${g1(S.sellGrade)}"></label>
-    <label>Est. bid<input type="number" step="100" id="e-bid" value="${o.bid??c.raw.bid??''}" placeholder="${Math.round(c.mmr*S.hammerPct/100/100)*100}"></label>
-  </div>
-  <div class="sec-l">After the sale</div>
-  <div class="edits"><label style="grid-column:span 2">Sold for (hammer price, whether he bought it or not)<input type="number" inputmode="numeric" step="25" min="0" id="e-sold" data-sold="${c.vin}" value="${soldOf(c.vin)||''}" placeholder="$"></label></div>
-  <div class="sh-grid" style="margin-top:12px">
-    <details class="card" open><summary><h2>The math: buy, fix, resell</h2><span class="chev">▼</span></summary><div id="d-exits"></div></details>
-    <details class="card"><summary><h2>Recon <span class="mini" id="d-reconmini"></span></h2><span class="chev">▼</span></summary><div id="d-recon"></div>
+    <label>CR grade now<input type="number" inputmode="decimal" step="0.1" id="e-cond" value="${o.cond??c.raw.cond??''}" placeholder="—"></label>
+    <label>Adj MMR (as-is)<input type="number" inputmode="numeric" step="50" id="e-mmr" value="${o.mmr??c.raw.mmr??''}" placeholder="${c.mmrSrc==='est'?'est '+c.mmr:''}"></label>
+    <label>Resale MMR (from the MMR tool)<input type="number" inputmode="numeric" step="50" id="e-sell" value="${o.mmrSell??c.raw.mmrSell??''}" placeholder="e.g. 15350"></label>
+    <label>…that MMR is at CR<input type="number" inputmode="decimal" step="0.1" id="e-sellat" value="${o.sellAt??c.raw.sellAt??''}" placeholder="${g1(S.sellGrade)}"></label>
+    <label class="wide">Est. bid<input type="number" inputmode="numeric" step="100" id="e-bid" value="${o.bid??c.raw.bid??''}" placeholder="${Math.round(c.mmr*S.hammerPct/100/100)*100}"></label>
+  </div></div>
+  <div class="card"><div class="sec-l">After the sale</div>
+  <div class="edits"><label class="wide">Sold for (hammer price, whether you bought it or not)<input type="number" inputmode="numeric" step="25" min="0" id="e-sold" data-sold="${c.vin}" value="${soldOf(c.vin)||''}" placeholder="$"></label></div></div>
+  <div class="sh-grid">
+    <details class="card" open><summary><h2>The math: buy, fix, resell</h2><span class="chev"></span></summary><div id="d-exits"></div></details>
+    <details class="card"><summary><h2>Recon <span class="mini" id="d-reconmini"></span></h2><span class="chev"></span></summary><div id="d-recon"></div>
       <div id="d-ai" style="margin-top:12px"></div></details>
-    <details class="card"><summary><h2>Stress test &amp; odds</h2><span class="chev">▼</span></summary><div id="d-stress"></div></details>
-  </div>`;
+    <details class="card"><summary><h2>Stress test &amp; odds</h2><span class="chev"></span></summary><div id="d-stress"></div></details>
+  </div>
+  ${metaRows.length?`<div class="card"><div class="meta">${metaRows.map(([k,v])=>`<div><span>${k}</span><span>${v}</span></div>`).join('')}</div></div>`:''}
+  </div>
+  <div class="sh-foot" id="d-foot"></div>`;
   $('sheet').classList.add('on');$('backdrop').classList.add('on');document.body.style.overflow='hidden';
-  $('sheet').scrollTop=0;
+  $('sh-body').scrollTop=0;
   $('d-close').onclick=closeCar;
   $('d-star').onclick=()=>{toggleStar(vin);$('d-star').classList.toggle('on',carBy(vin).star);};
   const bind=(id,k)=>$(id).addEventListener('input',e=>{const v=e.target.value===''?null:+e.target.value;setOv(vin,k,(k==='cond'||k==='sellAt')&&v!=null?crGrade(v):v);recompute();updateDetail();renderListSoon();});
@@ -1537,27 +1639,26 @@ function updateDetail(){
   $('d-aibox').innerHTML=aiBox(c);
   if($('ai-off'))$('ai-off').onclick=e=>{e.preventDefault();setOv(c.vin,'noAi',true);recompute();updateDetail();renderListSoon();};
   if($('ai-on'))$('ai-on').onclick=e=>{e.preventDefault();setOv(c.vin,'noAi',null);recompute();updateDetail();renderListSoon();};
-  $('d-badges').innerHTML=badges(c)+`<span class="reason r-${c.verdict}" style="margin:2px 0 0 4px">${esc(c.reason)}</span>`;
+  $('d-badges').innerHTML=badges(c)+`<span class="reason">${esc(c.reason)}</span>`;if($('d-cr'))$('d-cr').textContent=g1(c.cond);
   $('d-lift').innerHTML=`<div class="lift">
       <div><div class="l">As-is · CR ${g1(c.cond)}</div><div class="v">${money(c.mmr)}${c.mmrSrc==='est'?tg('est'):''}</div></div>
-      <div style="color:var(--muted)">→</div>
+      <div class="arr">→</div>
       <div><div class="l">After recon · CR ${g1(c.gradeAch)}</div><div class="v">${money(c.mmrAtSell)}${c.sellSrc==='est'?tg('est'):''}</div></div>
       <div><div class="l">Grade lift</div><div class="v pos">+${money(c.lift)}</div></div></div>
     ${c.gradeCapped?`<div class="callout red">${c.bodyPanels} repainted panel${c.bodyPanels>1?'s':''} → AutoGrade deducts for previous repairs, so this car realistically tops out at CR ${g1(c.gradeAch)}, not ${g1(S.sellGrade)}.</div>`:''}
     ${c.sellSrc==='est'?`<div class="callout blue">MMR after recon is estimated at +${S.liftPct}% per grade point. Type the real resale MMR from the MMR tool below, and the grade it is for, to replace the guess.</div>`:c.sellAt!=null&&Math.abs(c.sellAt-c.gradeAch)>.05?`<div class="callout blue">Resale MMR of ${money(c.mmrSell)} is for CR ${g1(c.sellAt)}. This car is planned to reach CR ${g1(c.gradeAch)}, so the model uses ${money(c.mmrAtSell)}, on a straight line from ${money(c.mmr)} at CR ${g1(c.cond)}.</div>`:''}`;
   // ladder
-  const live=c.status?`<div class="callout ${c.status==='won'?'green':'blue'}">${c.status==='won'?`Won at ${money(c.paid)}. It's in the Garage.`:`Marked lost${soldOf(c.vin)?`. It sold for ${money(soldOf(c.vin))}`:''}.`} <a href="#" id="d-undo" style="color:inherit">Undo</a></div>`
-    :`<div class="btns" style="display:grid;grid-template-columns:1fr 1fr"><button class="b good" id="d-won">Won it</button><button class="b bad" id="d-lost">Lost / passed</button></div>`;
+  $('d-foot').innerHTML=c.status?`<div class="done"><span>${c.status==='won'?`Won at ${money(c.paid)}. It's in the Garage.`:`Marked lost${soldOf(c.vin)?`. It sold for ${money(soldOf(c.vin))}`:''}.`}</span><button class="b sm" id="d-undo">Undo</button></div>`
+    :`<button class="b bad" id="d-lost">Lost / passed</button><button class="b good" id="d-won">Won it</button>`;
   $('d-ladder').innerHTML=`<div class="ladder">
       <div><div class="l">Safe bid</div><div class="v pos">${c.safe?money(c.safe):'—'}</div><div class="s">${S.conf}% odds of ${kf(S.minP)}+</div></div>
-      <div><div class="l">Max bid</div><div class="v maxbid">${c.max?money(c.max):'—'}</div><div class="s">${money(S.target)} on paper${c.pHitMax!=null?` · ${pc100(c.pHitMax)} odds`:''}</div></div>
+      <div class="mx"><div class="l">Max bid</div><div class="v maxbid">${c.max?money(c.max):'—'}</div><div class="s">${money(S.target)} on paper${c.pHitMax!=null?` · ${pc100(c.pHitMax)} odds`:''}</div></div>
       <div><div class="l">Walk-away</div><div class="v warn">${c.walk?money(c.walk):'—'}</div><div class="s">${money(S.minP)} floor</div></div></div>
-    <p class="hint" style="margin:10px 0 0">Expected bid ${money(c.bidUsed)}${c.bidSrc==='assumed'?` (assumed ${S.hammerPct}% of MMR)`:''} → <b class="${pc(c.profit)}">${money(c.profit)}</b> profit, ${(c.roi*100).toFixed(1)}% on ${money(c.capital)} cash, ${money(c.ppd)}/day.</p>
-    ${c.est.length?`<div class="callout red">Estimated, not measured: ${esc(c.est.join(', '))}. Fill ${c.est.length>1?'these':'it'} in below before bidding real money.</div>`:''}
+    <p class="expect">Expected bid ${money(c.bidUsed)}${c.bidSrc==='assumed'?` (assumed ${S.hammerPct}% of MMR)`:''} → <b class="${pc(c.profit)}">${money(c.profit)}</b> profit, ${(c.roi*100).toFixed(1)}% on ${money(c.capital)} cash, ${money(c.ppd)}/day.</p>`;
+  $('d-notes').innerHTML=`${c.est.length?`<div class="callout red"><b>Estimated, not measured:</b> ${esc(c.est.join(', '))}. Fill ${c.est.length>1?'these':'it'} in below before bidding real money.</div>`:''}
     ${c.buyNow?`<div class="callout ${c.buyNow<=c.safe?'green':'blue'}">Buy Now is ${money(c.buyNow)}${c.buyNow<=c.safe?', under the safe bid.':c.buyNow<=c.max?', between the safe bid and the max bid.':', over the max bid.'}</div>`:''}
     ${c.mmrSrc==='base'?`<div class="callout blue">The list's MMR of ${money(c.mmrBase)} is treated as a base MMR for a CR ${g1(S.baseGrade)} car, so this car's as-is value is ${money(c.mmr)}. If the list's MMR is already adjusted for grade, change that in Settings.</div>`:''}
-    ${!c.max?'<div class="callout red">No bid clears the target. Pass unless the numbers change.</div>':c.bidUsed>c.walk?`<div class="callout red">The expected bid is above walk-away. Let it go unless it stalls under ${money(c.walk)}.</div>`:''}
-    ${live}`;
+    ${!c.max?'<div class="callout red"><b>No bid clears the target.</b> Pass unless the numbers change.</div>':c.bidUsed>c.walk?`<div class="callout red"><b>The expected bid is above walk-away.</b> Let it go unless it stalls under ${money(c.walk)}.</div>`:''}`.trim();
   if($('d-won'))$('d-won').onclick=()=>askWon(c.vin);
   if($('d-lost'))$('d-lost').onclick=()=>askLost(c.vin);
   if($('d-undo'))$('d-undo').onclick=e=>{e.preventDefault();undoStatus(c.vin);};
@@ -1606,7 +1707,7 @@ function updateDetail(){
   // AI (only build once per open so typed text survives)
   if((SAMPLE||AI.on)&&!$('ai-text')){
     $('d-ai').innerHTML=`<div style="border-top:1px solid var(--line);padding-top:12px"><div class="l" style="margin-bottom:6px">AI repair estimate</div>
-      <textarea id="ai-text" style="min-height:80px;font-family:Inter;font-size:13px" placeholder="Paste the full condition report (damage lines, tire tread, notes)…">${esc(c.notes||'')}</textarea>
+      <textarea id="ai-text" style="min-height:90px;font-family:inherit;font-size:16px" placeholder="Paste the full condition report (damage lines, tire tread, notes)…">${esc(c.notes||'')}</textarea>
       <div class="btns"><button class="b primary" id="ai-go" style="grid-column:1/-1">Estimate recon from this report</button></div><div id="ai-out" class="hint" style="margin-top:8px"></div></div>`;
     $('ai-go').onclick=()=>aiEstimate(c.vin);
   }
@@ -1685,7 +1786,7 @@ function askLost(vin){
     <input type="number" id="m-h" inputmode="numeric" value="${soldOf(vin)||''}" placeholder="$ sale price" step="25">
     <p class="hint" id="m-p" style="margin:8px 0 0"></p>
     <div class="btns" style="display:grid;grid-template-columns:1fr 1fr"><button class="b" id="m-skip">Skip the price</button><button class="b primary" id="m-ok">Save</button></div>`);
-  const upd=()=>{const h=+$('m-h').value||0;$('m-p').textContent=h&&c.mmr?`That is ${(h/c.mmr*100).toFixed(0)}% of MMR${c.max?`, ${h>c.max?money(h-c.max)+' over':money(c.max-h)+' under'} his max bid`:''}.`:'';};
+  const upd=()=>{const h=+$('m-h').value||0;$('m-p').textContent=h&&c.mmr?`That is ${(h/c.mmr*100).toFixed(0)}% of MMR${c.max?`, ${h>c.max?money(h-c.max)+' over':money(c.max-h)+' under'} the max bid`:''}.`:'';};
   $('m-h').oninput=upd;upd();setTimeout(()=>$('m-h').focus(),50);
   const done=h=>{closeModal();if(h>0)setSold(vin,h);setStatus(vin,'lost');};
   $('m-skip').onclick=()=>done(0);
@@ -1732,7 +1833,7 @@ function renderSold(){
   const lg=$('soldlog');
   if(lg){
     lg.innerHTML=`<h2>Sold prices log <span class="mini">${st.all.length} car${st.all.length===1?'':'s'}, ${st.bought} bought</span></h2>
-      <p class="hint">Type what each car sold for on the Run List, whether he bought it or not. This compares real sale prices with MMR so the model's expected bid can be set from results.</p>
+      <p class="hint">Type what each car sold for on the Run List, whether you bought it or not. This compares real sale prices with MMR so the model's expected bid can be set from results.</p>
       ${st.n?`<table class="cal"><thead><tr><th>Cars</th><th>Count</th><th>Sold at (median % of MMR)</th><th>Model expects</th></tr></thead><tbody>
         ${[{l:'All logged cars',n:st.n,med:st.med}].concat(st.groups.filter(g=>g.n)).map(g=>`<tr><td>${g.l}</td><td>${g.n}</td><td>${g.med.toFixed(1)}%</td><td>${S.hammerPct}%</td></tr>`).join('')}</tbody></table>`:'<div class="empty" style="padding:16px">No sold prices logged yet.</div>'}
       ${st.all.length?'<div class="btns"><button class="b" id="soldExport">Download the log</button></div>':''}`;
@@ -1767,15 +1868,15 @@ function renderLive(){
   $('upnext').innerHTML=next.length?next.map(c=>`<div class="live-row" data-vin="${c.vin}">
       <div class="lot"><small>LOT</small>${esc(c.lot)}</div>
       <div style="min-width:0;cursor:pointer" data-open="${c.vin}"><div class="veh">${c.year} ${esc(c.make)} ${esc(c.model||'')}</div><div class="vin">CR ${g1(c.cond)} → ${g1(c.gradeAch)} · recon ${money(c.recon)} · ${money(c.profit)} at ${money(c.bidUsed)} · odds ${pc100(c.pHit)}</div>
-        <div style="margin-top:4px;display:flex;gap:4px;flex-wrap:wrap">${c.inPlan?'<span class="badge b-plan">In plan</span>':''}${c.star?'<span class="badge b-maybe">★ Starred</span>':''}${c.risk?'<span class="badge b-risk">High risk</span>':''}</div></div>
+        <div class="tags">${c.inPlan?'<span class="badge b-plan">In plan</span>':''}${c.star?'<span class="badge b-maybe">★ Starred</span>':''}${c.risk?'<span class="badge b-risk">High risk</span>':''}</div></div>
       <div class="lad-mini"><div><div class="l">Safe</div><div class="v pos">${c.safe?money(c.safe):'—'}</div></div><div><div class="l">Max</div><div class="v maxbid">${c.max?money(c.max):'—'}</div></div><div><div class="l">Walk</div><div class="v warn">${c.walk?money(c.walk):'—'}</div></div></div>
-      <div class="live-btns"><button class="b good" data-won="${c.vin}">Won</button><button class="b bad" data-lost="${c.vin}">Lost</button></div></div>`).join('')
+      <div class="live-btns"><button class="b bad" data-lost="${c.vin}">Lost</button><button class="b good" data-won="${c.vin}">Won</button></div></div>`).join('')
     :`<div class="empty">${RAW.length?'Nothing queued. Set a budget above, or ★ star cars on the Run List.':'Load a run list first.'}</div>`;
   const dec=ok.filter(c=>c.status).sort((a,b)=>lotKey(a)>lotKey(b)?1:-1);
   $('decmini').textContent=dec.length?`${dec.length} car${dec.length>1?'s':''}`:'';
-  $('declist').innerHTML=dec.length?dec.map(c=>`<div class="live-row" style="grid-template-columns:52px 1fr auto"><div class="lot"><small>LOT</small>${esc(c.lot)}</div>
+  $('declist').innerHTML=dec.length?dec.map(c=>`<div class="live-row dec"><div class="lot"><small>LOT</small>${esc(c.lot)}</div>
       <div><div class="veh">${c.year} ${esc(c.make)} ${esc(c.model||'')}</div><div class="vin">${c.status==='won'?`Won ${money(c.paid)} · projected ${money(c.profit)}`:'Lost / passed'}</div></div>
-      <button class="b ghost" data-undo="${c.vin}">Undo</button></div>`).join(''):'<div class="empty">Nothing decided yet.</div>';
+      <button class="b sm" data-undo="${c.vin}">Undo</button></div>`).join(''):'<div class="empty">Nothing decided yet.</div>';
   $('upnext').querySelectorAll('[data-won]').forEach(b=>b.onclick=()=>askWon(b.dataset.won));
   $('upnext').querySelectorAll('[data-lost]').forEach(b=>b.onclick=()=>askLost(b.dataset.lost));
   $('upnext').querySelectorAll('[data-open]').forEach(b=>b.onclick=()=>openCar(b.dataset.open));
@@ -1814,15 +1915,15 @@ function renderGarage(){
 }
 function flipHTML(f){
   const act=flipActual(f);const done=f.soldPrice!=null;
-  const iv=(k,l,step,ph)=>`<label>${l}<input type="number" data-id="${f.id}" data-f="${k}" step="${step}" value="${f[k]??''}" placeholder="${ph??''}"></label>`;
+  const iv=(k,l,step,ph)=>`<label>${l}<input type="number" inputmode="decimal" data-id="${f.id}" data-f="${k}" step="${step}" value="${f[k]??''}" placeholder="${ph??''}"></label>`;
   return `<div class="flip">
     <div class="flip-top"><div style="flex:1;min-width:0"><div class="veh">${f.year||''} ${esc(f.make||'')} ${esc(f.model||'')} ${f.demo?'<span class="src">demo</span>':''}</div>
       <div class="vin">Lot ${esc(f.lot||'—')} · bought ${esc(f.boughtAt||'')} at ${money(f.hammer)} · CR ${g1(f.crBuy)} → ${g1(f.gradeProj)} · ${EXIT_LABEL[f.exit]||''}</div></div>
-      <div style="text-align:right"><div class="l">${done?'Actual profit':'Projected'}</div><div style="font-size:18px;font-weight:800" class="${pc(done?act:f.projProfit)}">${money(done?act:f.projProfit)}</div>${done?`<div class="vin">proj ${money(f.projProfit)}</div>`:''}</div></div>
+      <div class="flip-p"><div class="l">${done?'Actual profit':'Projected'}</div><div class="v ${pc(done?act:f.projProfit)}">${money(done?act:f.projProfit)}</div>${done?`<div class="vin">proj ${money(f.projProfit)}</div>`:''}</div></div>
     <div class="stages">${STAGES.map(([k,l])=>`<button data-id="${f.id}" data-stage="${k}" class="${f.stage===k?'on':''}">${l}</button>`).join('')}</div>
     <div class="fgrid">${iv('actualRecon','Actual recon $',25,'proj '+f.projRecon)}${iv('gradeSold','Grade at sale',0.1,'proj '+g1(f.gradeProj))}${iv('soldPrice','Sold for $',50,'proj '+f.projPrice)}${iv('daysHeld','Days held',1,'proj '+f.projDays)}${iv('runs','Runs to sell',1,'1')}
       <label>Notes<input type="text" data-id="${f.id}" data-f="notes" value="${esc(f.notes||'')}" placeholder="What happened"></label></div>
-    <div style="text-align:right;margin-top:6px"><button class="b ghost" data-del="${f.id}" style="padding:5px 10px;font-size:12px;color:var(--muted)">Remove</button></div></div>`;
+    <div class="flip-rm"><button class="b ghost sm" data-del="${f.id}">Remove</button></div></div>`;
 }
 function avg(a){return a.length?a.reduce((s,x)=>s+x,0)/a.length:null;}
 function renderCalib(sold){
@@ -1845,7 +1946,7 @@ function renderCalib(sold){
   const miss=gs.filter(f=>f.gradeProj!=null).map(f=>Math.max(0,f.gradeProj-f.gradeSold));
   if(miss.length>=10)rows.push(['Grade miss',`±${S.gradeSd}`,`avg ${avg(miss).toFixed(2)} short of plan`,'gradeSd',Math.max(.1,Math.round(avg(miss)/.8*20)/20),v=>'±'+v]);
   const lr=sold.filter(f=>f.actualRecon>0&&f.projRecon>0).map(f=>Math.log(f.actualRecon/f.projRecon));
-  if(lr.length>=10){const mu=avg(lr),sd=Math.sqrt(avg(lr.map(x=>(x-mu)**2)));rows.push(['Recon spread',`±${S.reconSd}%`,`±${Math.round(sd*100)}% around his average`,'reconSd',Math.max(10,Math.round(sd*100/5)*5),v=>'±'+v+'%']);}
+  if(lr.length>=10){const mu=avg(lr),sd=Math.sqrt(avg(lr.map(x=>(x-mu)**2)));rows.push(['Recon spread',`±${S.reconSd}%`,`±${Math.round(sd*100)}% around your average`,'reconSd',Math.max(10,Math.round(sd*100/5)*5),v=>'±'+v+'%']);}
   const ad=sold.filter(f=>f.exit==='auction'&&f.daysHeld!=null);const rn=sold.filter(f=>f.exit==='auction'&&f.runs>0);
   if(ad.length>=3){const first=median(ad.map(f=>f.daysHeld-((f.runs||1)-1)*(S.rerunDays??7)));rows.push(['Days to first re-run',`${S.auctionDays}`,`median ${Math.round(first)} · ${Math.round(median(ad.map(f=>f.daysHeld)))} to sold`,'auctionDays',Math.max(1,Math.round(first)),v=>v+' days']);}
   if(rn.length>=10){const st=rn.length/rn.reduce((a,f)=>a+f.runs,0)*100;rows.push(['Chance it sells each run',`${S.sellThru}%`,`${Math.round(st)}% · ${rn.length} cars`,'sellThru',Math.round(st/5)*5,P]);}
@@ -1853,11 +1954,11 @@ function renderCalib(sold){
   const errs=sold.filter(f=>f.projProfit!=null).map(f=>flipActual(f)-f.projProfit);const bias=avg(errs),mae=avg(errs.map(Math.abs));
   const withOdds=sold.filter(f=>f.oddsAtBuy!=null);const expHit=avg(withOdds.map(f=>f.oddsAtBuy)),actHit=withOdds.length?withOdds.filter(f=>flipActual(f)>=S.minP).length/withOdds.length:null;
   $('calib').innerHTML=`<div class="callout ${Math.abs(bias)<=250?'green':'red'}" style="margin:0 0 10px"><b>Model accuracy on ${errs.length} sold cars:</b> actual profit came in ${money(Math.abs(bias))} ${bias<0?'under':'over'} the projection on average, and a typical car missed by ${money(mae)} either way.${withOdds.length>=5?` The model gave these cars ${pc100(expHit)} odds of ${kf(S.minP)}+ and ${pc100(actHit)} made it.`:''} ${Math.abs(bias)<=250?'That is close.':bias<0?'The model is too optimistic. Apply the corrections below.':'The model is too cautious. Apply the corrections below.'}</div>
-    <table class="cal"><thead><tr><th>Assumption</th><th>Model uses</th><th>His results</th><th>Suggest</th></tr></thead><tbody>
+    <table class="cal"><thead><tr><th>Assumption</th><th>Model uses</th><th>Your results</th><th>Suggest</th></tr></thead><tbody>
     ${rows.map(r=>`<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td><b>${r[5](r[4])}</b></td></tr>`).join('')}</tbody></table>
     <div class="btns"><button class="b primary" id="applyCal">Apply all ${rows.length} to the model</button></div>
     <p class="hint" style="margin-top:8px">Based on ${sold.length} sold cars. Under 10 cars these swing a lot; past 30 they are solid. Fill in grade at sale, actual recon, days held and runs to sell on every car to feed this.</p>`;
-  $('applyCal').onclick=()=>{rows.forEach(r=>ST.settings[r[3]]=r[4]);persist();recompute();renderAll();toast('Model calibrated to his results');};
+  $('applyCal').onclick=()=>{rows.forEach(r=>ST.settings[r[3]]=r[4]);persist();recompute();renderAll();toast('Model calibrated to your results');};
 }
 document.querySelectorAll('#gfilter button').forEach(b=>b.onclick=()=>{document.querySelectorAll('#gfilter button').forEach(x=>x.classList.remove('on'));b.classList.add('on');gfilt=b.dataset.g;renderGarage();});
 $('demoFlips').onclick=()=>{
@@ -1888,20 +1989,22 @@ $('addFlip').onclick=()=>{
 const SCHEMA=[
  ['g','Buy box & goals'],['maxGrade','Max CR grade to buy',.1],['sellGrade','Target grade after recon',.1],['cap','Recon cap per car ($)',100],['minP','Profit floor ($)',100],['target','Profit target ($)',100],['conf','Safe bid: odds of the floor needed (%)',5],['needSell','A Buy needs real MMR numbers',[['yes','Yes, no Buy on estimates'],['no','No, allow estimates']]],
  ['g','Value'],['liftPct','MMR change per CR point (%)',.5],['panelPenalty','Grade lost per repainted panel',.05],['mmrKind','A plain “MMR” column on the list is',[['adj','Already adjusted for this car\'s grade (Manheim export)'],['base','Base MMR (average-condition car)']]],['baseGrade','Grade a base MMR assumes',.1],['hammerPct','Expected hammer if no bid (% of MMR)',1],['sellPct','Re-run sells at (% of MMR at its grade)',1],['driftWk','Market drift (% per week)',.1],
- ['g','Exit'],['exitMode','How he sells',[['auction','Re-run at auction'],['retail','Retail on lot'],['dealer','Sell to a dealer'],['best','Best of the three, per car']]],['auctionDays','Days to re-run at auction',1],['sellThru','Chance it sells each run (%)',5],['rerunDays','Days added per no-sale',1],['noSaleFee','No-sale / re-run fee ($)',5],['rerunCut','Price drop per no-sale (%)',.5],['retailPct','Retail price (% of MMR)',1],['retailPrep','Retail-ready prep ($)',25],['retailCost','Retail selling cost ($)',25],['retailDays','Days to retail',1],['dealerPct','Dealer sale (% of MMR)',1],['dealerDays','Days to dealer sale',1],
+ ['g','Exit'],['exitMode','How you sell',[['auction','Re-run at auction'],['retail','Retail on lot'],['dealer','Sell to a dealer'],['best','Best of the three, per car']]],['auctionDays','Days to re-run at auction',1],['sellThru','Chance it sells each run (%)',5],['rerunDays','Days added per no-sale',1],['noSaleFee','No-sale / re-run fee ($)',5],['rerunCut','Price drop per no-sale (%)',.5],['retailPct','Retail price (% of MMR)',1],['retailPrep','Retail-ready prep ($)',25],['retailCost','Retail selling cost ($)',25],['retailDays','Days to retail',1],['dealerPct','Dealer sale (% of MMR)',1],['dealerDays','Days to dealer sale',1],
  ['g','Costs'],['feeMode','Buyer fee',[['tiered','Typical tiered schedule'],['flat','Flat $ per car'],['pct','% of hammer']]],['feeVal','Fee $ or % (if not tiered)',25],['onlineFee','Online (Simulcast) fee per buy ($)',5],['psi','Post-sale inspection per buy ($)',5],['tIn','Transport in ($)',25],['tOut','Transport out ($)',25],['sellFee','Seller fee + re-grade ($)',25],['doc','Title / doc ($)',25],['perDay','Holding cost per day ($)',1],['apr','Floor-plan interest (APR %)',.25],['fpFee','Floor-plan fee per car ($)',5],['reserve','Surprise reserve per car ($)',25],
  ['g','Recon & risk'],['reconMult','Recon multiplier (calibration)',.05],['reconPt','Recon $/grade point (no announcements)',50],['overrun','Stress: recon over by (%)',5],['shortGrade','Stress: only grades to',.1],['flags','Auto-pass if announcements mention','text'],
  ['g','AI and self-tuning'],['aiUse','AI checks every car on each upload',[['yes','On'],['no','Off']]],['autoTune','Model retunes itself from real results',[['yes','On'],['no','Off']]],
  ['g','Odds (what goes wrong, and how often)'],['gradeSd','Grade miss (± points)',.05],['reconSd','Recon spread (± %)',5],['priceSd','Sale price spread (± %)',1],['lemonPct','Chance of a hidden problem (%)',1],['lemonCost','Hidden problem cost ($)',100],['liftSd','Value-per-point doubt when MMR @ target is missing (± %)',.5]
 ];
+const openGroups=new Set([0]);   // which groups of assumptions are open
 function renderSettings(){
   const S=ST.settings;
-  $('settingsForm').innerHTML=SCHEMA.map(([k,l,t])=>{
-    if(k==='g')return `<div class="grp">${l}</div>`;
-    if(Array.isArray(t))return `<label>${l}<select data-s="${k}">${t.map(([v,n])=>`<option value="${v}"${S[k]===v?' selected':''}>${n}</option>`).join('')}</select></label>`;
+  const groups=[];SCHEMA.forEach(row=>{if(row[0]==='g')groups.push({l:row[1],rows:[]});else groups[groups.length-1].rows.push(row);});
+  $('settingsForm').innerHTML=groups.map((g,i)=>`<details class="sgroup" data-g="${i}"${openGroups.has(i)?' open':''}><summary><span>${g.l}</span><small>${g.rows.length} setting${g.rows.length>1?'s':''}</small><span class="chev"></span></summary><div class="settings">${g.rows.map(([k,l,t])=>{
+    if(Array.isArray(t))return `<label class="full">${l}<select data-s="${k}">${t.map(([v,n])=>`<option value="${v}"${S[k]===v?' selected':''}>${n}</option>`).join('')}</select></label>`;
     if(t==='text')return `<label class="full">${l}<input type="text" data-s="${k}" value="${esc(S[k])}"></label>`;
-    return `<label>${l}<input type="number" data-s="${k}" step="${t}" value="${S[k]}"></label>`;
-  }).join('');
+    return `<label>${l}<input type="number" inputmode="decimal" data-s="${k}" step="${t}" value="${S[k]}"></label>`;
+  }).join('')}</div></details>`).join('');
+  $('settingsForm').querySelectorAll('.sgroup').forEach(d=>d.addEventListener('toggle',()=>{const i=+d.dataset.g;if(d.open)openGroups.add(i);else openGroups.delete(i);}));
   $('settingsForm').querySelectorAll('[data-s]').forEach(el=>el.addEventListener('input',()=>{const k=el.dataset.s;ST.settings[k]=el.type==='number'?(+el.value||0):el.value;if(TUNED_KEYS.includes(k))pushTuned();persist();recompute();renderStrat();renderListSoon();}));
   renderTuneLog();
   const T=S.tiers&&S.tiers.length?S.tiers:(S.tiers=clone(DEFAULT_SETTINGS.tiers));
@@ -1984,10 +2087,21 @@ $('sortsel').onchange=e=>{sortKey=e.target.value;sortDir=1;renderList();};
 
 const TH_SUN='<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>',TH_MOON='<svg viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>';
 function applyTheme(t){document.documentElement.dataset.theme=t;try{localStorage.setItem('aff_theme',t);}catch(e){}
-  const m=document.querySelector('meta[name=theme-color]');if(m)m.content=t==='dark'?'#0d1117':'#ffffff';
+  const m=document.querySelector('meta[name=theme-color]');if(m)m.content=t==='dark'?'#0b0d11':'#ffffff';
+  document.querySelectorAll('#themeSeg button').forEach(x=>x.classList.toggle('on',x.dataset.th===t));
   const b=$('themeBtn');b.innerHTML=t==='dark'?TH_SUN:TH_MOON;b.title=t==='dark'?'Switch to light mode':'Switch to dark mode';}
 $('themeBtn').onclick=()=>applyTheme(document.documentElement.dataset.theme==='dark'?'light':'dark');
+document.querySelectorAll('#themeSeg button').forEach(x=>x.onclick=()=>applyTheme(x.dataset.th));
+// parts that only make sense on the website (sign out, shared data)
+if(AI.on)document.querySelectorAll('[data-site]').forEach(e=>e.hidden=false);
+// phone: drag the top of a car's page down to close it
+(function(){let y0=null;const sh=$('sheet');
+  sh.addEventListener('touchstart',e=>{y0=e.target.closest('.sh-head')&&!e.target.closest('button')?e.touches[0].clientY:null;},{passive:true});
+  sh.addEventListener('touchmove',e=>{if(y0==null)return;sh.style.transition='none';sh.style.transform=`translateY(${Math.max(0,e.touches[0].clientY-y0)}px)`;},{passive:true});
+  sh.addEventListener('touchend',e=>{if(y0==null)return;const d=e.changedTouches[0].clientY-y0;y0=null;sh.style.transition='';sh.style.transform='';if(d>90)closeCar();},{passive:true});
+})();
 applyTheme(document.documentElement.dataset.theme==='dark'?'dark':'light');
+document.querySelector('.notices').addEventListener('click',e=>{if(e.target.closest('a'))return;const c=e.target.closest('.callout');if(c)c.classList.toggle('open');});
 function renderAll(){renderList();if(tab==='live')renderLive();if(tab==='garage')renderGarage();renderLiveCount();}
 
 /* ================= Boot ================= */
@@ -2015,20 +2129,21 @@ function renderBacktest(){
   const P=BT.pairs;
   if(!BT.rows.length){
     $('btkpis').innerHTML='';$('btlanecard').style.display='none';$('btbuckets').innerHTML=$('btmodels').innerHTML=$('btcal').innerHTML='';$('btpairs').innerHTML='';
-    $('btheadline').innerHTML=`<div class="empty" style="padding:14px">${ST.btText&&BT.missing.length?`Couldn't find these columns: <b>${BT.missing.join(', ')}</b>. Check the header row.`:'Load the auction\'s sales history, or tap <b>Load demo sales</b> to see how it works.'}</div>`;return;
+    $('btheadline').innerHTML=`<div class="empty" style="padding:14px">${ST.btText&&BT.missing.length?`Couldn't find these columns: <b>${BT.missing.join(', ')}</b>. Check the header row.`:'Open “Load sales history” above and add the auction\'s past sales to see who already ran this play, and whether it paid.'}</div>`;['btgrid','btcalcard','btpaircard'].forEach(id=>$(id).style.display='none');return;
   }
+  ['btgrid','btcalcard','btpaircard'].forEach(id=>$(id).style.display='');
   const box=P.filter(p=>p.inBox),rec=P.filter(p=>p.flipType==='reconditioned');
   const sb=summarize(S,box),sa=summarize(S,P);
   $('btkpis').innerHTML=[
     ['Sales loaded',BT.rows.length,`${new Set(BT.rows.map(r=>r.vin||r.i)).size} vehicles`],
     ['Repeat sales',P.length,`${P.filter(p=>p.match==='VIN').length} by VIN · ${P.filter(p=>p.match==='Odometer').length} by mileage`],
-    ['In his buy box',box.length,`bought ≤ ${g1(S.maxGrade)}, sold ≥ ${g1(S.sellGrade)}`],
+    ['In your buy box',box.length,`bought ≤ ${g1(S.maxGrade)}, sold ≥ ${g1(S.sellGrade)}`],
     ['Box: made money',pct(sb.profitable),`${pct(sb.hitFloor)} cleared ${money(S.minP)}`],
     ['Box: median profit',money(sb.medProfit),`after est. recon · all flips ${money(sa.medProfit)}`]
   ].map(([l,v,s])=>`<div class="kpi"><div class="l">${l}</div><div class="v">${v}</div><div class="s">${s}</div></div>`).join('');
   $('btheadline').innerHTML=box.length?`<div class="headline">Of <b>${box.length}</b> cars bought at CR ${g1(S.maxGrade)} or under and resold at ${g1(S.sellGrade)}+ here, <b class="${(sb.profitable||0)>=.5?'pos':'neg'}">${pct(sb.profitable)}</b> made money after estimated recon, with a median of <b class="${pc(sb.medProfit)}">${money(sb.medProfit)}</b>. The median buyer could have spent up to <b>${money(sb.medSpread)}</b> on recon and still broken even, and resold in <b>${Math.round(sb.medDays)} days</b>.</div>
-    <p class="hint" style="margin:8px 0 0">Compared with all ${P.length} repeat sales: median ${money(sa.medProfit)}, ${pct(sa.profitable)} profitable. ${rec.length-box.length>0?`${rec.length-box.length} reconditioned flips fell outside his buy box.`:''}</p>`
-    :`<div class="headline">No repeat sales match his buy box (bought ≤ ${g1(S.maxGrade)}, sold ≥ ${g1(S.sellGrade)}) in this data. ${P.length} repeat sales overall.</div>`;
+    <p class="hint" style="margin:8px 0 0">Compared with all ${P.length} repeat sales: median ${money(sa.medProfit)}, ${pct(sa.profitable)} profitable. ${rec.length-box.length>0?`${rec.length-box.length} reconditioned flips fell outside your buy box.`:''}</p>`
+    :`<div class="headline">No repeat sales match your buy box (bought ≤ ${g1(S.maxGrade)}, sold ≥ ${g1(S.sellGrade)}) in this data. ${P.length} repeat sales overall.</div>`;
   // buckets
   const B=[['≤ 1.5',0,1.5],['1.6–2.0',1.6,2.0],['2.1–2.5',2.1,2.5],['2.6–3.0',2.6,3.0],['3.1+',3.1,9]];
   const rowsB=B.map(([l,lo,hi])=>{const L=rec.filter(p=>p.a.grade>=lo-1e-9&&p.a.grade<=hi+1e-9);const s=summarize(S,L);return [l,L.length,s];}).filter(r=>r[1]);

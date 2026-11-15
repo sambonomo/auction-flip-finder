@@ -1,0 +1,2200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Auction Flip Finder</title>
+<script>try{document.documentElement.dataset.theme=localStorage.getItem('aff_theme')==='dark'?'dark':'light'}catch(e){document.documentElement.dataset.theme='light'}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ===== tokens ===== */
+:root{--bg:#f5f6f8;--panel:#fff;--panel2:#f3f5f8;--panel3:#e7eaf0;--line:#e5e8ee;--line2:#d0d5de;--text:#0f172a;--muted:#5a6475;--faint:#99a1ae;--accent:#2f6fed;--on-accent:#fff;--good:#0a7a4b;--warn:#8a5300;--bad:#c42b32;--blue:#1f5ad6;--good-bg:#e7f6ee;--warn-bg:#fdf3dc;--bad-bg:#fdecec;--blue-bg:#eaf1fe;--neutral-bg:#eef0f4;--good-line:#b5e0c9;--bad-line:#f3c2c4;--blue-line:#c2d6fb;--warn-line:#f0d9a3;--star:#e5a100;--hdr:rgba(255,255,255,.88);--veil:rgba(245,246,248,.94);--shadow:0 1px 2px rgba(15,23,42,.05);--pop:0 24px 60px rgba(15,23,42,.22);--scrim:rgba(15,23,42,.4);--hd:56px;--nav:60px;color-scheme:light}
+:root[data-theme=dark]{--bg:#0b0d11;--panel:#14171c;--panel2:#1b1f26;--panel3:#272c35;--line:#242932;--line2:#39404b;--text:#f1f3f6;--muted:#a2aab6;--faint:#6a7381;--accent:#6ea6ff;--on-accent:#06142b;--good:#4ed69c;--warn:#f7c053;--bad:#ff8b8f;--blue:#8dbcff;--good-bg:#10291f;--warn-bg:#2e2510;--bad-bg:#321a1c;--blue-bg:#14263f;--neutral-bg:#222731;--good-line:#1f4d3a;--bad-line:#5c2a2d;--blue-line:#264a78;--warn-line:#57451a;--star:#f7c053;--hdr:rgba(11,13,17,.84);--veil:rgba(11,13,17,.92);--shadow:none;--pop:0 24px 60px rgba(0,0,0,.6);--scrim:rgba(0,0,0,.62);color-scheme:dark}
+
+/* ===== base ===== */
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.45;-webkit-text-size-adjust:100%;-webkit-font-smoothing:antialiased}
+body{overflow-x:hidden}
+button,input,select,textarea{font-family:inherit;color:inherit}
+button{-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+a{color:var(--accent)}
+h2{font-size:16px;margin:0 0 4px;font-weight:700;letter-spacing:-.01em}
+.hint{color:var(--muted);font-size:13.5px;margin:0 0 12px;line-height:1.5}
+.hint b{color:var(--text);font-weight:600}
+.mini{color:var(--muted);font-size:12.5px;font-weight:500;margin-left:6px}
+.l,.fl{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;font-weight:700}
+.fl{display:block;margin-bottom:6px}
+.num,.v{font-variant-numeric:tabular-nums}
+.pos{color:var(--good);font-weight:700}.neg{color:var(--bad);font-weight:700}.warn{color:var(--warn);font-weight:700}.maxbid{color:var(--blue);font-weight:700}
+.dim{opacity:.55}
+.empty{padding:32px 16px;text-align:center;color:var(--muted);font-size:14px}
+.scrollx{overflow-x:auto}
+
+/* ===== header and navigation ===== */
+header{position:sticky;top:0;z-index:15;display:flex;align-items:center;gap:10px;height:calc(var(--hd) + env(safe-area-inset-top));padding:env(safe-area-inset-top) 10px 0 16px;background:var(--hdr);-webkit-backdrop-filter:saturate(180%) blur(14px);backdrop-filter:saturate(180%) blur(14px);border-bottom:1px solid var(--line)}
+.logo{width:30px;height:30px;border-radius:9px;background:#2f6fed;display:grid;place-items:center;flex:none}
+.logo svg{width:18px;height:18px;stroke:#fff;fill:none;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+h1{font-size:17px;margin:0;font-weight:700;letter-spacing:-.015em;white-space:nowrap}
+.topnav{display:none;gap:2px;margin-left:20px}
+.topnav button{background:transparent;border:0;color:var(--muted);height:36px;padding:0 13px;border-radius:999px;font-weight:600;font-size:14px;cursor:pointer}
+.topnav button:hover{color:var(--text)}
+.topnav button.on{background:var(--panel3);color:var(--text)}
+.hdr-r{margin-left:auto;display:flex;align-items:center;gap:6px}
+.sync{font-size:12.5px;color:var(--muted);display:flex;align-items:center;gap:6px;white-space:nowrap;padding-right:4px}
+.sync i{width:8px;height:8px;border-radius:50%;background:var(--faint);display:inline-block}
+.sync.on i{background:var(--good)}
+.sync:not(.on){display:none}
+.signout{display:none;font-size:13.5px;font-weight:600;color:var(--muted);text-decoration:none;padding:0 8px;white-space:nowrap}
+.ic-btn{width:44px;height:44px;border-radius:50%;border:0;background:transparent;color:var(--text);display:inline-grid;place-items:center;cursor:pointer;flex:none;padding:0}
+.ic-btn:hover{background:var(--panel3)}
+.ic-btn.line{border:1px solid var(--line2);border-radius:12px;background:var(--panel)}
+.ic-btn svg,.botnav svg,.search svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.botnav{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:20;background:var(--hdr);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom);-webkit-backdrop-filter:saturate(180%) blur(14px);backdrop-filter:saturate(180%) blur(14px)}
+.botnav button{flex:1;min-width:0;height:var(--nav);background:none;border:0;color:var(--muted);font-weight:600;font-size:10.5px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;cursor:pointer}
+.botnav .ic{line-height:0;position:relative}
+.botnav svg{width:23px;height:23px}
+.botnav button.on{color:var(--accent)}
+.botnav .cnt{position:absolute;top:-5px;left:14px;background:var(--accent);color:var(--on-accent);border-radius:9px;min-width:17px;height:17px;padding:0 5px;font-size:10.5px;line-height:17px;font-weight:700}
+
+/* ===== page ===== */
+main{max-width:1320px;margin:0 auto;padding:14px 12px calc(var(--nav) + 28px + env(safe-area-inset-bottom))}
+main>section{display:none;gap:12px}
+main>section.on{display:grid}
+main>section>*,.grid2>*,#listbody>*{min-width:0}
+.pagehead{padding:4px 4px 0}
+.pagehead h2{font-size:24px;letter-spacing:-.02em;margin:0}
+.pagehead p{margin:2px 0 0;color:var(--muted);font-size:14px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px;box-shadow:var(--shadow)}
+.card.flat{background:none;border:0;box-shadow:none;padding:0}
+.cardhead{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;min-height:40px}
+.cardhead h2{margin:0;padding-left:4px}
+.cardhead .acts{display:flex;gap:8px;margin-left:auto}
+.grid2{display:grid;gap:12px}
+details>summary{list-style:none;cursor:pointer}
+details>summary::-webkit-details-marker{display:none}
+details.card>summary{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:-16px;padding:16px;min-height:52px}
+details.card>summary h2{margin:0}
+details.card[open]>summary{margin-bottom:0}
+.chev{width:9px;height:9px;border-right:2px solid var(--faint);border-bottom:2px solid var(--faint);transform:rotate(45deg);transition:transform .2s;flex:none;margin:0 6px 4px 0}
+details[open]>summary .chev{transform:rotate(225deg);margin-bottom:-4px}
+.card.quiet{background:none;border:0;box-shadow:none;padding:0 4px}
+.card.quiet>summary{margin:0;padding:6px 0;min-height:40px;justify-content:center;gap:10px}
+.card.quiet>summary h2{font-size:13.5px;font-weight:600;color:var(--muted)}
+.card.quiet[open]{background:var(--panel);border:1px solid var(--line);padding:4px 16px 16px;box-shadow:var(--shadow)}
+details.inl{margin-top:12px;border-top:1px solid var(--line);padding-top:10px}
+details.inl>summary{font-size:13.5px;font-weight:600;color:var(--accent)}
+
+/* ===== controls ===== */
+textarea,input[type=text],input[type=number],input[type=search],select{background:var(--panel);color:var(--text);border:1px solid var(--line2);border-radius:12px;padding:0 12px;height:44px;font-size:16px;width:100%;min-width:0;-webkit-appearance:none;appearance:none}
+select{padding-right:34px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238a93a2' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;background-size:16px;text-overflow:ellipsis}
+textarea{height:auto;min-height:110px;padding:10px 12px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px;resize:vertical}
+input::placeholder,textarea::placeholder{color:var(--faint)}
+input:focus,select:focus,textarea:focus{outline:0;border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 22%,transparent)}
+button:focus-visible,a:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.btns{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+.btns>:only-child,.btns>.primary:first-child{grid-column:1/-1}
+button.b,a.b,.filebtn{background:var(--panel);color:var(--text);border:1px solid var(--line2);border-radius:12px;min-height:44px;padding:8px 14px;font-weight:600;font-size:14.5px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px;text-decoration:none;text-align:center;line-height:1.2}
+button.b:hover,.filebtn:hover{border-color:var(--faint)}
+button.b:active,.filebtn:active{background:var(--panel2)}
+button.b.sm,a.b.sm{min-height:38px;padding:6px 14px;font-size:13.5px;border-radius:999px;white-space:nowrap;flex:none}
+button.b.primary{background:var(--accent);color:var(--on-accent);border-color:var(--accent)}
+button.b.good{background:var(--good);color:var(--panel);border-color:var(--good)}
+button.b.bad{background:var(--panel);color:var(--bad);border-color:var(--bad-line)}
+button.b.danger{color:var(--bad)}
+button.b.ghost{background:transparent;border-color:transparent;color:var(--muted)}
+button.b:disabled{opacity:.55}
+.filebtn input,.dropzone input{display:none}
+.primary-file{display:none}
+.seg{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.seg::-webkit-scrollbar{display:none}
+.seg button{flex:none;height:38px;padding:0 14px;border-radius:999px;border:1px solid var(--line2);background:var(--panel);color:var(--muted);font-weight:600;font-size:14px;cursor:pointer;white-space:nowrap}
+.seg button.on{background:var(--text);border-color:var(--text);color:var(--bg)}
+.seg .n{margin-left:6px;font-weight:600;opacity:.6;font-variant-numeric:tabular-nums}
+.seg .n:empty{display:none}
+.toggle{display:inline-flex;align-items:center;gap:10px;font-size:14.5px;font-weight:600;cursor:pointer;user-select:none;min-height:44px}
+.toggle input{position:absolute;opacity:0;pointer-events:none}
+.toggle .sw{width:46px;height:28px;border-radius:28px;background:var(--panel3);position:relative;transition:.2s;flex:none}
+.toggle .sw:after{content:"";position:absolute;width:24px;height:24px;border-radius:50%;background:#fff;top:2px;left:2px;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.25)}
+.toggle input:checked+.sw{background:var(--good)}
+.toggle input:checked+.sw:after{left:20px}
+.money-in{position:relative}
+.money-in span{position:absolute;left:14px;top:50%;transform:translateY(-50%);font-size:20px;font-weight:700;color:var(--muted)}
+.money-in input{height:52px;font-size:22px;font-weight:700;padding-left:32px}
+.copybox{display:none;margin-top:10px}.copybox.on{display:block}
+
+/* ===== badges and notices ===== */
+.badge{display:inline-flex;align-items:center;height:24px;padding:0 10px;border-radius:999px;font-size:12px;font-weight:700;white-space:nowrap}
+.b-buy,.b-won{background:var(--good-bg);color:var(--good)}.b-maybe{background:var(--warn-bg);color:var(--warn)}.b-pass,.b-risk{background:var(--bad-bg);color:var(--bad)}.b-skip,.b-err,.b-lost,.b-odo{background:var(--neutral-bg);color:var(--muted)}
+.b-ai,.b-plan,.b-vin{background:var(--blue-bg);color:var(--blue)}
+.b-ai{white-space:normal;height:auto;min-height:24px;padding:3px 10px;line-height:1.3}
+.reason{font-size:13px;color:var(--muted);line-height:1.35}
+.src{font-size:10.5px;color:var(--muted);border:1px solid var(--line2);border-radius:5px;padding:0 5px;margin-left:5px;font-weight:600;vertical-align:1px}
+.callout{border-radius:12px;padding:11px 13px;font-size:13.5px;line-height:1.5;margin-top:8px;background:var(--blue-bg);color:var(--text)}
+.callout b:first-child{color:var(--blue)}
+.callout.red{background:var(--bad-bg)}.callout.red b:first-child{color:var(--bad)}
+.callout.green{background:var(--good-bg)}.callout.green b:first-child{color:var(--good)}
+.callout.amber{background:var(--warn-bg)}.callout.amber b:first-child{color:var(--warn)}
+.callout a{color:var(--accent)!important;font-weight:600;text-decoration:none!important;white-space:nowrap}
+.callout .mini{margin-left:0}
+.notices{display:grid;gap:8px}
+.notices>div:empty{display:none}
+.notices .callout{margin:0;font-size:13px;padding:9px 12px 0;border-bottom:9px solid transparent;cursor:pointer;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
+.notices .callout.open{display:block}
+.note{font-size:13px;color:var(--muted);background:var(--panel2);border-radius:12px;padding:10px 12px}
+
+/* ===== run list: top ===== */
+.listbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.chips{display:contents}
+.chip{display:inline-flex;align-items:center;gap:6px;height:40px;min-width:0;padding:0 6px 0 14px;border:1px solid var(--line2);border-radius:999px;background:var(--panel);color:var(--text);font-weight:600;font-size:14px;cursor:pointer;max-width:100%}
+.listbar .chip{max-width:calc(100% - 118px)}
+.chip>span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+button.chip{padding:0 14px}
+.chip.on{background:var(--blue-bg);border-color:var(--blue-line);color:var(--blue)}
+.chip button{width:28px;height:28px;border-radius:50%;border:0;background:var(--panel3);color:var(--muted);font-size:11px;cursor:pointer;display:grid;place-items:center;padding:0;flex:none}
+.dropzone{display:inline-flex;align-items:center;gap:6px;height:40px;padding:0 14px 0 10px;border:1px dashed var(--line2);border-radius:999px;color:var(--accent);font-weight:600;font-size:14px;cursor:pointer;background:transparent}
+.dropzone .dz-ic{display:grid;place-items:center}
+.dropzone .dz-ic svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.dropzone b{display:none}
+.steps{display:none}
+.nolist #listbody,.nolist #howbox{display:none}
+#tab-list.nolist{max-width:560px;margin:4vh auto 0;width:100%}
+.nolist .listbar{display:block}
+.nolist .dropzone{display:flex;flex-direction:column;justify-content:center;gap:6px;height:auto;min-height:250px;padding:28px 20px;border:1.5px dashed var(--line2);border-radius:22px;background:var(--panel);text-align:center;color:var(--text);transition:border-color .15s,background .15s}
+.nolist .dropzone:hover{border-color:var(--accent);background:var(--blue-bg)}
+.nolist .dropzone .dz-ic{width:60px;height:60px;border-radius:50%;background:var(--blue-bg);color:var(--accent);margin:0 auto 10px}
+.nolist .dropzone .dz-ic svg{width:26px;height:26px}
+.nolist .dropzone b{display:block;font-size:20px;font-weight:700;letter-spacing:-.015em}
+.nolist .dropzone span{font-size:14.5px;font-weight:500;color:var(--muted);max-width:300px;margin:0 auto}
+.nolist .steps{display:grid;gap:12px;list-style:none;margin:6px 0 0;padding:4px 8px}
+.steps li{display:flex;gap:12px;align-items:flex-start;font-size:14px;color:var(--muted)}
+.steps i{flex:none;width:24px;height:24px;border-radius:50%;background:var(--panel3);color:var(--text);font-style:normal;font-weight:700;font-size:12.5px;display:grid;place-items:center}
+#listbody{display:grid;gap:12px}
+.kpis{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.kpis.three,#kpis{grid-template-columns:repeat(3,1fr)}
+.kpis:empty{display:none}
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:11px 12px;box-shadow:var(--shadow);min-width:0}
+.kpi .v{font-size:22px;font-weight:700;margin-top:2px;letter-spacing:-.02em;line-height:1.2}
+.kpi .v .of{color:var(--muted);font-weight:600}
+.kpi .s{color:var(--muted);font-size:12px;margin-top:2px;line-height:1.3}
+.kpis:not(.three):not(#kpis) .kpi:last-child:nth-child(odd){grid-column:1/-1}
+.kpis:not(#kpis) .kpi{padding:9px 12px 10px}.kpis:not(#kpis) .kpi .v{font-size:19px}
+.kpis.three .kpi{padding:10px}.kpis.three .kpi .v{font-size:17px}
+#kpis{gap:0;background:var(--panel);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);overflow:hidden}
+#kpis .kpi{border:0;border-radius:0;box-shadow:none;background:none;padding:9px 12px 10px}
+#kpis .kpi+.kpi{border-left:1px solid var(--line)}
+#kpis .kpi .v{font-size:20px}
+.rules{margin:-4px 2px 0;color:var(--muted);font-size:12px;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* ===== run list: filter, cards, table ===== */
+#listcard{background:none;border:0;padding:0;box-shadow:none}
+.filterbar{position:sticky;top:calc(var(--hd) + env(safe-area-inset-top));z-index:5;margin:0 -12px;padding:8px 12px;background:var(--veil);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
+.toolbar{display:flex;gap:8px;align-items:center;margin:2px 0 12px}
+.search{position:relative;flex:1 1 0;min-width:0}
+.search svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);width:18px;height:18px;color:var(--faint);pointer-events:none}
+.search input{padding-left:38px}
+.toolbar>select{flex:0 0 134px;width:134px}
+.cards{display:grid;gap:10px}
+.vcard{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px 14px 12px;cursor:pointer;-webkit-tap-highlight-color:transparent;box-shadow:var(--shadow)}
+.vcard:active{background:var(--panel2)}
+.vc-top{display:flex;gap:8px;align-items:flex-start}
+.vc-title{flex:1;min-width:0}
+.veh{font-weight:700;letter-spacing:-.01em}
+.vc-title .veh{font-size:16.5px;line-height:1.25}
+.vc-sub{font-size:13.5px;color:var(--muted);margin-top:2px}
+.vin{font-size:12.5px;color:var(--muted)}
+.star{background:none;border:0;color:var(--line2);font-size:22px;cursor:pointer;padding:0;line-height:1;width:40px;height:40px;margin:-8px -8px -8px 0;flex:none;border-radius:50%}
+.star.on{color:var(--star)}
+.vc-call{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:8px}
+.vc-call .reason{flex:1 1 180px;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
+.vc-bid{display:grid;grid-template-columns:repeat(3,1fr);margin-top:12px;background:var(--panel2);border-radius:12px;overflow:hidden}
+.vc-bid>div{padding:9px 6px 10px;text-align:center;min-width:0}
+.vc-bid>div+div{border-left:1px solid var(--line)}
+.vc-bid .v{font-size:18px;font-weight:700;margin-top:1px;letter-spacing:-.02em}
+.vc-bid .mx{background:var(--blue-bg)}
+.vc-bid .mx .l{color:var(--blue)}
+.vc-foot{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:10px}
+.vc-profit .v{font-size:15px;font-weight:700}
+.vc-sold{display:flex;align-items:center;gap:8px;font-size:12.5px;font-weight:600;color:var(--muted);cursor:text}
+.sold-in{width:112px!important;height:40px!important;text-align:right;border-radius:10px!important}
+.vcard.slim{padding:11px 14px;box-shadow:none;background:transparent}
+.vcard.slim .veh{font-size:15px;font-weight:600;color:var(--muted)}
+.vcard.slim .vc-foot{margin-top:6px}
+.tbl-wrap{display:none;overflow-x:auto;border:1px solid var(--line);border-radius:16px;background:var(--panel);box-shadow:var(--shadow)}
+table.t{width:100%;border-collapse:collapse;min-width:900px;font-size:14px}
+table.t th,table.t td{padding:11px 12px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}
+table.t th{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;font-weight:700;background:var(--panel2);position:sticky;top:0;z-index:1}
+table.t .num{text-align:right}
+table.t tbody tr{cursor:pointer}
+table.t tbody tr:hover{background:var(--panel2)}
+table.t tbody tr:last-child td{border-bottom:0}
+table.t td:nth-child(3){white-space:normal;min-width:190px;max-width:270px}
+table.t td:nth-child(11){white-space:normal}table.t td:nth-child(11) .badge{margin:1px 2px 1px 0}
+table.t .star{margin:-6px 0;font-size:19px}
+table.t .sold-in{width:96px!important;height:36px!important;font-size:14px}
+
+/* ===== car sheet ===== */
+.backdrop,.mback{display:none;position:fixed;inset:0;background:var(--scrim);z-index:30}
+.mback{z-index:40}
+.backdrop.on,.mback.on{display:block;animation:fade .18s ease-out}
+.sheet{display:none;position:fixed;z-index:31;left:0;right:0;bottom:0;top:calc(env(safe-area-inset-top) + 18px);background:var(--bg);border-radius:22px 22px 0 0;box-shadow:var(--pop);flex-direction:column;overflow:hidden}
+.sheet.on{display:flex;animation:up .24s cubic-bezier(.2,.8,.2,1)}
+@keyframes up{from{transform:translateY(40px);opacity:.4}to{transform:none;opacity:1}}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+.sh-head{flex:none;background:var(--panel);border-bottom:1px solid var(--line);padding:8px 8px 12px 16px;touch-action:none}
+.handle{width:38px;height:5px;border-radius:5px;background:var(--line2);margin:0 auto 8px}
+.sh-row{display:flex;align-items:flex-start;gap:4px}
+.sh-t{flex:1;min-width:0;padding-top:2px}
+.sh-t h2{font-size:20px;letter-spacing:-.02em;line-height:1.2;margin:0}
+.sh-head .star{margin:0;width:44px;height:44px;font-size:25px}
+.x{font-size:17px;background:var(--panel2)!important}
+.sh-body{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding:14px 12px 24px}
+.sh-body>*{margin:0 0 12px}
+.sh-body>*:last-child{margin-bottom:0}
+.sh-body>div:empty{display:none}
+#d-aibox .callout{background:var(--panel);border:1px solid var(--line)}
+.sh-body>.callout,#d-notes .callout:first-child,#d-aibox .callout,#d-lift .callout:first-child{margin-top:0}
+#d-lift .lift+.callout{margin-top:8px}
+.sh-foot{flex:none;display:grid;grid-template-columns:1fr 1.25fr;gap:10px;padding:10px 12px calc(10px + env(safe-area-inset-bottom));background:var(--panel);border-top:1px solid var(--line)}
+.sh-foot button.b{min-height:52px;font-size:16px;border-radius:14px}
+.sh-foot .done{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:14.5px;font-weight:600;min-height:52px}
+.vline{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.vline .reason{font-size:14px;flex:1 1 220px}
+.ladder{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.ladder>div{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:11px 8px 10px;text-align:center;min-width:0}
+.ladder>div.mx{background:var(--blue-bg);border-color:var(--blue-line)}
+.ladder>div.mx .l{color:var(--blue)}
+.ladder .v{font-size:23px;font-weight:700;margin-top:2px;letter-spacing:-.025em;line-height:1.15}
+.ladder .s{font-size:11.5px;color:var(--muted);margin-top:3px;line-height:1.3}
+.expect{font-size:13.5px;color:var(--muted);margin:10px 2px 0;line-height:1.5}
+.hero{display:grid;grid-template-columns:repeat(3,1fr);background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.hero>div{padding:11px 10px;min-width:0}
+.hero>div+div{border-left:1px solid var(--line)}
+.hero .v{font-size:18px;font-weight:700;margin-top:2px;letter-spacing:-.02em}
+.hero .s{font-size:11.5px;color:var(--muted);margin-top:1px}
+.meta{display:grid;gap:0;font-size:14px}
+.meta>div{display:flex;justify-content:space-between;gap:14px;padding:9px 0;border-bottom:1px solid var(--line)}
+.meta>div:last-child{border-bottom:0;padding-bottom:0}.meta>div:first-child{padding-top:0}
+.meta span:first-child{color:var(--muted);flex:none}
+.meta span:last-child{text-align:right;font-weight:500;overflow-wrap:anywhere}
+.lift{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:8px 10px;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px 14px}
+.lift .v{font-size:19px;font-weight:700;letter-spacing:-.02em}
+.lift .arr{color:var(--faint);font-size:18px}
+.lift>div:last-child{grid-column:1/-1;display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--line);padding-top:9px}
+.sec-l{font-size:15px;font-weight:700;margin:0 0 10px}
+.edits{display:grid;grid-template-columns:1fr 1fr;gap:10px;align-items:end}
+.edits label,.fgrid label,.settings label{display:flex;flex-direction:column;gap:5px;font-size:12.5px;color:var(--muted);font-weight:600;line-height:1.3;min-width:0}
+.edits .wide{grid-column:1/-1}
+.sh-grid{display:grid;gap:12px;align-items:start}
+.sheet .card{box-shadow:none}
+.brk{width:100%;border-collapse:collapse;font-size:14px}
+.brk td{padding:8px 0;border-bottom:1px solid var(--line)}
+.brk td:last-child{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap;padding-left:10px;vertical-align:top}
+.brk tr.tot td{font-weight:700;font-size:16px;padding:11px 0}
+.brk tr:last-child td{border-bottom:0}
+.rline{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line)}
+.rline .nm{flex:1;font-size:14px;min-width:0}
+.rline .nm small{color:var(--bad);font-weight:700;margin-left:6px;font-size:11px;text-transform:uppercase;letter-spacing:.04em}
+.rline .c{width:68px;text-align:right;font-variant-numeric:tabular-nums;font-weight:600}
+.step{display:flex;align-items:center;border:1px solid var(--line2);border-radius:10px;overflow:hidden;flex:none}
+.step button{width:40px;height:38px;border:0;background:var(--panel);color:var(--text);font-size:19px;cursor:pointer}
+.step button:active{background:var(--panel3)}
+.step span{width:28px;text-align:center;font-weight:700}
+.exits{width:100%;border-collapse:collapse;font-size:13.5px;margin-top:6px}
+.exits th{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;text-align:right;padding:4px 6px;font-weight:700}
+.exits th:first-child,.exits td:first-child{text-align:left}
+.exits td{padding:9px 6px;text-align:right;border-top:1px solid var(--line);font-variant-numeric:tabular-nums}
+.exits tr.use td{background:var(--good-bg)}
+.exits tr.use td:first-child{box-shadow:inset 3px 0 var(--good);font-weight:600}
+
+/* ===== live ===== */
+.budget{display:grid;gap:16px}
+.bbar{height:10px;border-radius:8px;background:var(--panel3);overflow:hidden;display:flex}
+.bbar span{display:block;height:100%}
+.legend{display:flex;gap:12px;flex-wrap:wrap;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+.list{display:grid;gap:10px}
+.live-row{display:grid;grid-template-columns:auto 1fr;gap:10px 12px;align-items:center;padding:14px;border:1px solid var(--line);border-radius:16px;background:var(--panel);box-shadow:var(--shadow)}
+.live-row .lot{font-size:17px;font-weight:700;color:var(--accent);text-align:center;background:var(--blue-bg);border-radius:12px;padding:6px 10px;min-width:58px;line-height:1.15}
+.live-row .lot small{display:block;font-size:9.5px;color:var(--blue);font-weight:700;letter-spacing:.06em}
+.live-row .veh{font-size:16px}
+.live-row .tags{margin-top:5px;display:flex;gap:5px;flex-wrap:wrap}
+.live-row .tags:empty{display:none}
+.lad-mini{grid-column:1/-1;display:grid;grid-template-columns:repeat(3,1fr);background:var(--panel2);border-radius:12px;overflow:hidden}
+.lad-mini>div{padding:8px 6px;text-align:center}
+.lad-mini>div+div{border-left:1px solid var(--line)}
+.lad-mini .v{font-weight:700;font-size:18px;letter-spacing:-.02em}
+.live-btns{grid-column:1/-1;display:grid;grid-template-columns:1fr 1.25fr;gap:8px}
+.live-btns button{min-height:50px!important;font-size:16px!important}
+.live-row.dec{grid-template-columns:auto 1fr auto;box-shadow:none}
+
+/* ===== garage ===== */
+.flip{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px;box-shadow:var(--shadow)}
+.flip-top{display:flex;gap:10px;align-items:flex-start}
+.flip-top .veh{font-size:16px}
+.flip-p{text-align:right;flex:none}
+.flip-p .v{font-size:19px;font-weight:700;letter-spacing:-.02em}
+.stages{display:flex;gap:6px;margin-top:12px;overflow-x:auto;scrollbar-width:none}
+.stages button{flex:1;border:1px solid var(--line2);background:var(--panel);color:var(--muted);border-radius:999px;height:36px;padding:0 8px;font-weight:600;font-size:13px;cursor:pointer;white-space:nowrap}
+.stages button.on{background:var(--blue-bg);border-color:var(--blue-line);color:var(--blue)}
+.fgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+.fgrid label:last-child{grid-column:1/-1}
+.flip-rm{text-align:right;margin-top:6px}
+.cal{width:100%;border-collapse:collapse;font-size:13.5px}
+.cal td,.cal th{padding:9px 6px;border-bottom:1px solid var(--line);text-align:right}
+.cal th{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;font-weight:700}
+.cal td:first-child,.cal th:first-child{text-align:left;padding-left:0}
+.cal tr:last-child td{border-bottom:0}
+
+/* ===== backtest ===== */
+.pair{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center;padding:13px 14px;border:1px solid var(--line);border-radius:16px;background:var(--panel);box-shadow:var(--shadow)}
+.pair>.veh-cell{grid-column:1/-1}
+.pair .sale .v{font-weight:700;font-size:16px}
+.pair .sale .s{font-size:12px;color:var(--muted)}
+.pair .arrow{color:var(--faint)}
+.pair>.num{text-align:left;font-weight:700}
+.pair>.num:last-child{grid-column:span 2;text-align:right}
+.headline{font-size:15.5px;line-height:1.55}
+
+/* ===== settings ===== */
+.rows{padding:4px 16px}
+.row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1px solid var(--line);min-height:60px}
+.row:last-child{border-bottom:0}
+.row .hint{margin:1px 0 0;font-size:13px}
+.row>div:first-child{flex:1;min-width:0}
+.row .seg{flex:none;overflow:visible}
+.row .seg button{height:36px}
+.sgroup{border-top:1px solid var(--line)}
+.sgroup:last-child{border-bottom:1px solid var(--line)}
+.sgroup>summary{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:50px;font-weight:600;font-size:15px}
+.sgroup>summary>span:first-child{flex:1;min-width:0}
+.sgroup>summary small{color:var(--muted);font-weight:500;font-size:12.5px;margin-right:6px;white-space:nowrap}
+.settings{display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:end}
+.sgroup .settings{padding:2px 0 16px}
+.settings .full{grid-column:1/-1}
+.book{width:100%;border-collapse:collapse}
+.book td{padding:5px 8px 5px 0;border-bottom:1px solid var(--line)}
+.book td:last-child{padding-right:0}
+.book tr:first-child td{padding-bottom:8px}
+.book input[type=number]{width:104px}
+.book input[type=checkbox]{width:22px;height:22px;accent-color:var(--accent)}
+.tline{display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid var(--line)}
+.tline:last-child{border-bottom:0;padding-bottom:0}
+.tline .nm{flex:1;min-width:0;font-size:14.5px;font-weight:600}
+.tline small{display:block;color:var(--muted);font-weight:500;font-size:12.5px;margin-top:2px;line-height:1.4}
+
+/* ===== modal, toast, drag ===== */
+.modal{display:none;position:fixed;z-index:41;left:50%;top:max(12vh,calc(env(safe-area-inset-top) + 24px));transform:translateX(-50%);width:min(430px,calc(100vw - 24px));max-height:80vh;overflow-y:auto;background:var(--panel);border-radius:22px;padding:20px;box-shadow:var(--pop)}
+.modal.on{display:block;animation:fade .18s ease-out}
+.modal h2{font-size:19px;letter-spacing:-.02em}
+.modal input[type=number]#m-h{font-size:28px;font-weight:700;height:60px;text-align:center;letter-spacing:-.02em}
+.modal .btns button{min-height:50px;font-size:16px}
+.toast{position:fixed;bottom:calc(var(--nav) + 16px + env(safe-area-inset-bottom));left:50%;transform:translate(-50%,8px);max-width:calc(100vw - 24px);background:var(--text);color:var(--bg);padding:11px 16px;border-radius:14px;font-weight:600;font-size:14px;opacity:0;transition:.22s;pointer-events:none;z-index:50;text-align:center;box-shadow:var(--pop)}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+.dropveil{display:none;position:fixed;inset:0;z-index:60;background:var(--veil);align-items:center;justify-content:center;padding:24px}
+.dropveil.on{display:flex}.dropveil div{border:2px dashed var(--accent);border-radius:24px;padding:48px 32px;font-size:20px;font-weight:700;color:var(--accent);text-align:center;background:var(--blue-bg)}
+#sample,#demoFlips,#btdemo{display:none!important}   /* real data only */
+
+/* ===== small phones ===== */
+@media(max-width:359px){
+  .vc-bid .v{font-size:16px}.ladder .v{font-size:19px}.kpi .v{font-size:19px}
+  .toolbar>select{flex-basis:112px;width:112px}
+}
+/* ===== wider screens ===== */
+@media(min-width:560px){
+  .sync:not(.on){display:flex}
+  .edits{grid-template-columns:repeat(3,1fr)}
+  .fgrid{grid-template-columns:repeat(3,1fr)}
+  .settings{grid-template-columns:repeat(3,1fr)}
+  .btns{display:flex;flex-wrap:wrap}
+  .kpis{grid-template-columns:repeat(3,1fr)}
+  .kpis:not(.three):not(#kpis) .kpi:last-child:nth-child(odd){grid-column:auto}
+}
+@media(min-width:900px){
+  :root{--hd:60px}
+  html,body{font-size:14.5px}
+  header{padding:0 20px}
+  .topnav{display:flex}
+  .botnav{display:none}
+  .signout{display:block}
+  main{padding:22px 24px 64px}
+  main>section{gap:16px}
+  .toast{bottom:28px}
+  .cards{display:none}.tbl-wrap{display:block}
+  #listcard{background:var(--panel);border:1px solid var(--line);padding:16px;box-shadow:var(--shadow)}
+  #listcard .tbl-wrap{box-shadow:none}
+  .filterbar{position:static;margin:0;padding:0;background:none;backdrop-filter:none;-webkit-backdrop-filter:none}
+  #listcard{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center}
+  #listcard>.tbl-wrap,#listcard>.copybox,#listcard>.cards{grid-column:1/-1}
+  .toolbar{margin:0}
+  .search{flex:0 0 250px}
+  .toolbar>select{flex:0 0 190px;width:190px}
+  .kpis{grid-template-columns:repeat(5,1fr)}
+  #kpis,.kpis.three{grid-template-columns:repeat(3,1fr)}
+  .kpis:not(#kpis) .kpi,.kpi{padding:14px 16px}.kpis:not(#kpis) .kpi .v,.kpi .v{font-size:24px}
+  #kpis .kpi{padding:12px 16px}#kpis .kpi .v{font-size:22px}
+  .notices .callout{display:block;cursor:auto}
+  table.t th,table.t td{padding:11px 8px}
+  table.t td:first-child,table.t th:first-child{padding-left:12px;padding-right:0}
+  table.t td:nth-child(3){min-width:190px}
+  .grid2{grid-template-columns:1fr 1fr}
+  .budget{grid-template-columns:1fr 1.6fr;align-items:center}
+  .settings{grid-template-columns:repeat(4,1fr)}
+  .fgrid{grid-template-columns:repeat(6,1fr)}.fgrid label:last-child{grid-column:auto}
+  .edits{grid-template-columns:repeat(5,1fr)}
+  #tab-settings,#tab-live{max-width:860px;margin:0 auto;width:100%}
+  .live-row{grid-template-columns:auto 1fr 300px 230px}
+  .lad-mini,.live-btns{grid-column:auto}
+  .live-row.dec{grid-template-columns:auto 1fr auto}
+  .pair{grid-template-columns:1.5fr 1fr auto 1fr .9fr .9fr;gap:14px}
+  .pair>.veh-cell,.pair>.num:last-child{grid-column:auto}
+  .pair>.num{text-align:right}
+  .sheet{left:50%;right:auto;top:4vh;bottom:auto;transform:translateX(-50%);width:min(960px,94vw);max-height:92vh;border-radius:22px}
+  .sheet.on{animation:fade .18s ease-out}
+  .handle{display:none}
+  .sh-head{padding:16px 14px 14px 22px;touch-action:auto}
+  .sh-body{padding:18px 22px 24px}
+  .sh-foot{padding:12px 22px;grid-template-columns:1fr 1fr}
+  .sh-grid{grid-template-columns:1fr 1fr}
+  .ladder .v{font-size:28px}
+  .lift{grid-template-columns:1fr auto 1fr 1fr}
+  .lift>div:last-child{grid-column:auto;display:block;border:0;padding:0;text-align:right}
+  .modal{top:50%;transform:translate(-50%,-50%)}
+}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 16l5-5 4 4 7-8M20 7h-5M20 7v5"/></svg></div>
+  <h1>Flip Finder</h1>
+  <nav class="topnav" id="topnav" aria-label="Sections">
+    <button data-tab="list" class="on">Run List</button><button data-tab="live">Live Auction</button><button data-tab="garage">Garage</button><button data-tab="backtest">Backtest</button><button data-tab="settings">Settings</button>
+  </nav>
+  <div class="hdr-r"><div class="sync" id="sync"><i></i><span>This device</span></div><a class="signout" href="/api/logout" data-site hidden>Sign out</a><button class="ic-btn" id="themeBtn" aria-label="Switch between light and dark"></button></div>
+</header>
+
+<main>
+<!-- ============ RUN LIST ============ -->
+<section id="tab-list" class="on">
+  <div class="listbar">
+    <div class="chips" id="listchips"></div>
+    <label class="dropzone" id="dropzone"><input type="file" id="file2" multiple accept=".csv,.txt,text/csv,text/plain,text/comma-separated-values,application/vnd.ms-excel"><div class="dz-ic"><svg viewBox="0 0 24 24"><path d="M12 16V4M7 9l5-5 5 5M5 20h14"/></svg></div><b id="dzT">Drop the Manheim export here</b><span id="dzS">or tap to choose the file</span></label>
+  </div>
+  <ol class="steps" id="steps">
+    <li><i>1</i><span>Export the run list from Manheim. The Export.csv file loads as it is.</span></li>
+    <li><i>2</i><span>Drop it above, or tap to pick it. Several lists can be loaded together.</span></li>
+    <li><i>3</i><span>Every car gets a safe bid, a max bid and a walk-away number.</span></li>
+  </ol>
+  <div id="listbody">
+    <section class="kpis" id="kpis"></section>
+    <p class="rules" id="strat"></p>
+    <div class="notices"><div id="liftcal"></div><div id="soldcal"></div><div id="aistat"></div></div>
+    <div class="card" id="listcard">
+      <div class="filterbar"><div class="seg" id="filter" role="tablist" aria-label="Filter cars">
+        <button data-f="all" class="on">All<span class="n" id="n-all"></span></button><button data-f="buy">Buy<span class="n" id="n-buy"></span></button><button data-f="maybe">Maybe<span class="n" id="n-maybe"></span></button><button data-f="star" aria-label="Starred">★<span class="n" id="n-star"></span></button><button data-f="pass">Pass<span class="n" id="n-pass"></span></button><button data-f="ai" id="f-ai">AI flags<span class="n" id="n-ai"></span></button>
+      </div></div>
+      <div class="toolbar">
+        <div class="search"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input type="search" id="search" placeholder="Search lot, make or model" aria-label="Search"></div>
+        <select id="sortsel" aria-label="Sort">
+          <option value="rank">Best first</option><option value="profit">Most profit</option><option value="ppd">Profit per day</option><option value="odds">Best odds</option><option value="down">Safest (stress test)</option><option value="lift">Biggest grade lift</option><option value="lot">Lot / run order</option>
+        </select>
+        <label class="filebtn primary-file" title="Upload a run list">Upload list<input type="file" id="file3" multiple accept=".csv,.txt,text/csv,text/plain,text/comma-separated-values,application/vnd.ms-excel"></label>
+        <button class="ic-btn line" id="exportList" title="Export to spreadsheet" aria-label="Export to spreadsheet"><svg viewBox="0 0 24 24"><path d="M12 4v12M7 11l5 5 5-5M5 20h14"/></svg></button>
+      </div>
+      <div class="cards" id="cards"></div>
+      <div class="tbl-wrap"><table class="t"><thead><tr id="thead"></tr></thead><tbody id="tbody"></tbody></table></div>
+      <div class="copybox" id="resbox"><textarea id="restext" readonly style="min-height:110px"></textarea></div>
+    </div>
+  </div>
+  <details class="card quiet" id="loadbox">
+    <summary><h2>Paste a list instead <span class="mini" id="loadmini" style="display:none"></span></h2><span class="chev"></span></summary>
+    <p class="hint">Paste or upload the auction list. A Manheim export file (Export.csv) loads as it is. Best columns: <b>Auction, Lane, Run (or Lot / Work Order), Year, Make, Model, CR Grade, Adj MMR, MMR @ 4.0, Est Bid, Announcements</b>. The real <b>MMR @ 4.0</b> from the MMR tool matters most: without it the sell value is a guess. VIN is optional. Column order doesn't matter, and the app turns announcements into a repair estimate automatically.</p>
+    <textarea id="input" spellcheck="false" placeholder="Lot,VIN,Model,Odometer,CR Grade,Adj MMR,MMR @ 4.0,Est Bid,Recon Est,Announcements"></textarea>
+    <div class="btns">
+      <button class="b primary" id="analyze">Run the model</button>
+      <button class="b" id="sample">Load sample list</button>
+      <label class="filebtn">Upload CSV<input type="file" id="file" multiple accept=".csv,.txt,text/csv,text/plain"></label>
+      <button class="b" id="tmpl">Blank template</button>
+    </div>
+    <div class="copybox" id="tmplbox"><p class="hint" style="margin:8px 0 6px">Copy into Excel or Google Sheets, fill it in, save as CSV, then upload it.</p><textarea id="tmpltext" readonly style="min-height:80px"></textarea><div class="btns"><button class="b" id="copytmpl">Copy template</button></div></div>
+  </details>
+  <details class="card quiet" id="howbox"><summary><h2>How a car is scored</h2><span class="chev"></span></summary><p class="hint" style="margin:0">Repair cost is priced line by line from the announcements, using your price book (Settings). Each repainted panel lowers the grade the car can realistically reach, since AutoGrade deducts for previous repairs. The sell value is MMR at that reachable grade, using your “MMR @ 4.0” number when you have one or the % per grade point when you don't, then lowered for market drift over the days held. Costs include buyer fee, transport, recon, a surprise reserve, the exit's selling costs, holding cost and floor-plan interest. <b>Max bid</b> hits your target on paper; <b>walk-away</b> hits your floor; <b>safe bid</b> is the highest bid that still makes your floor in 7 of 10 replays. The stress test re-runs each car with recon over budget and a lower grade. <b>Odds</b> replays each flip 300 times with the things that go wrong (grade lands short, recon runs over, a no-sale, a soft sale price, a hidden problem) and shows how often it still makes your profit floor. A car that clears the target on paper but has under 50% odds is a Maybe, not a Buy. Tap any car to adjust its numbers.</p></details>
+</section>
+
+<!-- ============ LIVE ============ -->
+<section id="tab-live">
+  <div class="pagehead"><h2>Live Auction</h2><p>Your plan and starred cars, in lot order.</p></div>
+  <div class="card">
+    <div class="budget">
+      <div>
+        <label class="fl" for="budget">Auction-day budget</label>
+        <div class="money-in"><span>$</span><input type="number" id="budget" step="5000" inputmode="numeric"></div>
+        <p class="hint" style="margin:6px 0 0">The cash you can put into cars today, all-in including fees and recon.</p>
+        <label class="toggle" style="margin-top:12px"><input type="checkbox" id="incMaybe"><span class="sw"></span>Let the plan include Maybes</label>
+      </div>
+      <div>
+        <div class="kpis three" id="livekpis"></div>
+        <div class="bbar" id="bbar" style="margin-top:12px"></div>
+        <div class="legend" style="margin-top:8px"><span><i style="background:var(--good)"></i>Won (all-in)</span><span><i style="background:var(--accent)"></i>Planned</span><span><i style="background:var(--panel3)"></i>Unused</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="card flat">
+    <div class="cardhead"><h2>Up next</h2><button class="b sm" id="replan">Reset today</button></div>
+    <div class="list" id="upnext"></div>
+  </div>
+  <details class="card" id="decided"><summary><h2>Decided today <span class="mini" id="decmini"></span></h2><span class="chev"></span></summary><div class="list" id="declist"></div></details>
+</section>
+
+<!-- ============ GARAGE ============ -->
+<section id="tab-garage">
+  <div class="pagehead"><h2>Garage</h2><p>Cars you won, from purchase to sale. Shared with everyone who signs in.</p></div>
+  <section class="kpis" id="garkpis"></section>
+  <div class="card flat">
+    <div class="cardhead"><div class="seg" id="gfilter"><button data-g="open" class="on">In progress</button><button data-g="sold">Sold</button><button data-g="all">All</button></div>
+      <div class="acts"><button class="b sm" id="exportFlips">Export</button><button class="b sm primary" id="addFlip">Add car</button></div>
+    </div>
+    <div class="list" id="flips"></div>
+  </div>
+  <div class="card">
+    <h2>What the results say</h2>
+    <p class="hint">Once 3 or more cars are sold, the app compares what actually happened with what the model predicted and suggests corrections. One tap applies them to every future score.</p>
+    <div id="calib"></div>
+    <div class="btns"><button class="b" id="demoFlips">Load demo history</button><button class="b ghost danger" id="clearFlips">Clear all garage data</button></div>
+  </div>
+</section>
+
+
+<!-- ============ BACKTEST ============ -->
+<section id="tab-backtest">
+  <div class="pagehead"><h2>Backtest</h2><p>Who already ran this play at this auction, and did it pay?</p></div>
+  <div class="card" id="soldlog"></div>
+  <details class="card" id="btload">
+    <summary><h2>Load sales history <span class="mini" id="btmini"></span></h2><span class="chev"></span></summary>
+    <p class="hint">Load the auction's sales history. The app finds cars that sold twice, bought rough and re-sold, and runs each pair through the same cost model. Recon isn't known, so each pair shows the most the buyer could have spent and still broken even, plus estimated profit using your recon $ per grade point.</p>
+    <p class="hint">One row per sale: <b>Sale Date, Sale Price, Grade, Odometer</b>, plus <b>VIN</b> if available. Add an <b>Auction</b> column (Dallas or DFW) to compare the two lanes. Without VINs it matches on Year / Make / Model / Trim / Color and mileage.</p>
+    <textarea id="btinput" spellcheck="false" placeholder="VIN,Sale Date,Sale Price,Grade,Odometer,Year,Make,Model,Trim,Color"></textarea>
+    <div class="btns">
+      <button class="b primary" id="btrun">Run backtest</button>
+      <button class="b" id="btdemo">Load demo sales</button>
+      <label class="filebtn">Upload CSV<input type="file" id="btfile" accept=".csv,.txt,text/csv,text/plain"></label>
+      <button class="b" id="bttmpl">Blank template</button>
+    </div>
+    <div class="copybox" id="bttmplbox"><textarea id="bttmpltext" readonly style="min-height:60px"></textarea><div class="btns"><button class="b" id="btcopytmpl">Copy template</button></div></div>
+    <div class="settings" style="margin-top:14px">
+      <label>Assumed recon $ per grade point<input type="number" id="bt_reconPt" step="50" inputmode="numeric"></label>
+      <label>Max days between sales<input type="number" id="bt_maxDays" step="5" inputmode="numeric"></label>
+      <label>Max miles between sales (no-VIN match)<input type="number" id="bt_maxMiles" step="100" inputmode="numeric"></label>
+      <label>Min days between sales<input type="number" id="bt_minDays" step="1" inputmode="numeric"></label>
+    </div>
+  </details>
+  <section class="kpis" id="btkpis"></section>
+  <div class="card" id="btheadline"></div>
+  <div class="grid2" id="btgrid">
+    <div class="card"><h2>By buy grade</h2><p class="hint">Where the money was made, grouped by the grade the car was bought at.</p><div class="scrollx" id="btbuckets"></div></div>
+    <div class="card"><h2>By model</h2><p class="hint">Models with 2+ repeat sales, best first.</p><div class="scrollx" id="btmodels"></div></div>
+  </div>
+  <div class="card" id="btlanecard" style="display:none"><h2>Lane to lane</h2><p class="hint">Where each flip was bought and where it was re-sold. Shows whether carrying a car between Manheim Dallas and Dallas-Fort Worth paid better than re-running it in the same lane.</p><div class="scrollx" id="btlanes"></div></div>
+  <div class="card" id="btcalcard"><h2>Calibrate the model from the market</h2><div id="btcal"></div></div>
+  <div class="card flat" id="btpaircard">
+    <div class="cardhead"><div class="seg" id="btfilter"><button data-b="box" class="on">Your buy box</button><button data-b="recon">Reconditioned</button><button data-b="all">All</button></div>
+      <button class="ic-btn line" id="btexport" title="Export" aria-label="Export"><svg viewBox="0 0 24 24"><path d="M12 4v12M7 11l5 5 5-5M5 20h14"/></svg></button></div>
+    <div class="list" id="btpairs"></div>
+  </div>
+</section>
+
+<!-- ============ SETTINGS ============ -->
+<section id="tab-settings">
+  <div class="pagehead"><h2>Settings</h2><p>Every car re-scores as soon as a number changes.</p></div>
+  <div class="card rows">
+    <div class="row"><div><b>Appearance</b><div class="hint">Light or dark. Saved on this device.</div></div><div class="seg" id="themeSeg"><button data-th="light">Light</button><button data-th="dark">Dark</button></div></div>
+    <div class="row" data-site hidden><div><b>Shared data</b><div class="hint" id="syncNote">Checking the shared log…</div></div></div>
+    <div class="row" data-site hidden><div><b>Account</b><div class="hint">You stay signed in on this device for 30 days.</div></div><a class="b sm" href="/api/logout">Sign out</a></div>
+  </div>
+  <div class="card">
+    <h2>Changes the model made on its own</h2>
+    <p class="hint">Each change is small, based on real logged results, and can be undone here.</p>
+    <div id="tunelog"></div>
+  </div>
+  <div class="card" id="assumcard">
+    <h2>Model assumptions</h2>
+    <p class="hint">Tap a group to open it.</p>
+    <div id="settingsForm"></div>
+    <details class="inl"><summary>About the re-run and odds numbers</summary><p class="hint" style="margin:8px 0 0">A re-run is assumed to sell at 98% of MMR with a 60% chance each run, and every car gets odds. These are estimates until real sales are loaded. To get the old numbers back, set “Re-run sells at” and “Chance it sells each run” to 100 and the no-sale fee to 0. The Garage and the Run List measure these numbers from real results and offer to apply them.</p></details>
+  </div>
+  <details class="card">
+    <summary><h2>Buyer fee table</h2><span class="chev"></span></summary>
+    <p class="hint">Used when Buyer fee is set to the tiered schedule. Manheim doesn't publish one national buyer fee schedule; each location sets its own. These rows are placeholders. Copy the real numbers from the Manheim Dallas and Dallas-Fort Worth fee sheets (they are in the Manheim account under each location). If the two lanes differ, enter the higher one.</p>
+    <table class="book" id="tiers"></table>
+    <div class="btns"><button class="b" id="resetTiers">Reset fee table</button><button class="b" id="presetDFW">Local transport: $150 each way</button></div>
+    <p class="hint" style="margin:10px 0 0">Manheim Dallas (W Kiest Blvd) and Manheim Dallas-Fort Worth (Euless) are about 20 miles apart, so a local shuttle or driving the car costs far less than a long haul. Transport is set to $150 per trip (in and out) for local cars; put in what you actually pay.</p>
+  </details>
+  <details class="card">
+    <summary><h2>Recon price book</h2><span class="chev"></span></summary>
+    <p class="hint">What each repair costs at your shop. “Paint” items count as repainted panels, which lowers the grade a car can reach after repair.</p>
+    <table class="book" id="book"></table>
+    <div class="btns"><button class="b" id="resetBook">Reset price book</button></div>
+  </details>
+  <div class="card">
+    <h2>Reset</h2>
+    <p class="hint">Resetting assumptions puts every number back to its default. Clearing cars removes the lists, edits and garage on this device only.</p>
+    <div class="btns"><button class="b" id="resetSettings">Reset all assumptions</button><button class="b danger" id="clearAll">Clear all cars on this device</button></div>
+  </div>
+</section>
+</main>
+
+<nav class="botnav" id="botnav" aria-label="Sections">
+  <button data-tab="list" class="on"><span class="ic"><svg viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg></span>Run List</button>
+  <button data-tab="live"><span class="ic"><svg viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg><span class="cnt" id="livecnt" style="display:none"></span></span>Live</button>
+  <button data-tab="garage"><span class="ic"><svg viewBox="0 0 24 24"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.4-.6-.6-2.4z"/></svg></span>Garage</button>
+  <button data-tab="backtest"><span class="ic"><svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/></svg></span>Backtest</button>
+  <button data-tab="settings"><span class="ic"><svg viewBox="0 0 24 24"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg></span>Settings</button>
+</nav>
+
+<div class="backdrop" id="backdrop"></div>
+<div class="sheet" id="sheet" role="dialog" aria-modal="true"></div>
+<div class="mback" id="mback"></div>
+<div class="modal" id="modal" role="dialog" aria-modal="true"></div>
+<div class="toast" id="toast" role="status"></div>
+<div class="dropveil" id="dropveil"><div>Drop the run list to load it</div></div>
+
+<script>
+/* ================= VIN ================= */
+const TRANSLIT={A:1,B:2,C:3,D:4,E:5,F:6,G:7,H:8,J:1,K:2,L:3,M:4,N:5,P:7,R:9,S:2,T:3,U:4,V:5,W:6,X:7,Y:8,Z:9};
+const WEIGHTS=[8,7,6,5,4,3,2,10,0,9,8,7,6,5,4,3,2];
+function charVal(c){return /\d/.test(c)?+c:TRANSLIT[c];}
+function checkDigit(vin){let s=0;for(let i=0;i<17;i++){const v=charVal(vin[i]);if(v===undefined)return null;s+=v*WEIGHTS[i];}const r=s%11;return r===10?'X':String(r);}
+function withCheck(v){const t=v.slice(0,8)+'0'+v.slice(9);return t.slice(0,8)+checkDigit(t)+t.slice(9);}
+const YEAR_CODES='ABCDEFGHJKLMNPRSTVWXY123456789';
+function decodeYear(vin){const idx=YEAR_CODES.indexOf(vin[9]);if(idx<0)return null;let y=1980+idx;if(/[A-Z]/.test(vin[6]))y+=30;if(y>new Date().getFullYear()+1)y-=30;return y;}
+const WMI={
+ '1FT':['Ford','truck','truck'],'1FD':['Ford','truck','truck'],'1FM':['Ford','suv','mid'],'1FA':['Ford','car','mid'],'3FA':['Ford','car','mid'],'3FM':['Ford','suv','mid'],
+ '1G1':['Chevrolet','car','mid'],'2G1':['Chevrolet','car','mid'],'1GN':['Chevrolet','suv','mid'],'3GN':['Chevrolet','suv','mid'],'1GC':['Chevrolet','truck','truck'],'3GC':['Chevrolet','truck','truck'],'2GC':['Chevrolet','truck','truck'],
+ '1GT':['GMC','truck','truck'],'3GT':['GMC','truck','truck'],'1GK':['GMC','suv','mid'],'1GY':['Cadillac','suv','lux'],
+ '1C6':['Ram','truck','truck'],'3C6':['Ram','truck','truck'],'3C7':['Ram','truck','truck'],'1C4':['Jeep','suv','mid'],'1J4':['Jeep','suv','mid'],'2C3':['Dodge','car','mid'],'1C3':['Chrysler','car','low'],'2C4':['Chrysler','suv','low'],
+ '1HG':['Honda','car','keep'],'2HG':['Honda','car','keep'],'19X':['Honda','car','keep'],'JHM':['Honda','car','keep'],'5FN':['Honda','suv','keep'],'5J6':['Honda','suv','keep'],'7FA':['Honda','suv','keep'],
+ '4T1':['Toyota','car','keep'],'2T1':['Toyota','car','keep'],'JTD':['Toyota','car','keep'],'4T3':['Toyota','suv','keep'],'2T3':['Toyota','suv','keep'],'JTM':['Toyota','suv','keep'],'JTE':['Toyota','suv','keep'],'5TD':['Toyota','suv','keep'],'5TF':['Toyota','truck','truck'],'3TM':['Toyota','truck','truck'],'3TY':['Toyota','truck','truck'],
+ '2T2':['Lexus','suv','lux'],'JTH':['Lexus','car','lux'],'JTJ':['Lexus','suv','lux'],'58A':['Lexus','car','lux'],
+ '1N4':['Nissan','car','low'],'3N1':['Nissan','car','low'],'JN1':['Nissan','car','low'],'5N1':['Nissan','suv','low'],'JN8':['Nissan','suv','low'],'1N6':['Nissan','truck','mid'],
+ 'KMH':['Hyundai','car','low'],'5NP':['Hyundai','car','low'],'KM8':['Hyundai','suv','low'],'5NM':['Hyundai','suv','low'],
+ 'KNA':['Kia','car','low'],'3KP':['Kia','car','low'],'KND':['Kia','suv','low'],'5XY':['Kia','suv','low'],
+ 'JF1':['Subaru','car','keep'],'JF2':['Subaru','suv','keep'],'4S4':['Subaru','suv','keep'],'JM1':['Mazda','car','mid'],'JM3':['Mazda','suv','mid'],
+ '3VW':['Volkswagen','car','mid'],'1VW':['Volkswagen','car','mid'],'WVW':['Volkswagen','car','mid'],'1V2':['Volkswagen','suv','mid'],
+ 'WBA':['BMW','car','lux'],'5UX':['BMW','suv','lux'],'WDD':['Mercedes-Benz','car','lux'],'W1K':['Mercedes-Benz','car','lux'],'4JG':['Mercedes-Benz','suv','lux'],'W1N':['Mercedes-Benz','suv','lux'],
+ 'WAU':['Audi','car','lux'],'WA1':['Audi','suv','lux'],'1LN':['Lincoln','car','lux'],'5LM':['Lincoln','suv','lux'],'YV1':['Volvo','car','lux'],'YV4':['Volvo','suv','lux'],'SAL':['Land Rover','suv','lux'],
+ '5YJ':['Tesla','car','ev'],'7SA':['Tesla','suv','ev'],'7G2':['Tesla','truck','ev']
+};
+function validateVin(raw){
+  const vin=(raw||'').toUpperCase().replace(/[^A-Z0-9]/g,'');
+  if(vin.length!==17)return {vin,ok:false,err:`${vin.length} characters (needs 17)`};
+  if(/[IOQ]/.test(vin))return {vin,ok:false,err:'Contains I, O or Q (not allowed in VINs)'};
+  if(checkDigit(vin)!==vin[8])return {vin,ok:false,err:'Check digit fails (likely a typo)'};
+  return {vin,ok:true};
+}
+const MAKE_CLS={};for(const k in WMI)MAKE_CLS[WMI[k][0].toLowerCase()]=WMI[k][2];
+function guessType(model){const m=(model||'').toLowerCase();
+  if(/f-?1[05]0|f-?250|f-?350|silverado|sierra|\bram\b|1500|2500|tundra|tacoma|colorado|canyon|ranger|frontier|titan|ridgeline|gladiator|maverick|santa cruz/.test(m))return 'truck';
+  if(/cr-?v|rav4|explorer|escape|expedition|bronco|edge|tahoe|suburban|equinox|traverse|blazer|trailblazer|pilot|passport|hr-?v|highlander|4runner|sequoia|sorento|sportage|telluride|seltos|tucson|santa fe|palisade|kona|rogue|murano|pathfinder|armada|cherokee|wrangler|compass|durango|forester|outback|ascent|crosstrek|cx-|acadia|terrain|yukon|escalade|xt[456]|q[3578]|x[1357]|gl[abcs]|rx|nx|gx|atlas|tiguan|enclave|encore|envision|journey|pacifica|odyssey|sienna|carnival/.test(m))return 'suv';
+  return 'car';}
+function lotKey(c){const m=String(c.lot??'').match(/^(\d+)\D+(\d+)$/);if(m)return +m[1]*100000+ +m[2];return isNaN(+c.lot)?c.lot:+c.lot;}
+function carKey(raw,i){const v=(raw.vin||'').toUpperCase().replace(/[^A-Z0-9]/g,'');if(v.length===17)return v;return 'LOT-'+String(raw.lot||raw.wo||('row'+i)).replace(/[^A-Za-z0-9-]/g,'');}
+function decodeVin(vin){const w=WMI[vin.slice(0,3)];return {year:decodeYear(vin),make:w?w[0]:null,type:w?w[1]:'car',cls:w?w[2]:'mid'};}
+const NEW_PRICE={car:28000,suv:36000,truck:54000},LUX_MULT={lux:1.55,ev:1.45},KEEP={truck:.945,keep:.955,mid:.93,low:.915,lux:.91,ev:.895};
+function roughMMR(d,miles){
+  if(!d.year)return null;const now=new Date();const age=Math.max(.3,now.getFullYear()+now.getMonth()/12-(d.year-.25));
+  let v=NEW_PRICE[d.type]*(LUX_MULT[d.cls]||1)*.82*Math.pow(KEEP[d.cls]||.93,Math.max(0,age-1));
+  if(miles!=null){const adj=(12500*age-miles)*v*.0000045;const cap=v*.25;v+=Math.max(-cap,Math.min(cap,adj));}
+  return Math.max(1500,Math.round(v*.84/50)*50);
+}
+
+/* ================= Defaults ================= */
+const DEFAULT_SETTINGS={
+  maxGrade:2.5,sellGrade:4.0,cap:2000,minP:750,target:1500,aiUse:'yes',autoTune:'yes',
+  liftPct:9,panelPenalty:0.2,hammerPct:92,driftWk:0.3,
+  exitMode:'auction',auctionDays:21,retailPct:112,retailPrep:400,retailCost:600,retailDays:45,dealerPct:96,dealerDays:10,
+  feeMode:'tiered',feeVal:500,tIn:150,tOut:150,sellFee:300,doc:100,perDay:10,apr:9,reserve:150,
+  reconMult:1,reconPt:750,overrun:25,shortGrade:3.5,
+  mmrKind:'adj',baseGrade:3.2,rev:5,
+  sellPct:98,sellThru:60,rerunDays:7,noSaleFee:50,onlineFee:0,psi:0,
+  gradeSd:0.3,reconSd:25,priceSd:4,lemonPct:5,lemonCost:1500,
+  liftSd:2.5,rerunCut:1,fpFee:0,conf:70,needSell:'yes',
+  tiers:[[1000,225],[3000,350],[5000,450],[7500,525],[10000,600],[15000,700],[20000,800],[30000,925],[40000,1050],[1e9,1200]],
+  flags:'frame, structural, flood, salvage, rebuilt, TMU, odometer, airbag, buyback, fire, hail, engine noise, transmission, does not run'
+};
+// body:true = repaint / panel repair (AutoGrade deducts for previous repairs per panel)
+const DEFAULT_BOOK=[
+  {id:'tire',label:'Tire (each)',cost:140,body:false},
+  {id:'pdr',label:'Dent – PDR (per panel)',cost:125,body:false},
+  {id:'buff',label:'Buff / scratch correction',cost:175,body:false},
+  {id:'panel',label:'Body + paint panel',cost:450,body:true},
+  {id:'bumper',label:'Bumper refinish',cost:375,body:true},
+  {id:'bumperR',label:'Bumper cover replace',cost:650,body:true},
+  {id:'windshield',label:'Windshield replace',cost:350,body:false},
+  {id:'chip',label:'Windshield chip repair',cost:60,body:false},
+  {id:'glass',label:'Side / rear glass',cost:225,body:false},
+  {id:'wheel',label:'Wheel curb repair (each)',cost:100,body:false},
+  {id:'interior',label:'Interior repair (seat / stain)',cost:250,body:false},
+  {id:'odor',label:'Odor / ozone',cost:125,body:false},
+  {id:'brakes',label:'Brakes (per axle)',cost:250,body:false},
+  {id:'cel',label:'Check-engine diag + fix',cost:450,body:false},
+  {id:'key',label:'Extra key / fob',cost:200,body:false},
+  {id:'light',label:'Headlight / taillight',cost:180,body:false},
+  {id:'mech',label:'Misc. mechanical',cost:500,body:false},
+  {id:'detail',label:'Full detail',cost:175,body:false}
+];
+
+/* ================= Announcement parser → recon lines ================= */
+function wordNum(s){const m={one:1,two:2,three:3,four:4,five:5,six:6,both:2,all:4,multiple:3,several:3};const n=parseInt(s,10);return isNaN(n)?(m[s]||null):n;}
+function parseRecon(text){
+  const t=(text||'').toLowerCase();const L={};const add=(id,q)=>{L[id]=Math.max(L[id]||0,q);};
+  if(!t.trim())return {lines:{detail:1},parsed:false};
+  let m;
+  if((m=t.match(/(\d|one|two|three|four|both|all)\s*(?:worn\s*)?tires?/)))add('tire',wordNum(m[1])||2);
+  else if(/tires?/.test(t))add('tire',/worn|bald|3\/32|2\/32|replace/.test(t)?4:2);
+  if(/(dents?|dings?)/.test(t)){const k=t.match(/(multiple|several|\d)\s*(?:dents|dings)/);add('pdr',k?Math.min(6,wordNum(k[1])||3):(/dents|dings/.test(t)?2:1));}
+  if((m=t.match(/(?:paint|refinish)\s*(\d|one|two|three|four)\s*panels?/))||(m=t.match(/(\d|one|two|three|four)\s*panels?\s*(?:need\s*)?paint/)))add('panel',wordNum(m[1])||1);
+  if(/clear ?coat|peel|fade/.test(t))add('panel',(t.match(/hood|roof|trunk/g)||[1]).length);
+  if(/(quarter|fender|door|hood|roof)\s*(damage|dent|crease)|panel damage|rear quarter/.test(t))add('panel',1);
+  if(/bumper/.test(t))/(crack|torn|missing|broken|replace)/.test(t)?add('bumperR',1):add('bumper',1);
+  if(/windshield/.test(t))/(crack|broken|replace)/.test(t)?add('windshield',1):(/chip/.test(t)?add('chip',1):0);
+  else if(/chip/.test(t))add('chip',1);
+  if(/(side|rear|back) (glass|window)/.test(t))add('glass',1);
+  if(/scratch|scuff|scrape|swirl|buff/.test(t))add('buff',1);
+  if(/curb|wheel rash|rim/.test(t))add('wheel',2);
+  if(/stain|torn|seat|interior|headliner/.test(t))add('interior',1);
+  if(/odor|smell|smoke/.test(t))add('odor',1);
+  if(/brake/.test(t))add('brakes',1);
+  if(/check engine|\bcel\b|engine light/.test(t))add('cel',1);
+  if(/one key|1 key|no key|missing key|fob/.test(t))add('key',1);
+  if(/headlight|taillight|tail light|lamp/.test(t))add('light',1);
+  add('detail',1);
+  return {lines:L,parsed:Object.keys(L).length>1};
+}
+
+/* ================= Core math ================= */
+const TIERS=[[1000,225],[3000,350],[5000,450],[7500,525],[10000,600],[15000,700],[20000,800],[30000,925],[40000,1050],[Infinity,1200]];
+function baseFee(S,h){if(S.feeMode==='flat')return S.feeVal;if(S.feeMode==='pct')return Math.round(h*S.feeVal/100);const T=S.tiers&&S.tiers.length?S.tiers:TIERS;for(const [c,f] of T)if(h<(c??Infinity))return f;return T[T.length-1][1];}
+// buyer fee + online (Simulcast) fee + post-sale inspection, all paid at purchase
+function buyerFee(S,h){return baseFee(S,h)+(S.onlineFee||0)+(S.psi||0);}
+function linesCost(book,lines){let c=0,body=0;for(const id in lines){const it=book.find(b=>b.id===id);if(!it)continue;c+=it.cost*lines[id];if(it.body)body+=lines[id];}return {cost:c,body};}
+
+function buildCar(S,book,raw,ov){
+  ov=ov||{};
+  const clean=(raw.vin||'').toUpperCase().replace(/[^A-Z0-9]/g,'');
+  let v,d;
+  if(clean.length===17||(clean.length>=11&&!(raw.year||raw.make||raw.model))){v=validateVin(raw.vin);}
+  else if(raw.year||raw.make||raw.model){v={vin:carKey(raw,0),ok:true,noVin:true};}
+  else v={vin:clean||'—',ok:false,err:'Needs a VIN, or year / make / model columns'};
+  const o={raw,lot:raw.lot,vin:v.vin,realVin:v.noVin?(clean?'VIN …'+clean.slice(-8):''):v.vin,ok:v.ok,err:v.err,model:raw.model,miles:raw.miles,notes:raw.notes,auction:raw.auction||'',star:!!ov.star,status:ov.status||null,paid:ov.paid??null};
+  if(!v.ok)return o;
+  if(v.noVin){const mk=(raw.make||'').toLowerCase();d={year:raw.year,make:raw.make,type:guessType(raw.model),cls:MAKE_CLS[mk]||'mid'};}
+  else d=decodeVin(v.vin);
+  o.year=raw.year||d.year;o.make=raw.make||d.make||'Unknown make';
+  const cond=ov.cond??raw.cond;o.condGiven=cond!=null;o.cond=cond!=null?Math.round(cond*10)/10:null;
+  const mmr=ov.mmr??raw.mmr;
+  if(mmr!=null&&ov.mmr==null&&!raw.mmrAdj&&S.mmrKind==='base'&&o.cond!=null){
+    // the list's MMR is for an average-condition car: move it to this car's grade
+    o.mmrBase=mmr;o.mmr=Math.round(mmr*Math.max(.4,1+S.liftPct/100*(o.cond-S.baseGrade))/25)*25;o.mmrSrc='base';}
+  else if(mmr!=null){o.mmr=mmr;o.mmrSrc='mmr';}else{o.mmr=roughMMR({...d,year:o.year},raw.miles);o.mmrSrc='est';}
+  o.mmrSell=ov.mmrSell??raw.mmrSell??null;o.sellAt=ov.sellAt??raw.sellAt??null;
+  o.sellSrc=o.mmrSell!=null?'mmr':'est';
+  // recon
+  const parsed=parseRecon(raw.notes);
+  o.parsedLines=parsed.lines;
+  if(ov.lines){o.lines=ov.lines;o.reconSrc='lines';}
+  else if(raw.recon!=null){o.lines=parsed.lines;o.reconSrc='list';}
+  else if(parsed.parsed){o.lines=parsed.lines;o.reconSrc='parsed';}
+  else{o.lines={};o.reconSrc=ov.aiRecon>0?'ai':'model';}
+  const lc=linesCost(book,o.lines);
+  o.bodyPanels=lc.body;
+  const gNow=o.cond??S.maxGrade;
+  let base;
+  if(o.reconSrc==='lines'||o.reconSrc==='parsed')base=lc.cost;
+  else if(o.reconSrc==='list')base=raw.recon;
+  else if(o.reconSrc==='ai'){const m0=Math.max(0,S.sellGrade-gNow)*S.reconPt;base=Math.min(Math.max(ov.aiRecon,m0*.5),Math.max(m0*2,ov.aiRecon>0?600:0));}
+  else base=Math.max(0,S.sellGrade-gNow)*S.reconPt;
+  o.reconBase=Math.round(base);
+  o.recon=Math.round(base*S.reconMult/25)*25;
+  // achievable grade
+  o.gradeAch=Math.round(Math.max(gNow,S.sellGrade-S.panelPenalty*o.bodyPanels)*10)/10;
+  o.gradeCapped=o.gradeAch<S.sellGrade-1e-9;
+  // hammer
+  o.bidUsed=o.paid??ov.bid??raw.bid??Math.max(Math.round(o.mmr*S.hammerPct/100/100)*100,raw.curBid||0);   // it can't hammer under the bid already on it
+  o.buyNow=raw.buyNow||null;o.seller=raw.seller||'';o.saleAt=raw.saleAt||'';
+  o.bidSrc=o.paid!=null?'paid':(ov.bid!=null||raw.bid!=null)?'list':'assumed';
+  const ann=(raw.notes||'').toLowerCase();
+  o.flag=S.flags.split(',').map(x=>x.trim().toLowerCase()).filter(Boolean).find(k=>ann.includes(k))||null;
+  evaluate(S,o);
+  return o;
+}
+function mmrAt(S,o,grade,lift){
+  if(lift==null)lift=S.liftPct;
+  if(o.mmrSell!=null){const gS=o.sellAt??S.sellGrade,g0=o.cond;
+    // both ends measured (as-is MMR at its grade, resale MMR at gS): use this car's own slope, not the global %
+    if(g0!=null&&o.mmrSrc==='mmr'&&gS-g0>=.5&&o.mmrSell>o.mmr)return Math.max(o.mmr*.5,o.mmr+(o.mmrSell-o.mmr)*(grade-g0)/(gS-g0));
+    return o.mmrSell*(1+lift/100*(grade-gS));}
+  return o.mmr*(1+lift/100*Math.max(0,grade-(o.cond??S.maxGrade)));
+}
+const EXITS=['auction','retail','dealer'];
+const EXIT_LABEL={auction:'Re-run at auction',retail:'Retail on lot',dealer:'Sell to a dealer'};
+// runs = how many times it crosses the block before it sells. Left empty, the model uses the
+// average: 1 / sell-through. Each extra run adds a week, a no-sale fee, and more market drift.
+function exitCalc(S,o,exit,{hammer=o.bidUsed,recon=o.recon,grade=o.gradeAch,priceMult=1,runs=null,lift=null}={}){
+  const base=mmrAt(S,o,grade,lift)*priceMult;
+  let days,price,sellCosts;
+  if(exit==='auction'){
+    const p=Math.min(1,Math.max(.05,(S.sellThru??100)/100));const extra=runs!=null?runs-1:1/p-1;
+    days=Math.round(S.auctionDays+(S.rerunDays??7)*extra);price=base*(S.sellPct??100)/100*(1-(S.rerunCut||0)/100*extra);   // the floor comes down after each no-sale
+    sellCosts=Math.round(S.tOut+S.sellFee+S.doc+(S.noSaleFee||0)*extra);}
+  else if(exit==='retail'){days=S.retailDays;price=base*S.retailPct/100;sellCosts=S.retailPrep+S.retailCost+S.doc;}
+  else {days=S.dealerDays;price=base*S.dealerPct/100;sellCosts=S.tOut+S.doc;}
+  price=Math.round(price*(1-S.driftWk/100*days/7)/50)*50;
+  const fee=buyerFee(S,hammer);
+  const capital=hammer+fee+S.tIn+recon;
+  const holding=Math.round(days*S.perDay+capital*S.apr/100*days/365+(S.fpFee||0));
+  const allIn=capital+S.reserve+sellCosts+holding;
+  return {exit,days,price,fee,capital,sellCosts,holding,allIn,profit:price-allIn,ppd:(price-allIn)/days};
+}
+/* ---- Odds: replay the flip a few hundred times with the things that go wrong ---- */
+function mulberry(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return ((t^t>>>14)>>>0)/4294967296;};}
+function hashStr(s){let h=2166136261;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619);}return h>>>0;}
+function simCar(S,o,N,hammer){
+  N=N||300;if(hammer==null)hammer=o.bidUsed;const r=mulberry(hashStr(String(o.vin)));   // same seed every time, so odds only move when an input moves
+  const g=()=>{let u=0;while(!u)u=r();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*r());};
+  const exit=o.exitUsed,p=Math.min(1,Math.max(.05,(S.sellThru??100)/100)),gFloor=Math.min(o.gradeAch,o.cond??S.maxGrade),out=[];
+  for(let i=0;i<N;i++){
+    const grade=Math.max(gFloor,Math.round((o.gradeAch-Math.abs(g())*(S.gradeSd||0))*10)/10);   // grade can miss, never beats the plan
+    let recon=o.recon*Math.exp(g()*(S.reconSd||0)/100);                                        // recon runs over more often than under
+    if(r()<(S.lemonPct||0)/100)recon+=(S.lemonCost||0);                                        // hidden problem found after the buy
+    let runs=1;if(exit==='auction')while(r()>p&&runs<8)runs++;                                 // no-sales
+    const lift=o.mmrSell==null?Math.max(0,S.liftPct+g()*(S.liftSd||0)):null;                    // no real MMR @ target: the value per point is itself a guess
+    out.push(exitCalc(S,o,exit,{hammer,grade,recon:Math.round(recon),priceMult:1+g()*(S.priceSd||0)/100,runs,lift}).profit);
+  }
+  out.sort((a,b)=>a-b);
+  return {pHit:out.filter(x=>x>=S.minP).length/N,pLoss:out.filter(x=>x<0).length/N,p10:out[Math.floor(N*.1)],p50:out[Math.floor(N*.5)],p90:out[Math.floor(N*.9)]};
+}
+// Safe bid: the highest hammer where the odds of making the floor are still at least S.conf %
+function safeBid(S,o){
+  const need=(S.conf||70)/100,ok=h=>simCar(S,o,200,h).pHit>=need;
+  if(!ok(0))return 0;let lo=0,hi=Math.max(1000,mmrAt(S,o,o.gradeAch)*1.3);
+  for(let i=0;i<14;i++){const m=(lo+hi)/2;ok(m)?lo=m:hi=m;}
+  return Math.floor(lo/25)*25;
+}
+function pickExit(S,o,opts){
+  if(S.exitMode!=='best')return exitCalc(S,o,S.exitMode,opts);
+  return EXITS.map(e=>exitCalc(S,o,e,opts)).sort((a,b)=>b.profit-a.profit)[0];
+}
+function maxBidFor(S,o,need,exit){
+  const p=h=>exitCalc(S,o,exit,{hammer:h}).profit;
+  if(p(0)<need)return 0;let lo=0,hi=Math.max(1000,mmrAt(S,o,o.gradeAch)*1.5);
+  for(let i=0;i<40;i++){const m=(lo+hi)/2;p(m)>=need?lo=m:hi=m;}
+  return Math.floor(lo/25)*25;
+}
+function evaluate(S,o){
+  o.exits=EXITS.map(e=>exitCalc(S,o,e));
+  const best=pickExit(S,o);Object.assign(o,best);o.exitUsed=best.exit;
+  o.mmrAtSell=Math.round(mmrAt(S,o,o.gradeAch)/50)*50;
+  o.lift=o.mmrAtSell-o.mmr;
+  o.roi=o.profit/o.capital;o.roiAnn=o.roi*365/o.days;
+  const st=(opts)=>exitCalc(S,o,o.exitUsed,opts).profit;
+  o.sOver=st({recon:Math.round(o.recon*(1+S.overrun/100))});
+  o.sShort=st({grade:Math.min(o.gradeAch,S.shortGrade)});
+  o.sBoth=st({recon:Math.round(o.recon*(1+S.overrun/100)),grade:Math.min(o.gradeAch,S.shortGrade)});
+  o.down=Math.min(o.sOver,o.sShort,o.sBoth);
+  Object.assign(o,simCar(S,o));
+  o.max=maxBidFor(S,o,S.target,o.exitUsed);
+  o.walk=maxBidFor(S,o,S.minP,o.exitUsed);
+  o.stretch=maxBidFor(S,o,S.target+750,o.exitUsed);
+  o.safe=safeBid(S,o);if(o.safe&&o.max&&o.safe>o.max)o.safe=o.max;   // the safe bid never sits above the max bido.pHitMax=o.max?simCar(S,o,300,o.max).pHit:null;
+  o.est=[];if(o.mmrSrc==='est')o.est.push('Adj MMR');if(o.mmrSrc==='base')o.est.push('Adj MMR (worked out from base MMR)');if(o.sellSrc==='est')o.est.push(`MMR @ ${S.sellGrade.toFixed(1)}`);if(o.reconSrc==='model')o.est.push('recon');if(!o.condGiven)o.est.push('CR grade');
+  const money=n=>(n<0?'-$':'$')+Math.abs(Math.round(n)).toLocaleString();
+  if(o.cond==null){o.verdict='pass';o.reason='No CR grade on the list';}
+  else if(o.cond>S.maxGrade+1e-9){o.verdict='skip';o.reason=`CR ${o.cond.toFixed(1)} is above the ${S.maxGrade.toFixed(1)} buy box`;}
+  else if(o.flag){o.verdict='pass';o.reason=`Announced: ${o.flag}`;}
+  else if(o.recon>S.cap){o.verdict='pass';o.reason=`Recon ${money(o.recon)} is over the ${money(S.cap)} cap`;}
+  else if(o.profit>=S.target&&S.needSell==='yes'&&o.mmrSrc==='est'){o.verdict='maybe';o.reason='Looks like a buy, but the Adj MMR is a guess from the VIN. Get the real one first';}
+  else if(o.profit>=S.target&&S.needSell==='yes'&&o.sellSrc==='est'){o.verdict='maybe';o.reason=`Looks like a buy, but needs the real MMR @ ${S.sellGrade.toFixed(1)} first`;}
+  else if(o.profit>=S.target&&o.pHit<.5){o.verdict='maybe';o.reason=`Clears ${money(S.target)} on paper, but only ${Math.round(o.pHit*100)}% odds of ${money(S.minP)}+`;}
+  else if(o.profit>=S.target){o.verdict='buy';o.reason=`Clears ${money(S.target)} target · ${Math.round(o.pHit*100)}% odds of ${money(S.minP)}+`;}
+  else if(o.profit>=S.minP){o.verdict='maybe';o.reason=`Clears the ${money(S.minP)} floor, short of target`;}
+  else if(o.walk>0&&o.walk>=o.bidUsed*.85){o.verdict='maybe';o.reason=`Only works at ${money(o.walk)} or less`;}
+  else{o.verdict='pass';o.reason=o.profit<0?'Loses money at the expected bid':`Only ${money(o.profit)} profit, under the ${money(S.minP)} floor`;}
+  o.risk=(o.verdict==='buy'||o.verdict==='maybe')&&(o.down<0||o.pLoss>.25);
+  if(o.gradeCapped&&(o.verdict==='buy'||o.verdict==='maybe'))o.reason+=` · paint caps it at CR ${o.gradeAch.toFixed(1)}`;
+}
+
+/* ================= Budget optimizer (0/1 knapsack on profit) ================= */
+function planBudget(cars,budget){
+  const items=cars.filter(c=>c.profit>0);
+  if(budget<=0||!items.length)return new Set();
+  const unit=budget>600000?1000:250;const W=Math.floor(budget/unit);
+  const w=items.map(c=>Math.ceil(c.allIn/unit));
+  const dp=new Float64Array(W+1);const keep=items.map(()=>new Uint8Array(W+1));
+  items.forEach((c,i)=>{for(let x=W;x>=w[i];x--){const val=dp[x-w[i]]+c.profit;if(val>dp[x]){dp[x]=val;keep[i][x]=1;}}});
+  const pick=new Set();let x=W;for(let i=items.length-1;i>=0;i--){if(keep[i][x]){pick.add(items[i].vin);x-=w[i];}}
+  return pick;
+}
+
+/* ================= CSV parsing ================= */
+function splitCSV(line){const out=[];let cur='',q=false;for(let i=0;i<line.length;i++){const c=line[i];if(q){if(c==='"'&&line[i+1]==='"'){cur+='"';i++;}else if(c==='"')q=false;else cur+=c;}else if(c==='"')q=true;else if(c===','||c==='\t'){out.push(cur);cur='';}else cur+=c;}out.push(cur);return out.map(s=>s.trim());}
+function num(s){if(s==null||s==='')return null;const n=parseFloat(String(s).replace(/[$,\s]/g,''));return isNaN(n)?null:n;}
+function crGrade(n){if(n==null||n===0)return null;   // 0.0 on a Manheim list means "not graded"
+  if(n>5&&n<=50)n=n/10;return Math.min(5,Math.max(0,n));}
+function mapHeaders(h){
+  const idx={};const H=h.map(x=>x.toLowerCase());const used=new Set();
+  const find=(k,test)=>{const i=H.findIndex((x,j)=>!used.has(j)&&test(x));if(i>=0){idx[k]=i;used.add(i);}};
+  find('vin',x=>/^vin/.test(x));
+  find('mmrSell',x=>/mmr/.test(x)&&/(@|at |target|after|sell|clean|4\.0|\b4\b)/.test(x));
+  if(idx.mmrSell!=null){const m=H[idx.mmrSell].match(/(\d(?:\.\d)?)\s*$/);if(m&&+m[1]>=1&&+m[1]<=5)idx.sellAt=+m[1];}
+  find('mmr',x=>/adj.*mmr|mmr.*adj/.test(x));if(idx.mmr!=null)idx.mmrAdj=true;
+  if(idx.mmr==null)find('mmr',x=>/mmr/.test(x));if(idx.mmr==null)find('mmr',x=>/book|value/.test(x)&&!/odo|mile/.test(x));
+  find('recon',x=>/recon|repair/.test(x));
+  find('buyNow',x=>/buy ?now/.test(x));
+  find('curBid',x=>/^(bid amount|current bid|high bid)$/.test(x));
+  find('bid',x=>/bid|hammer|floor|expected/.test(x)&&!/count|number|#/.test(x));
+  find('units',x=>/odo.*unit|unit.*odo/.test(x));
+  find('seller',x=>/^seller( name)?$|consignor/.test(x));
+  find('saleAt',x=>/^starts? at$|sale ?date|sale ?time|^start/.test(x));
+  find('status',x=>/^status$/.test(x));
+  find('cond',x=>/(^cr\b|cr ?grade|grade|cond|rating)/.test(x));
+  find('miles',x=>/mile|odo/.test(x));
+  find('auction',x=>/auction|location|^site|sale ?loc/.test(x));
+  find('wo',x=>/work ?order|^wo\b|^wo ?#/.test(x));
+  find('lane',x=>/^lane/.test(x));
+  find('run',x=>/^run/.test(x));
+  find('lot',x=>/^(lot|stock)/.test(x));
+  find('year',x=>/^(yr|year)$/.test(x));find('make',x=>/^make$/.test(x));find('model',x=>/^(model|trim|model ?\/ ?trim|description)$/.test(x));find('trim',x=>/^(trim|series|style)$/.test(x));
+  find('notes',x=>/note|announce|disclos|comment|damage/.test(x));
+  return idx;
+}
+function parseInput(text){
+  const lines=(text||'').split(/\r\n|\r|\n/).map(l=>l.trim()).filter(Boolean);if(!lines.length)return [];
+  const first=splitCSV(lines[0]);const hasHeader=first.some(c=>/vin|^lane|^run|work ?order|^lot|^year|^make/i.test(c));let idx={};
+  if(hasHeader){idx=mapHeaders(first);lines.shift();}
+  return lines.map((l,n)=>{const c=splitCSV(l);
+    if(!hasHeader){const v=c.find(x=>x.replace(/[^A-Za-z0-9]/g,'').length>=11)||c[0];return {lot:String(n+1),vin:v};}
+    const g=k=>idx[k]!=null?c[idx[k]]:null;
+    const lane=g('lane'),run=g('run'),wo=g('wo');
+    const lot=g('lot')||(lane&&run?`${lane}-${run}`:run)||wo||String(n+1);
+    const km=/^k/i.test(g('units')||'');const mi=num(g('miles'));
+    return {lot,wo,vin:g('vin'),miles:mi!=null&&km?Math.round(mi*.621371):mi,curBid:num(g('curBid')),buyNow:num(g('buyNow')),seller:(g('seller')||'').trim(),saleAt:(g('saleAt')||'').trim(),mmrAdj:!!idx.mmrAdj,sellAt:idx.sellAt??null,cond:crGrade(num(g('cond'))),mmr:num(g('mmr')),mmrSell:num(g('mmrSell')),bid:num(g('bid')),recon:num(g('recon')),year:num(g('year')),make:g('make'),model:[g('model'),g('trim')].filter(Boolean).join(' ')||null,notes:g('notes'),auction:(g('auction')||'').trim()};
+  });
+}
+
+/* ================= Sample run list ================= */
+// lot, vin16, model, odo, CR, Adj MMR, MMR@4.0 ('' = estimate), est bid, recon est ('' = from announcements), announcements
+const SAMPLE_DEF=[
+ ['201','1FTFW1E50MFA41827','F-150 XLT 4x4',81400,2.1,26100,30900,24600,'','Bed rail dents; 3 worn tires; interior stains; scratches'],
+ ['202','5J6RW2H80LL013376','CR-V EX',68300,2.3,18900,'',17400,'','Front bumper scuffed; windshield chip; 4 tires worn'],
+ ['203','4T1B11HK0KU774102','Camry SE',91200,1.9,13600,16500,12400,'','Multiple dings L side; key scratches; 2 tires'],
+ ['204','1C6SRFFT0NN218840','1500 Big Horn',58900,2.4,29700,'',28300,'','Tailgate dent; 4 tires at 3/32; smoke odor'],
+ ['205','1G1ZD5ST0KF155092','Malibu LT',112000,1.8,7600,'',7000,'','Hood + roof clear coat peel; seats torn'],
+ ['206','KNDPMCAC0M7902214','Sportage LX',63000,2.2,15400,'',13900,'','Rear bumper cracked; scratches; 2 tires'],
+ ['207','3TMCZ5AN0MM421568','Tacoma TRD Sport',70200,2.5,30800,34600,29500,'','Wheel curb rash; scratches; needs detail'],
+ ['208','5NPEG4JA0JH680223','Elantra SE',118500,1.6,5400,'',4300,'','Structural damage - left rear'],
+ ['209','1N4BL4BV0NN310745','Altima SV',57400,2.0,13900,'',12500,'','Multiple dents; windshield cracked'],
+ ['210','1C4RJFBG0KC612980','Grand Cherokee Limited',96200,2.2,16200,'',13800,'','Rear quarter damage; paint 3 panels; 4 tires'],
+ ['211','JTMRWRFV0MD107719','RAV4 XLE',61100,2.4,23400,27400,21900,'','Front bumper + fender scrapes; 2 tires'],
+ ['212','1FMCU9GD0JUB55017','Escape SE',121000,1.9,6900,'',5700,'','TMU'],
+ ['213','19XFC2F50KE027716','Civic LX',84000,2.3,13200,'',11800,'','Scratches all panels; 4 tires; one key'],
+ ['214','1GCUYDED0LZ190634','Silverado 1500 LT',92300,2.0,25300,'',23600,1800,'Bumper + grille damage; 4 tires'],
+ ['215','WBA5R1C50LFH38211','330i',73500,2.1,19800,'',18600,'','Check engine light on; scuffs'],
+ ['216','JF2SKAEC0LH512288','Forester Premium',72600,3.6,19400,'',18800,'','Light scratches'],
+ ['217','2T3P1RFV0MW180443','RAV4 LE',58800,2.2,21900,25600,19800,'','Door dings; 4 tires; headlight cloudy'],
+ ['218','5XYPGDA50LG631907','Sorento LX',77100,2.3,16900,'',15000,'','Scratches; windshield chip; 2 tires'],
+ ['219','1HGCV1F3XLA0I9921','Accord Sport',66000,2.2,17600,'',15600,'','']
+];
+function sampleCSV(){
+  return 'Lot,VIN,Model,Odometer,CR Grade,Adj MMR,MMR @ 4.0,Est Bid,Recon Est,Announcements\n'+SAMPLE_DEF.map(r=>{
+    const vin=r[0]==='219'?r[1]:withCheck(r[1]);return [r[0],vin,r[2],r[3],r[4].toFixed(1),r[5],r[6],r[7],r[8],`"${r[9]}"`].join(',');
+  }).join('\n');
+}
+const TEMPLATE='Auction,Lane,Run,Work Order,VIN (optional),Year,Make,Model,Odometer,CR Grade,Adj MMR,MMR @ 4.0,Est Bid,Recon Est,Announcements\nDallas,12,45,,,,,,,,,,,,\nDallas,12,46,,,,,,,,,,,,\nDFW,14,8,,,,,,,,,,,,';
+
+/* demo history for the Garage (loaded only when the user taps the button) */
+const DEMO_FLIPS=[
+ // lot,vin16,year,make,model,crBuy,mmrBuy,hammer,projRecon,projProfit,actualRecon,gradeSold,soldPrice,exit,days
+ ['88','1FTEW1EP0KFA10221',2019,'Ford','F-150 XLT',2.2,24800,22900,1500,1900,1720,3.9,28900,'auction',19],
+ ['91','2T1BURHE0KC184571',2019,'Toyota','Corolla LE',2.0,11900,10600,1300,1150,1460,3.7,13650,'auction',23],
+ ['94','5J6RW2H50KL011903',2019,'Honda','CR-V LX',2.4,17600,16100,1100,1600,1180,4.1,20500,'auction',17],
+ ['97','1C6RR7LT0KS551296',2019,'Ram','1500 Classic SLT',1.9,21800,19700,1800,1750,2150,3.6,24700,'auction',26],
+ ['102','KNDPM3AC0K7542210',2019,'Kia','Sportage LX',2.3,13900,12600,1200,1250,1150,4.0,16950,'retail',38],
+ ['105','JTMBFREV0KD004331',2019,'Toyota','RAV4 XLE',2.1,21200,19500,1500,1700,1610,3.8,24100,'auction',21]
+];
+if(typeof module!=='undefined')module.exports={carKey,parseInput,buildCar,DEFAULT_SETTINGS,DEFAULT_BOOK,sampleCSV,planBudget,parseRecon,exitCalc};
+
+/* ================= Backtest: repeat sales at the same auction ================= */
+function parseDate(s){
+  if(!s)return null;s=String(s).trim();let m;
+  if((m=s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/)))return Date.UTC(+m[1],+m[2]-1,+m[3]);
+  if((m=s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})/))){let y=+m[3];if(y<100)y+=2000;return Date.UTC(y,+m[1]-1,+m[2]);}
+  const t=Date.parse(s);return isNaN(t)?null:t;
+}
+const DAY=86400000;
+function fmtDate(t){if(t==null)return '—';const d=new Date(t);return `${d.getUTCMonth()+1}/${d.getUTCDate()}/${String(d.getUTCFullYear()).slice(2)}`;}
+function mapSalesHeaders(h){
+  const idx={};const H=h.map(x=>x.toLowerCase().trim());const used=new Set();
+  const find=(k,test)=>{const i=H.findIndex((x,j)=>!used.has(j)&&test(x));if(i>=0){idx[k]=i;used.add(i);}};
+  find('vin',x=>/^vin/.test(x));
+  find('date',x=>/date|sold on|sale day/.test(x));
+  find('price',x=>/(sale|sold|hammer).*price|^price|^sold|hammer|sale amount|^amount/.test(x));
+  find('grade',x=>/(^cr\b|cr ?grade|grade|cond|rating)/.test(x));
+  find('miles',x=>/mile|odo/.test(x));
+  find('year',x=>/^(yr|year)$/.test(x));find('make',x=>/^make$/.test(x));
+  find('model',x=>/^model$/.test(x));find('trim',x=>/^(trim|style|series)$/.test(x));
+  find('color',x=>/colou?r|ext/.test(x));
+  find('auction',x=>/auction|location|site/.test(x));
+  find('mmr',x=>/mmr/.test(x));
+  find('notes',x=>/announce|note|disclos|comment/.test(x));
+  return idx;
+}
+function parseSales(text){
+  const lines=(text||'').split(/\r\n|\r|\n/).map(l=>l.trim()).filter(Boolean);if(lines.length<2)return {rows:[],missing:['header']};
+  const head=splitCSV(lines[0]);const idx=mapSalesHeaders(head);
+  const missing=['date','price'].filter(k=>idx[k]==null);
+  if(idx.vin==null&&(idx.model==null||idx.miles==null))missing.push('VIN (or Model + Odometer)');
+  const rows=lines.slice(1).map((l,i)=>{const c=splitCSV(l);const g=k=>idx[k]!=null?c[idx[k]]:null;
+    const vin=(g('vin')||'').toUpperCase().replace(/[^A-Z0-9]/g,'');
+    return {i,vin:vin.length===17?vin:'',date:parseDate(g('date')),price:num(g('price')),grade:crGrade(num(g('grade'))),miles:num(g('miles')),
+      year:num(g('year')),make:(g('make')||'').trim(),model:(g('model')||'').trim(),trim:(g('trim')||'').trim(),color:(g('color')||'').trim(),auction:(g('auction')||'').trim(),mmr:num(g('mmr')),notes:g('notes')};
+  }).filter(r=>r.date!=null&&r.price!=null&&r.price>0);
+  // fill year/make from VIN when missing
+  rows.forEach(r=>{if(r.vin&&(!r.year||!r.make)){const d=decodeVin(r.vin);r.year=r.year||d.year;r.make=r.make||d.make||'';}});
+  return {rows,missing};
+}
+const norm=s=>(s||'').toLowerCase().replace(/[^a-z0-9]/g,'');
+function pairSales(rows,opt){
+  // opt: {maxDays, minDays, maxMiles}
+  const groups={};
+  rows.forEach(r=>{
+    const k=r.vin?('V:'+r.vin):('F:'+[r.year,norm(r.make),norm(r.model),norm(r.trim),norm(r.color)].join('|'));
+    (groups[k]=groups[k]||[]).push(r);
+  });
+  const pairs=[];
+  for(const k in groups){
+    const g=groups[k].sort((a,b)=>a.date-b.date||(a.miles??0)-(b.miles??0));if(g.length<2)continue;
+    const byVin=k.startsWith('V:');
+    if(byVin){for(let i=0;i+1<g.length;i++){const a=g[i],b=g[i+1];const d=(b.date-a.date)/DAY;if(d>=opt.minDays&&d<=opt.maxDays)pairs.push({a,b,match:'VIN'});}}
+    else{
+      // fuzzy: each sale links to the next sale of the same car = nearest later sale with odometer within range
+      const used=new Set();
+      for(let i=0;i<g.length;i++){if(g[i].miles==null)continue;
+        let best=null;for(let j=i+1;j<g.length;j++){if(used.has(j)||g[j].miles==null)continue;const d=(g[j].date-g[i].date)/DAY,dm=g[j].miles-g[i].miles;
+          if(d<opt.minDays||d>opt.maxDays||dm<0||dm>opt.maxMiles)continue;if(!best||dm<best.dm)best={j,dm};}
+        if(best){used.add(best.j);pairs.push({a:g[i],b:g[best.j],match:'Odometer'});}
+      }
+    }
+  }
+  return pairs;
+}
+function evalPair(S,p,reconPt){
+  const a=p.a,b=p.b;const days=Math.max(1,Math.round((b.date-a.date)/DAY));
+  const fee=buyerFee(S,a.price);const capital=a.price+fee+S.tIn;
+  const hold=Math.round(days*S.perDay+capital*S.apr/100*days/365);
+  const sell=S.tOut+S.sellFee+S.doc;
+  const spread=b.price-(capital+sell+hold);         // = break-even recon
+  const gUp=(a.grade!=null&&b.grade!=null)?Math.round((b.grade-a.grade)*10)/10:null;
+  const estRecon=gUp!=null?Math.round(Math.max(0,gUp)*reconPt*S.reconMult/25)*25:null;
+  const estProfit=estRecon!=null?spread-estRecon:null;
+  const liftPerPt=(gUp!=null&&gUp>=0.5)?(b.price/a.price-1)/gUp*100:null;
+  const inBox=a.grade!=null&&b.grade!=null&&a.grade<=S.maxGrade+1e-9&&b.grade>=S.sellGrade-1e-9;
+  const flipType=gUp==null?'unknown':gUp>=1?'reconditioned':gUp>-0.3?'as-is':'worse';
+  return {...p,days,fee,hold,sell,spread,gUp,estRecon,estProfit,liftPerPt,inBox,flipType,
+    year:a.year||b.year,make:a.make||b.make,model:a.model||b.model,trim:a.trim||b.trim,vin:a.vin||b.vin};
+}
+// bought at one lane, sold at another: which direction paid?
+function laneMatrix(S,pairs){
+  const M={};pairs.forEach(p=>{const a=p.a.auction||'',b=p.b.auction||'';if(!a||!b)return;const k=a+' → '+b;(M[k]=M[k]||{from:a,to:b,list:[]}).list.push(p);});
+  return Object.values(M).map(m=>({from:m.from,to:m.to,same:norm(m.from)===norm(m.to),...summarize(S,m.list)})).sort((x,y)=>(y.medProfit??y.medSpread??-1e9)-(x.medProfit??x.medSpread??-1e9));
+}
+function listLift(S,cars){
+  const v=cars.filter(c=>c.ok&&c.mmrSrc==='mmr'&&c.raw.mmr!=null&&(c.mmrSell!=null)&&c.cond!=null&&(c.sellAt??S.sellGrade)-c.cond>=.5).map(c=>(c.mmrSell/c.mmr-1)/((c.sellAt??S.sellGrade)-c.cond)*100).filter(x=>isFinite(x)&&x>-5&&x<40);
+  return {n:v.length,med:median(v),lo:v.length?Math.min(...v):null,hi:v.length?Math.max(...v):null};
+}
+function median(a){if(!a.length)return null;const s=a.slice().sort((x,y)=>x-y);const m=Math.floor(s.length/2);return s.length%2?s[m]:(s[m-1]+s[m])/2;}
+function summarize(S,list){
+  const withP=list.filter(p=>p.estProfit!=null);
+  return {n:list.length,
+    medSpread:median(list.map(p=>p.spread)),
+    medProfit:median(withP.map(p=>p.estProfit)),
+    hitFloor:withP.length?withP.filter(p=>p.estProfit>=S.minP).length/withP.length:null,
+    profitable:withP.length?withP.filter(p=>p.estProfit>0).length/withP.length:null,
+    medDays:median(list.map(p=>p.days)),
+    medGain:median(list.map(p=>p.b.price-p.a.price))};
+}
+
+/* demo sales history (only loaded when the user taps the button) */
+function demoSales(){
+  let seed=7;const rnd=()=>{seed=(seed*16807)%2147483647;return (seed-1)/2147483646;};
+  const pick=a=>a[Math.floor(rnd()*a.length)];
+  const cars=[['1FTFW1E5','2021','Ford','F-150','XLT','Oxford White',27000],['5J6RW2H8','2020','Honda','CR-V','EX','Lunar Silver',19500],['4T1B11HK','2019','Toyota','Camry','SE','Celestial Silver',15200],
+    ['1C6SRFFT','2022','Ram','1500','Big Horn','Granite Crystal',31000],['KNDPMCAC','2021','Kia','Sportage','LX','Snow White Pearl',16200],['3TMCZ5AN','2021','Toyota','Tacoma','TRD Sport','Magnetic Gray',31500],
+    ['1N4BL4BV','2022','Nissan','Altima','SV','Gun Metallic',15000],['JTMRWRFV','2021','Toyota','RAV4','XLE','Blueprint',24500],['19XFC2F5','2019','Honda','Civic','LX','Crystal Black',13800],
+    ['1GCUYDED','2020','Chevrolet','Silverado 1500','LT','Summit White',26500],['5XYPGDA5','2020','Kia','Sorento','LX','Ebony Black',16800],['1G1ZD5ST','2019','Chevrolet','Malibu','LT','Silver Ice',9200]];
+  const yc={2019:'K',2020:'L',2021:'M',2022:'N'};
+  const rows=[];const start=Date.UTC(2026,7,3);
+  const vinFor=(c,n)=>withCheck(c[0]+'0'+yc[c[1]]+'A'+String(100000+n).slice(-6));
+  let n=0;
+  cars.forEach((c,ci)=>{
+    const flips=2+Math.floor(rnd()*2);
+    for(let f=0;f<flips;f++){
+      n++;const vin=vinFor(c,n);const base=c[6]*(0.9+rnd()*0.2);
+      const g1=Math.round((1.5+rnd()*1.3)*10)/10;const d1=start+Math.floor(rnd()*60)*DAY;const mi=40000+Math.floor(rnd()*70000);
+      const p1=Math.round(base*(1-0.1*(4-g1)*0.95)/25)*25;
+      const kind=rnd();const showVin=rnd()>0.35;
+      rows.push([showVin?vin:'',fmtISO(d1),p1,g1.toFixed(1),mi,c[1],c[2],c[3],c[4],c[5]]);
+      if(kind<0.72){ // reconditioned flip
+        const g2=Math.round((3.5+rnd()*0.9)*10)/10;const days=12+Math.floor(rnd()*30);
+        const p2=Math.round(base*(1-0.1*(4-g2)*0.95)*(0.97+rnd()*0.08)/25)*25;
+        rows.push([showVin?vin:'',fmtISO(d1+days*DAY),p2,g2.toFixed(1),mi+40+Math.floor(rnd()*400),c[1],c[2],c[3],c[4],c[5]]);
+      }else if(kind<0.88){ // re-run as-is
+        const g2=Math.max(1,Math.round((g1+(rnd()-0.5)*0.4)*10)/10);const days=7+Math.floor(rnd()*14);
+        const p2=Math.round(p1*(0.96+rnd()*0.08)/25)*25;
+        rows.push([showVin?vin:'',fmtISO(d1+days*DAY),p2,g2.toFixed(1),mi+10+Math.floor(rnd()*80),c[1],c[2],c[3],c[4],c[5]]);
+      }
+    }
+    for(let s=0;s<3;s++){n++;const g=Math.round((2+rnd()*2.6)*10)/10;rows.push([vinFor(c,n),fmtISO(start+Math.floor(rnd()*90)*DAY),Math.round(c[6]*(1-0.1*(4-g)*0.95)*(0.9+rnd()*0.2)/25)*25,g.toFixed(1),35000+Math.floor(rnd()*80000),c[1],c[2],c[3],c[4],c[5]]);}
+  });
+  rows.sort((a,b)=>a[1]<b[1]?-1:1);
+  const lanes=['Manheim Dallas','Manheim Dallas-Fort Worth'];let ls=11;const lr=()=>{ls=(ls*48271)%2147483647;return ls/2147483647;};
+  return 'VIN,Sale Date,Sale Price,Grade,Odometer,Year,Make,Model,Trim,Color,Auction\n'+rows.map(r=>r.join(',')+','+lanes[lr()<.5?0:1]).join('\n');
+}
+function fmtISO(t){return new Date(t).toISOString().slice(0,10);}
+const SALES_TEMPLATE='VIN,Sale Date,Sale Price,Grade,Odometer,Year,Make,Model,Trim,Color,Auction\n,,,,,,,,,,';
+if(typeof module!=='undefined')module.exports={parseSales,pairSales,evalPair,summarize,demoSales};
+
+</script>
+<script>
+/* ================= State ================= */
+const $=id=>document.getElementById(id);
+const clone=o=>JSON.parse(JSON.stringify(o));
+const money=n=>n==null||isNaN(n)?'—':(n<0?'-$':'$')+Math.abs(Math.round(n)).toLocaleString();
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const g1=n=>n==null?'—':Number(n).toFixed(1);
+let ST={settings:clone(DEFAULT_SETTINGS),book:clone(DEFAULT_BOOK),listText:'',lists:[],results:{},ai:{},tuneLog:[],resetRev:2,ov:{},budget:150000,incMaybe:false,updatedAt:0};
+let FLIPS={};          // id -> flip
+let RAW=[],CARS=[],PLAN=new Set(),listFilt=null;
+// all loaded lists become one set of cars; a car that is on two lists is kept once, from the newest list
+function rebuildRaw(){
+  const seen=new Set();RAW=[];const Ls=ST.lists||[];Ls.forEach(L=>L.n=0);
+  Ls.slice().reverse().forEach(L=>{parseInput(L.text).forEach((r,i)=>{const k=carKey(r,i);if(seen.has(k))return;seen.add(k);r._list=L.id;RAW.push(r);L.n++;});});
+  if(listFilt&&!Ls.some(L=>L.id===listFilt))listFilt=null;
+}
+let filt='all',sortKey='rank',sortDir=1,query='',gfilt='open',openVin=null,tab='list';
+let DB=null,UID=null,SAMPLE=null,DL=null;
+
+/* ================= Persistence ================= */
+function loadLocal(){
+  try{if(localStorage.getItem('aff_reset')!=='2'){localStorage.removeItem('aff3_flips');localStorage.removeItem('aff3_bt');localStorage.setItem('aff_reset','2');}}catch(e){}
+  try{const s=JSON.parse(localStorage.getItem('aff3_state')||'null');if(s)ST=mergeState(s);}catch(e){}
+  try{const f=JSON.parse(localStorage.getItem('aff3_flips')||'null');if(f)FLIPS=f;}catch(e){}
+}
+function mergeState(s){
+  const out={...ST,...s};out.settings={...clone(DEFAULT_SETTINGS),...(s.settings||{})};
+  const rv=(s.settings||{}).rev||0;
+  if(rv<2)out.settings.mmrKind='adj';
+  if(rv<3){out.settings.tIn=150;out.settings.tOut=150;}   // all local cars: $150 per trip
+  if(rv<4&&out.settings.liftPct===10)out.settings.liftPct=9;   // first real MMR pair: $12,700 at CR 2.2 to $15,350 at 4.5 = 9.1% per point
+  if(rv<5&&out.settings.minP===1000)out.settings.minP=750;   // floor lowered from $1,000 to $750
+  out.settings.rev=5;   // Manheim's export MMR is confirmed grade-adjusted
+  out.book=Array.isArray(s.book)&&s.book.length?s.book:clone(DEFAULT_BOOK);out.ov=s.ov||{};out.results=s.results||{};out.ai=s.ai||{};out.tuneLog=Array.isArray(s.tuneLog)?s.tuneLog:[];
+  out.lists=Array.isArray(s.lists)?s.lists:(s.listText?[{id:'l0',name:'Saved list',file:'',text:s.listText,at:s.updatedAt||0}]:[]);out.listText='';
+  if((s.resetRev||0)<2){out.lists=[];out.ov={};out.results={};out.btText='';}   // clean start requested 2026-11-15: test lists and results are dropped once
+  out.resetRev=2;return out;
+}
+let saveT=null,saving=false,saveAgain=false;
+function persist(){
+  ST.updatedAt=Date.now();
+  try{localStorage.setItem('aff3_state',JSON.stringify(ST));}catch(e){}
+  clearTimeout(saveT);saveT=setTimeout(pushState,1200);
+}
+async function pushState(){
+  if(!DB||!UID)return;if(saving){saveAgain=true;return;}
+  saving=true;
+  try{await DB.doc(`data/users/${UID}/state`).set(JSON.parse(JSON.stringify(ST)));setSync(true);}
+  catch(e){if(e&&e.code==='invalid_argument'){DB=null;setSync(false,'This device');}}
+  saving=false;if(saveAgain){saveAgain=false;pushState();}
+}
+const flipTimers={};
+function saveFlip(f){
+  f.u=Date.now();if(f.rm==null)f.rm=ST.settings.reconMult;f.actualProfit=f.soldPrice!=null?flipActual(f):null;
+  FLIPS[f.id]=f;kvPut('flip',f.id,f);try{localStorage.setItem('aff3_flips',JSON.stringify(FLIPS));}catch(e){}
+  if(!DB||!UID)return;clearTimeout(flipTimers[f.id]);
+  flipTimers[f.id]=setTimeout(()=>DB.doc(`data/users/${UID}/${f.id}`).set(JSON.parse(JSON.stringify(FLIPS[f.id]||f))).catch(()=>{}),600);
+}
+async function deleteFlip(id,localOnly){
+  delete FLIPS[id];if(!localOnly)kvPut('flip',id,null);try{localStorage.setItem('aff3_flips',JSON.stringify(FLIPS));}catch(e){}
+  if(DB&&UID){try{await DB.doc(`data/users/${UID}/${id}`).delete();}catch(e){}}
+}
+function setSync(on,label){const el=$('sync');const t=label||(on?'Saved to account':'This device');el.classList.toggle('on',!!on);el.querySelector('span').textContent=t;
+  const n=$('syncNote');if(n)n.textContent=on?'On. Sold prices, the Garage, AI results and the tuned numbers are shared with everyone who signs in.':t==='Not shared yet'?'The shared log cannot be reached right now. Changes are kept on this device and sent when it is back.':t;}
+async function initCloud(){
+  if(!window.claude||!window.claude.use)return;
+  try{
+    const [db,user]=await Promise.all([claude.use('db'),claude.use('user')]);
+    if(db&&user){const id=await user.id();if(id){DB=db;UID=id;}}
+  }catch(e){}
+  claude.use('sample').then(s=>{SAMPLE=s;if(openVin)updateDetail();}).catch(()=>{});
+  claude.use('downloads').then(d=>{DL=d;}).catch(()=>{});
+  if(!DB)return;
+  setSync(false,'Connecting…');
+  const timer=setTimeout(()=>setSync(false,'Offline · this device'),10000);
+  try{
+    const snap=await DB.doc(`data/users/${UID}/state`).get();
+    if(snap.exists){const s=snap.data();if((s.updatedAt||0)>(ST.updatedAt||0)){ST=mergeState(clone(s));try{localStorage.setItem('aff3_state',JSON.stringify(ST));}catch(e){}rebuildRaw();recompute();if(ST.btText){$('btinput').value=ST.btText;runBacktest();}renderAll();if(tab==='backtest')renderBacktest();}}
+    else if((ST.lists||[]).length){pushState();}
+    clearTimeout(timer);setSync(true);
+  }catch(e){clearTimeout(timer);setSync(false,'Offline · this device');}
+  // flips: subscribe once
+  const localOnly={...FLIPS};let first=true;
+  DB.collection(`data/users/${UID}`).onSnapshot(qs=>{
+    const next={};qs.docs.forEach(d=>{if(d.id.startsWith('flip_'))next[d.id]=d.data();});
+    if(first){first=false;for(const id in localOnly)if(!next[id]){next[id]=localOnly[id];DB.doc(`data/users/${UID}/${id}`).set(localOnly[id]).catch(()=>{});}}
+    FLIPS=next;try{localStorage.setItem('aff3_flips',JSON.stringify(FLIPS));}catch(e){}
+    if(tab==='garage'&&!$('flips').contains(document.activeElement))renderGarage();
+    renderLiveCount();
+  },()=>{});
+}
+
+/* ================= Compute ================= */
+/* ================= AI second opinion ================= */
+// The website asks its own server (/api/ai), which holds the key. Results are kept per car and reused until the car's data changes.
+const AI={on:typeof window!=='undefined'&&!window.claude&&/^https?:/.test(location.protocol),busy:false,done:0,total:0,err:'',fails:0};
+const aiHash=r=>[r.year,r.make,r.model,r.miles,r.cond,r.mmr].join('|');
+function aiFor(k,r){if(ST.settings.aiUse==='no')return null;const a=(ST.ai||{})[k];if(!a||a.h!==aiHash(r))return null;if((ST.ov[k]||{}).noAi)return null;return a;}
+function aiOv(ov,a){
+  if(!a)return ov;const o={...(ov||{})};
+  (a.fixes||[]).forEach(f=>{if((f.field==='mmr'||f.field==='cond')&&o[f.field]==null&&f.value>0)o[f.field]=f.value;});   // only clear data-entry errors, and never over a number typed by hand
+  if(a.recon>0)o.aiRecon=a.recon;
+  return o;
+}
+const VR={buy:2,maybe:1,pass:0,skip:0};
+function applyAi(c,a){
+  c.mVerdict=c.verdict;c.mReason=c.reason;c.ai=a||null;c.aiDis=false;c.aiFixed=false;
+  if(!a||!c.ok||c.verdict==='skip')return;
+  c.aiFixed=(a.fixes||[]).some(f=>f.field==='mmr'||f.field==='cond');
+  c.aiDis=VR[a.call]!==VR[c.verdict];
+  // the AI can hold a car back, it cannot promote one: a Buy needs both to agree
+  if(a.call==='pass'&&c.verdict==='buy'){c.verdict='maybe';c.reason='AI would pass: '+a.reason;}
+  else if(a.call==='pass'&&c.verdict==='maybe'&&a.conf==='high'){c.verdict='pass';c.reason='AI would pass: '+a.reason;}
+  else if(a.call==='maybe'&&c.verdict==='buy'){c.verdict='maybe';c.reason='AI wants a closer look: '+a.reason;}
+}
+function aiCtx(){
+  const S=ST.settings,st=soldStats();
+  const sold=st.n?`${st.n} sold prices logged, median ${st.med.toFixed(1)}% of MMR. `+st.groups.filter(g=>g.n).map(g=>`${g.l}: ${g.n} cars at ${g.med.toFixed(1)}%`).join('; '):'';
+  return {sellGrade:S.sellGrade,minP:S.minP,target:S.target,cap:S.cap,liftPct:S.liftPct,reconPt:S.reconPt,hammerPct:S.hammerPct,sold,book:ST.book.map(b=>({id:b.id,label:b.label,cost:b.cost}))};
+}
+function aiCar(k,c,report){
+  return {id:k,year:c.year,make:c.make,model:c.model||'',miles:c.miles??null,cond:c.raw.cond??c.cond,mmr:c.raw.mmr??c.mmr,mmrEst:c.mmrSrc==='est',seller:c.seller||'',auction:c.auction||'',notes:c.notes||'',report:report||'',
+    verdict:c.mVerdict||c.verdict,recon:c.recon,resale:c.mmrAtSell,max:c.max||null,bid:c.bidUsed,profit:c.profit,odds:Math.round((c.pHit||0)*100)};
+}
+async function aiAsk(cars){
+  const r=await fetch('/api/ai',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify({cars,ctx:aiCtx()})});
+  let j={};try{j=await r.json();}catch(e){}
+  if(!r.ok)throw {status:r.status,code:j.error||'',message:j.message||'The AI review failed.'};
+  return j.cars||[];
+}
+function aiStore(k,r,a){
+  ST.ai=ST.ai||{};
+  ST.ai[k]={h:aiHash(r),call:a.call,conf:a.confidence,recon:Math.max(0,Math.round(a.recon_est||0)),value:Math.round(a.value_at_target||0),retail:Math.round(a.retail_est||0),
+    flags:(a.flags||[]).slice(0,3).map(x=>String(x).slice(0,90)),reason:String(a.reason||'').slice(0,240),fixes:(a.fixes||[]).slice(0,4).map(f=>({field:f.field,value:+f.value||0,why:String(f.why||'').slice(0,160)})),at:Date.now()};
+  kvPut('ai',k,ST.ai[k]);
+  const ks=Object.keys(ST.ai);if(ks.length>3000)ks.sort((x,y)=>ST.ai[x].at-ST.ai[y].at).slice(0,ks.length-3000).forEach(x=>delete ST.ai[x]);
+}
+async function aiRun(){
+  if(!AI.on||AI.busy||ST.settings.aiUse==='no')return;
+  const S=ST.settings,todo=[];
+  RAW.forEach((r,i)=>{const c=CARS[i];if(!c||!c.ok||c.cond==null||c.cond>S.maxGrade+1e-9)return;const k=carKey(r,i);const a=(ST.ai||{})[k];if(a&&a.h===aiHash(r))return;todo.push({k,r,c});});
+  if(!todo.length)return;
+  todo.splice(300);AI.busy=true;AI.done=0;AI.total=todo.length;AI.err='';AI.fails=0;AI.missed=0;AI.last='';renderAi();
+  const batches=[];for(let i=0;i<todo.length;i+=6)batches.push(todo.slice(i,i+6));
+  const worker=async()=>{
+    while(batches.length&&!AI.err){
+      const b=batches.shift();let tries=0;
+      for(;;){
+        try{const out=await aiAsk(b.map(x=>aiCar(x.k,x.c)));out.forEach(a=>{const x=b.find(y=>y.k===a.id);if(x)aiStore(x.k,x.r,a);});AI.fails=0;break;}
+        catch(e){
+          if(e.code==='no_key'||e.code==='bad_key'||e.status===401||e.status===302){AI.err=e.message||'AI is not set up yet.';break;}
+          if(e.status===429&&tries++<3){await new Promise(r=>setTimeout(r,4000*tries));continue;}
+          AI.missed+=b.length;AI.last=e.message||'';if(++AI.fails>=3)AI.err=e.message||'The AI review stopped after several errors.';break;
+        }
+      }
+      AI.done+=b.length;persist();recompute();renderAll();
+    }
+  };
+  await Promise.all([worker(),worker(),worker()]);
+  if(!AI.err&&AI.missed)AI.err=`${AI.missed} car${AI.missed>1?'s':''} could not be checked. ${AI.last}`;
+  AI.busy=false;persist();recompute();renderAll();
+}
+function renderAi(){
+  const el=$('aistat');if(!el)return;
+  if(!AI.on||ST.settings.aiUse==='no'||!RAW.length){el.innerHTML='';return;}
+  const rev=CARS.filter(c=>c.ai),dis=rev.filter(c=>c.aiDis).length,fx=rev.filter(c=>c.aiFixed).length;
+  if(AI.err)el.innerHTML=`<div class="callout red" style="margin:0"><b>AI review stopped.</b> ${esc(AI.err)} <a href="#" id="aiRetry" style="color:inherit;text-decoration:underline">Try again</a></div>`;
+  else if(AI.busy)el.innerHTML=`<div class="callout blue" style="margin:0"><b>AI is checking this upload:</b> ${Math.min(AI.done,AI.total)} of ${AI.total} cars. Calls update as it goes.</div>`;
+  else if(rev.length)el.innerHTML=`<div class="callout ${dis?'red':'green'}" style="margin:0"><b>AI checked ${rev.length} car${rev.length>1?'s':''}.</b> ${dis?`It disagrees with the model on ${dis}.`:'It agrees with the model on all of them.'}${fx?` It corrected data on ${fx}.`:''} ${dis?'<a href="#" id="aiShow" style="color:inherit;text-decoration:underline">Show them</a>':''}</div>`;
+  else el.innerHTML='';
+  if($('aiRetry'))$('aiRetry').onclick=e=>{e.preventDefault();AI.err='';aiRun();};
+  if($('aiShow'))$('aiShow').onclick=e=>{e.preventDefault();document.querySelectorAll('#filter button').forEach(x=>x.classList.toggle('on',x.dataset.f==='ai'));filt='ai';renderList();};
+}
+function aiBox(c){
+  const a=c.ai;if(!a)return AI.on&&ST.settings.aiUse!=='no'&&(ST.ov[c.vin]||{}).noAi?`<div class="callout blue">AI is ignored for this car. <a href="#" id="ai-on" style="color:inherit;text-decoration:underline">Use it again</a></div>`:'';
+  const S=ST.settings,fx=(a.fixes||[]).filter(f=>f.value>0);
+  return `<div class="callout ${c.aiDis?'red':'blue'}"><b>AI second opinion: ${VL[a.call]}</b> <span class="mini">${a.conf} confidence</span>${c.aiDis?` · the model alone says ${VL[c.mVerdict]}`:' · agrees with the model'}<br>${esc(a.reason)}
+    ${a.flags&&a.flags.length?`<div style="margin-top:6px">${a.flags.map(f=>`<span class="badge b-ai">${esc(f)}</span>`).join(' ')}</div>`:''}
+    <div style="margin-top:8px">AI estimates: ${a.value?`${money(a.value)} at auction at CR ${g1(S.sellGrade)} (model ${money(c.mmrAtSell)})`:''}${a.retail?` · ${money(a.retail)} retail`:''}${a.recon?` · ${money(a.recon)} recon`:''}.</div>
+    ${fx.map(f=>`<div style="margin-top:6px"><b>Corrected ${f.field==='mmr'?'MMR':f.field==='cond'?'CR grade':esc(f.field)} to ${f.field==='mmr'?money(f.value):f.value}:</b> ${esc(f.why)}${f.field!=='mmr'&&f.field!=='cond'?' (shown only, not applied)':''}</div>`).join('')}
+    <div class="mini" style="margin-top:8px">These are the AI's own estimates from general market knowledge. They are not KBB or MMR quotes. <a href="#" id="ai-off" style="color:inherit;text-decoration:underline">Ignore AI for this car</a></div></div>`;
+}
+/* ================= Shared sold-price log ================= */
+// On the website every login reads and writes one shared log. The copy on this device is kept so it still works offline.
+const SHARE={on:AI.on,ok:false};
+const shareRow=k=>{const r=ST.results[k];return {key:k,sold:r.sold,bought:!!r.bought,u:r.u||r.at||Date.now(),data:r};};
+async function shareCall(method,body){
+  const r=await fetch('/api/results',{method,headers:{'Content-Type':'application/json'},credentials:'same-origin',body:body?JSON.stringify(body):undefined});
+  if(!r.ok){let j={};try{j=await r.json();}catch(e){}throw {status:r.status,code:j.error||''};}
+  return r.json();
+}
+async function shareSold(k){
+  if(!SHARE.on||!SHARE.ok)return;
+  try{if(ST.results[k]){await shareCall('POST',{rows:[shareRow(k)]});if(!(ST.sharedKeys||[]).includes(k))(ST.sharedKeys=ST.sharedKeys||[]).push(k);}else{await shareCall('DELETE',{key:k});ST.sharedKeys=(ST.sharedKeys||[]).filter(x=>x!==k);}persist();setSync(true,'Shared log');}
+  catch(e){setSync(false,'Not shared yet');}
+}
+const kvT={},kvQ={};
+function kvPut(kind,key,data){   // data null marks the row removed for everyone
+  if(!SHARE.on)return;(kvQ[kind]=kvQ[kind]||{})[key]={key,u:Date.now(),gone:data==null,data:data==null?{}:JSON.parse(JSON.stringify(data))};
+  clearTimeout(kvT[kind]);kvT[kind]=setTimeout(()=>kvFlush(kind),700);
+}
+async function kvFlush(kind){
+  const rows=Object.values(kvQ[kind]||{});if(!rows.length||!SHARE.ok)return;kvQ[kind]={};
+  try{for(let i=0;i<rows.length;i+=100)await shareCall2('POST',{kind,rows:rows.slice(i,i+100)});}
+  catch(e){rows.forEach(r=>{if(!(kvQ[kind]||{})[r.key])(kvQ[kind]=kvQ[kind]||{})[r.key]=r;});}
+}
+async function shareCall2(method,body,qs){
+  const r=await fetch('/api/share'+(qs||''),{method,headers:{'Content-Type':'application/json'},credentials:'same-origin',body:body?JSON.stringify(body):undefined});
+  if(!r.ok)throw {status:r.status};return r.json();
+}
+const TUNED_KEYS=['hammerPct','reconMult','liftPct'];
+function pushTuned(){
+  ST.tunedU=Date.now();const values={};TUNED_KEYS.forEach(k=>values[k]=ST.settings[k]);
+  kvPut('tuned','current',{values,log:(ST.tuneLog||[]).slice(-60),weekly:(ST.weekly||[]).slice(-12)});
+}
+async function shareMore(){
+  // Garage
+  const fl=(await shareCall2('GET',null,'?kind=flip')).rows||[];const seen={};let ch=false;
+  fl.forEach(r=>{seen[r.key]=r;const l=FLIPS[r.key];if(r.gone){if(l&&(l.u||0)<=r.u){delete FLIPS[r.key];ch=true;}}else if(!l||(r.u||0)>(l.u||0)){FLIPS[r.key]={...r.data,u:r.u};ch=true;}});
+  Object.values(FLIPS).forEach(f=>{const r=seen[f.id];if(!r||(f.u||0)>r.u){if(!f.u)f.u=Date.now();(kvQ.flip=kvQ.flip||{})[f.id]={key:f.id,u:f.u,gone:false,data:f};}});
+  if(ch){try{localStorage.setItem('aff3_flips',JSON.stringify(FLIPS));}catch(e){}if(tab==='garage')renderGarage();}
+  await kvFlush('flip');
+  // AI results: anything another device already paid for is reused here
+  ST.kvSince=ST.kvSince||{};const ai=(await shareCall2('GET',null,'?kind=ai&since='+(ST.kvSince.ai||0))).rows||[];let got=0;ST.ai=ST.ai||{};
+  ai.forEach(r=>{ST.kvSince.ai=Math.max(ST.kvSince.ai||0,r.u);if(r.gone)return;const l=ST.ai[r.key];if(!l||(r.data.at||0)>(l.at||0)){ST.ai[r.key]=r.data;got++;}});
+  // tuned numbers and the weekly note
+  const t=((await shareCall2('GET',null,'?kind=tuned')).rows||[]).find(r=>r.key==='current'&&!r.gone);let tuned=false;
+  if(t&&t.u>(ST.tunedU||0)){ST.tunedU=t.u;const v=t.data.values||{};
+    if(ST.settings.autoTune!=='no')TUNED_KEYS.forEach(k=>{if(v[k]>0&&v[k]!==ST.settings[k])ST.settings[k]=v[k];});
+    ST.tuneLog=Array.isArray(t.data.log)?t.data.log:(ST.tuneLog||[]);ST.weekly=Array.isArray(t.data.weekly)?t.data.weekly:[];tuned=true;}
+  else if(!t&&(ST.tuneLog||[]).length)pushTuned();
+  if(got||tuned){persist();recompute();renderAll();if(tab==='settings')renderSettings();}
+}
+async function shareSync(){
+  if(!SHARE.on)return;
+  try{
+    const j=await shareCall('GET');SHARE.ok=true;ST.results=ST.results||{};
+    const remote={};(j.rows||[]).forEach(r=>remote[r.key]=r);let got=0;
+    for(const k in remote){const r=remote[k],l=ST.results[k];if(!l||(r.u||0)>(l.u||l.at||0)){ST.results[k]={...r.data,sold:r.sold,bought:r.bought,u:r.u,by:r.by};got++;}}
+    (ST.sharedKeys||[]).forEach(k=>{if(!remote[k]&&ST.results[k]){delete ST.results[k];got++;}});   // removed on another device
+    const up=Object.keys(ST.results).filter(k=>ST.results[k].sold>0&&(!remote[k]||(ST.results[k].u||ST.results[k].at||0)>remote[k].u)).map(shareRow);
+    for(let i=0;i<up.length;i+=200)await shareCall('POST',{rows:up.slice(i,i+200)});
+    setSync(true,'Shared log');ST.sharedKeys=Object.keys(ST.results);persist();
+    try{await shareMore();}catch(e){}
+    if(got){autoTune();renderAll();if(typeof renderBacktest==='function'&&tab==='backtest')renderBacktest();}
+  }catch(e){SHARE.ok=false;if(e.code!=='no_db')setSync(false,'Not shared yet');}
+}
+/* ================= Self-tuning from real results ================= */
+// Small, limited steps only, each one logged in Settings with an undo.
+const TUNE={reconMult:{label:'Recon multiplier'},hammerPct:{lo:80,hi:102,step:1.5,n:10,label:'Expected sale price (% of MMR)'},liftPct:{lo:5,hi:14,step:.5,n:10,label:'MMR change per CR point (%)'}};
+function tuneSet(key,to,why){
+  ST.tuneLog=ST.tuneLog||[];ST.tuneLog.push({at:Date.now(),key,from:ST.settings[key],to,why});if(ST.tuneLog.length>40)ST.tuneLog.shift();ST.settings[key]=to;
+}
+function autoTune(){
+  const S=ST.settings;if(S.autoTune==='no')return false;const now=Date.now();const log=ST.tuneLog||[];let ch=false;
+  const ready=k=>{const e=log.filter(x=>x.key===k).pop();return !e||now-e.at>(e.undone?7*24:20)*3600e3;};
+  const nudge=(k,want,n,why)=>{const T=TUNE[k];if(n<T.n||!ready(k)||!(want>0))return;const cur=S[k];const d=Math.min(T.hi,Math.max(T.lo,want))-cur;if(Math.abs(d)<T.step/1.5)return;
+    tuneSet(k,Math.round((cur+Math.max(-T.step,Math.min(T.step,d)))*2)/2,why);ch=true;};
+  const st=soldStats(),g=st.groups[0];
+  if(g.n>=TUNE.hammerPct.n)nudge('hammerPct',g.med,g.n,`${g.n} logged sales of CR 2.5 and under cars sold at a median of ${g.med.toFixed(1)}% of MMR`);
+  else if(st.n>=TUNE.hammerPct.n)nudge('hammerPct',st.med,st.n,`${st.n} logged sales sold at a median of ${st.med.toFixed(1)}% of MMR`);
+  const LL=listLift(S,CARS);if(LL.n>=TUNE.liftPct.n)nudge('liftPct',LL.med,LL.n,`${LL.n} cars with both MMR values show ${LL.med.toFixed(1)}% per grade point`);
+  if(ch){pushTuned();persist();recompute();renderAll();if(tab==='settings')renderSettings();const e=ST.tuneLog[ST.tuneLog.length-1];toast(`Model updated itself: ${TUNE[e.key].label} ${e.from} to ${e.to}`);}
+  return ch;
+}
+function renderTuneLog(){
+  const el=$('tunelog');if(!el)return;const log=(ST.tuneLog||[]).slice().reverse();
+  const wk=(ST.weekly||[]).slice(-1)[0];
+  const wkH=wk?`<div class="callout blue" style="margin:0 0 10px"><b>Weekly retune, ${new Date(wk.at).toLocaleDateString([], {weekday:'short',month:'short',day:'numeric'})}.</b> ${esc(wk.text)}</div>`:'';
+  el.innerHTML=wkH+(log.length?log.map((e,i)=>`<div class="tline"><div class="nm">${esc(TUNE[e.key]?TUNE[e.key].label:e.key)}: ${e.from} → ${e.to}${e.undone?' <span class="mini">undone</span>':''}<small>${new Date(e.at).toLocaleDateString([], {month:'short',day:'numeric'})} · ${esc(e.why)}</small></div>${e.undone?'':`<button class="b sm" data-undo="${log.length-1-i}">Undo</button>`}</div>`).join('')
+    :'<p class="hint" style="margin:0">Nothing yet. After 10 sold prices are logged, the model starts moving its expected sale price toward what cars really sell for, at most 1.5 points a day. Every Monday morning a retune also checks recon costs and value per grade point against finished flips in the Garage.</p>');
+  el.querySelectorAll('[data-undo]').forEach(b=>b.onclick=()=>{const e=ST.tuneLog[+b.dataset.undo];ST.settings[e.key]=e.from;e.undone=true;e.at=Date.now();pushTuned();persist();recompute();renderSettings();renderListSoon();toast('Change undone. The model will leave this number alone for a week.');});
+}
+function recompute(){
+  const S=ST.settings;
+  CARS=RAW.map((r,i)=>{const k=carKey(r,i);const a=aiFor(k,r);const c=buildCar(S,ST.book,r,aiOv(ST.ov[k],a));c.listId=r._list;applyAi(c,a);return c;});
+  const ok=CARS.filter(c=>c.ok);
+  ok.sort((a,b)=>score(b)-score(a)).forEach((c,i)=>c.rank=i+1);
+  const spent=wonSpend();
+  const cands=ok.filter(c=>!c.status&&(c.verdict==='buy'||(ST.incMaybe&&c.verdict==='maybe')));
+  PLAN=planBudget(cands,Math.max(0,ST.budget-spent));
+  ok.forEach(c=>c.inPlan=PLAN.has(c.vin));
+}
+function score(c){return ({buy:3e6,maybe:2e6,pass:1e6,skip:0}[c.verdict])+c.profit;}
+function wonSpend(){let s=0;CARS.forEach(c=>{if(c.ok&&c.status==='won')s+=c.allIn;});return s;}
+function ov(vin){return ST.ov[vin]||(ST.ov[vin]={});}
+function setOv(vin,k,v){const o=ov(vin);if(v==null||v==='')delete o[k];else o[k]=v;if(!Object.keys(o).length)delete ST.ov[vin];persist();}
+
+/* ================= Tabs ================= */
+function setTab(t){
+  tab=t;document.querySelectorAll('main>section[id^=tab-]').forEach(s=>s.classList.toggle('on',s.id==='tab-'+t));
+  document.querySelectorAll('#topnav button,#botnav button').forEach(b=>b.classList.toggle('on',b.dataset.tab===t));
+  if(t==='live')renderLive();if(t==='garage')renderGarage();if(t==='settings')renderSettings();if(t==='list')renderList();if(t==='backtest'&&typeof renderBacktest==='function')renderBacktest();
+  try{history.replaceState(null,'','#'+t);}catch(e){}window.scrollTo(0,0);
+}
+document.querySelectorAll('#topnav button,#botnav button').forEach(b=>b.onclick=()=>setTab(b.dataset.tab));
+
+/* ================= Run list ================= */
+const VL={buy:'Buy',maybe:'Maybe',pass:'Pass',skip:'Out of box'};
+const pc=p=>p>=ST.settings.minP?'pos':p>=0?'warn':'neg';
+function badges(c){
+  let b=`<span class="badge b-${c.verdict}">${VL[c.verdict]}</span>`;
+  if(c.status==='won')b=`<span class="badge b-won">Won ${money(c.paid)}</span>`;
+  else if(c.status==='lost')b+=`<span class="badge b-lost">Lost</span>`;
+  else if(c.inPlan)b+=`<span class="badge b-plan">In plan</span>`;
+  if(c.risk&&c.status!=='won')b+=`<span class="badge b-risk">High risk</span>`;
+  if(c.aiDis&&c.status!=='won')b+=`<span class="badge b-ai">AI: ${VL[c.ai.call]}</span>`;
+  if(c.aiFixed)b+=`<span class="badge b-ai">AI fixed data</span>`;
+  return b;
+}
+function renderStrat(){
+  const S=ST.settings;
+  const k=n=>'$'+(n>=1000?(Math.round(n/100)/10)+'k':n);
+  $('strat').textContent=`Buy CR ≤ ${g1(S.maxGrade)} · fix under ${k(S.cap)} · sell at CR ${g1(S.sellGrade)}+ · make ${k(S.minP)}–${k(S.target).slice(1)}`;
+}
+function renderList(){
+  renderStrat();
+  const ok=CARS.filter(c=>c.ok),S=ST.settings;
+  $('loadmini').textContent=RAW.length?`${RAW.length} cars loaded`:'';
+  $('dropzone').classList.toggle('has',!!RAW.length);$('tab-list').classList.toggle('nolist',!RAW.length);
+  $('dzT').textContent=RAW.length?`${RAW.length} cars loaded`:'Drop the Manheim export here';
+  $('dzS').textContent=RAW.length?'Add list':'or tap to choose the file';renderChips();
+  const inBox=ok.filter(c=>c.verdict!=='skip'),buys=ok.filter(c=>c.verdict==='buy'),maybes=ok.filter(c=>c.verdict==='maybe');
+  const plan=ok.filter(c=>c.inPlan),bad=CARS.length-ok.length;
+  const pP=plan.reduce((s,c)=>s+c.profit,0),pC=plan.reduce((s,c)=>s+c.allIn,0),pD=plan.reduce((s,c)=>s+c.down,0);
+  $('kpis').innerHTML=RAW.length?[
+    ['Cars',`${CARS.length}`,bad?`${bad} unreadable row${bad>1?'s':''}`:'on this list'],
+    ['In buy box',`${inBox.length}`,`CR ≤ ${g1(S.maxGrade)}`],
+    ['Buy · Maybe',`${buys.length}<span class="of"> · ${maybes.length}</span>`,`${ok.filter(c=>c.risk).length} high-risk`]
+  ].map(([l,v,s])=>`<div class="kpi"><div class="l">${l}</div><div class="v">${v}</div><div class="s">${s}</div></div>`).join(''):'';
+  const inList=listFilt?CARS.filter(c=>c.listId===listFilt):CARS;
+  const cnt={all:inList.length,buy:0,maybe:0,star:0,pass:0,ai:0};
+  inList.forEach(c=>{if(c.ok&&(c.verdict==='buy'||c.verdict==='maybe'))cnt[c.verdict]++;else cnt.pass++;if(c.star)cnt.star++;if(c.aiDis||c.aiFixed)cnt.ai++;});
+  for(const k in cnt){const e=$('n-'+k);if(e)e.textContent=RAW.length?cnt[k]:'';}
+  // value per grade point, read straight from the MMR tool numbers on this list
+  const LL=listLift(S,CARS);const sug=LL.n>=3?Math.round(LL.med*2)/2:null;
+  $('liftcal').innerHTML=LL.n>=3?`<div class="callout ${Math.abs(sug-S.liftPct)>=1?'red':'green'}" style="margin:0"><b>Value per grade point on this list: ${LL.med.toFixed(1)}%</b> (median of ${LL.n} cars with both Adj MMR and MMR @ ${g1(S.sellGrade)}; range ${LL.lo.toFixed(1)}% to ${LL.hi.toFixed(1)}%). The model uses ${S.liftPct}% for cars without an MMR @ ${g1(S.sellGrade)}.${Math.abs(sug-S.liftPct)>=.5?` <a href="#" id="useLift" style="color:inherit;text-decoration:underline">Use ${sug}%</a>`:' They agree.'}</div>`
+    :RAW.length&&inBox.length?`<div class="callout blue" style="margin:0"><b>Resale values are estimates.</b> This list has no MMR @ ${g1(S.sellGrade)}, so the model assumes ${S.liftPct}% per grade point${S.needSell==='yes'?' and holds every car at Maybe or lower':''}. Tap a car and type its resale MMR from the MMR tool to firm it up.</div>`:'';
+  if($('useLift'))$('useLift').onclick=e=>{e.preventDefault();ST.settings.liftPct=sug;persist();recompute();renderAll();toast(`Value per grade point set to ${sug}%`);};
+  // filter + sort
+  let list=CARS.slice();
+  const q=query.trim().toLowerCase();
+  if(q)list=list.filter(c=>`${c.lot} ${c.realVin||''} ${c.make||''} ${c.model||''} ${c.year||''}`.toLowerCase().includes(q));
+  if(filt==='buy'||filt==='maybe')list=list.filter(c=>c.ok&&c.verdict===filt);
+  if(filt==='pass')list=list.filter(c=>!c.ok||c.verdict==='pass'||c.verdict==='skip');
+  if(listFilt)list=list.filter(c=>c.listId===listFilt);
+  if(filt==='ai')list=list.filter(c=>c.aiDis||c.aiFixed);
+  if(filt==='star')list=list.filter(c=>c.star);
+  if(filt==='plan')list=list.filter(c=>c.inPlan);
+  const key={rank:c=>c.rank,profit:c=>-c.profit,ppd:c=>-c.ppd,down:c=>-c.down,odds:c=>-c.pHit,lift:c=>-c.lift,lot:lotKey}[sortKey]||(c=>c.rank);
+  list.sort((a,b)=>{if(!a.ok)return 1;if(!b.ok)return -1;const x=key(a),y=key(b);return (x>y?1:x<y?-1:0)*sortDir;});
+  const empty=RAW.length?'Nothing matches.':'Drop the Manheim export at the top of this page to start.';
+  if(!list.length){$('cards').innerHTML=`<div class="empty">${empty}</div>`;$('tbody').innerHTML=`<tr><td colspan="12" class="empty">${empty}</td></tr>`;}
+  else{
+    $('cards').innerHTML=list.map(cardHTML).join('');
+    $('tbody').innerHTML=list.map(rowHTML).join('');
+  }
+  $('thead').innerHTML=['','Lot','Vehicle','CR','MMR → resale','Recon','Safe bid','Max bid','Profit at est. bid','Odds','Call','Sold for'].map((h,i)=>`<th class="${i>2&&i<10||i===11?'num':''}">${h}</th>`).join('');
+  document.querySelectorAll('#cards .vcard[data-vin],#tbody tr[data-vin]').forEach(el=>el.onclick=e=>{if(e.target.closest('.star,.vc-sold,.sold-in'))return;openCar(el.dataset.vin);});
+  document.querySelectorAll('input[data-sold]').forEach(i=>{i.onchange=()=>{const v=+i.value||0;setSold(i.dataset.sold,v);toast(v>0?`Sold price saved: ${money(v)}`:'Sold price cleared');};i.onkeydown=e=>{if(e.key==='Enter')i.blur();};});
+  renderSold();renderAi();if($('f-ai'))$('f-ai').style.display=AI.on&&ST.settings.aiUse!=='no'?'':'none';
+  document.querySelectorAll('.star[data-star]').forEach(b=>b.onclick=e=>{e.stopPropagation();toggleStar(b.dataset.star);});
+  renderLiveCount();
+}
+const kf=n=>'$'+(n>=1000?(Math.round(n/100)/10)+'k':n);
+function soldInput(c){return `<label class="vc-sold"><span>Sold for</span><input class="sold-in" type="number" inputmode="numeric" step="25" min="0" data-sold="${c.vin}" value="${soldOf(c.vin)||''}" placeholder="$" aria-label="Sold for"></label>`;}
+function cardHTML(c){
+  if(!c.ok)return `<div class="vcard slim"><div class="vc-top"><div class="vc-title"><div class="veh" style="color:var(--bad)">Lot ${esc(c.lot)} · Can't read row</div><div class="vc-sub">${esc(c.vin)}</div><div class="vc-sub">${c.err}</div></div><span class="badge b-err">Check</span></div></div>`;
+  const top=`<div class="vc-top">
+      <div class="vc-title"><div class="veh">${c.year} ${esc(c.make)} ${esc(c.model||'')}</div><div class="vc-sub">Lot ${esc(c.lot)} · CR ${g1(c.cond)}${c.miles!=null?' · '+Math.round(c.miles/1000)+'k mi':''}</div></div>
+      <button class="star${c.star?' on':''}" data-star="${c.vin}" aria-label="Star">★</button></div>`;
+  // cars outside the buy box take one short row; the full numbers are one tap away
+  if(c.verdict==='skip'&&c.status!=='won')return `<div class="vcard slim" data-vin="${c.vin}">${top}
+    <div class="vc-foot"><div class="vc-call" style="margin:0">${badges(c)}</div>${soldInput(c)}</div></div>`;
+  return `<div class="vcard v-${c.status==='won'?'won':c.verdict}${c.status==='lost'?' dim':''}" data-vin="${c.vin}">${top}
+    <div class="vc-call">${badges(c)}<span class="reason">${esc(c.reason)}</span></div>
+    <div class="vc-bid">
+      <div><div class="l">Safe</div><div class="v pos">${c.safe?money(c.safe):'—'}</div></div>
+      <div class="mx"><div class="l">Max</div><div class="v maxbid">${c.max?money(c.max):'—'}</div></div>
+      <div><div class="l">Walk away</div><div class="v warn">${c.walk?money(c.walk):'—'}</div></div>
+    </div>
+    <div class="vc-foot"><div class="vc-profit"><div class="l">Profit at est. bid</div><div class="v ${pc(c.profit)}">${money(c.profit)}</div></div>${soldInput(c)}</div></div>`;
+}
+const tg=t=>`<span class="src">${t}</span>`;
+function fmtWhen(s){const d=new Date(s);return isNaN(d)?s:d.toLocaleString([], {weekday:'short',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});}
+const pc100=x=>x==null?'—':Math.round(x*100)+'%';
+const oc=x=>x>=.6?'pos':x>=.4?'warn':'neg';
+function rowHTML(c){
+  if(!c.ok)return `<tr><td></td><td>${esc(c.lot)}</td><td><div class="veh" style="color:var(--bad)">Can\'t read row</div><div class="vin">${esc(c.vin)} · ${c.err}</div></td><td colspan="7" style="color:var(--muted)">Fix this row and re-run</td><td><span class="badge b-err">Check</span></td><td></td></tr>`;
+  return `<tr data-vin="${c.vin}" class="v-${c.verdict} ${c.verdict==='skip'||c.status==='lost'?'dim':''}">
+    <td><button class="star${c.star?' on':''}" data-star="${c.vin}" aria-label="Star">★</button></td><td>${esc(c.lot)}</td>
+    <td><div class="veh">${c.year} ${esc(c.make)} ${esc(c.model||'')}</div><div class="reason r-${c.verdict}">${esc(c.reason)}</div></td>
+    <td class="num">${g1(c.cond)}</td>
+    <td class="num">${money(c.mmr)} → ${money(c.mmrAtSell)}${c.sellSrc==='est'?tg('est'):''}</td>
+    <td class="num ${c.recon>ST.settings.cap?'neg':''}">${money(c.recon)}</td>
+    <td class="num">${c.safe?money(c.safe):'—'}</td>
+    <td class="num maxbid">${c.max?money(c.max):'—'}</td>
+    <td class="num ${pc(c.profit)}">${money(c.profit)}</td>
+    <td class="num ${oc(c.pHit)}">${pc100(c.pHit)}</td>
+    <td>${badges(c)}</td>
+    <td class="num"><input class="sold-in" type="number" inputmode="numeric" step="25" min="0" data-sold="${c.vin}" value="${soldOf(c.vin)||''}" placeholder="$" aria-label="Sold for"></td></tr>`;
+}
+function toggleStar(vin){const c=CARS.find(x=>x.vin===vin);setOv(vin,'star',c&&c.star?null:true);recompute();renderAll();}
+
+/* ================= Detail sheet ================= */
+function carBy(vin){return CARS.find(c=>c.vin===vin);}
+function openCar(vin){
+  openVin=vin;const c=carBy(vin);if(!c)return;const S=ST.settings;const o=ST.ov[vin]||{};
+  const metaRows=[c.auction?['Auction',esc(c.auction)]:null,c.saleAt?['Sells',esc(fmtWhen(c.saleAt))]:null,c.seller?['Seller',esc(c.seller)]:null,c.realVin?['VIN',esc(c.realVin)]:null].filter(Boolean);
+  $('sheet').innerHTML=`<div class="sh-head" id="sh-head"><div class="handle"></div>
+    <div class="sh-row"><div class="sh-t"><h2>${c.year} ${esc(c.make)} ${esc(c.model||'')}</h2>
+      <div class="vc-sub">Lot ${esc(c.lot)} · CR <span id="d-cr">${g1(c.cond)}</span>${c.miles!=null?' · '+c.miles.toLocaleString()+' mi':''}</div></div>
+    <button class="star${c.star?' on':''}" id="d-star" aria-label="Star">★</button>
+    <button class="ic-btn x" id="d-close" aria-label="Close">✕</button></div>
+  </div>
+  <div class="sh-body" id="sh-body">
+  <div id="d-badges" class="vline"></div>
+  <div id="d-ladder"></div>
+  <div class="hero" id="d-hero"></div>
+  <div id="d-notes"></div>
+  <div id="d-aibox"></div>
+  ${c.notes?`<div class="callout ${c.flag?'red':'blue'}"><b>Announcements:</b> ${esc(c.notes)}</div>`:'<div class="callout amber"><b>No announcements on the list.</b> Recon is a grade-gap guess. Paste the condition report into the AI estimate under Recon, or add the repair lines by hand.</div>'}
+  <div id="d-lift"></div>
+  <div class="card"><div class="sec-l">Change the numbers</div>
+  <div class="edits">
+    <label>CR grade now<input type="number" inputmode="decimal" step="0.1" id="e-cond" value="${o.cond??c.raw.cond??''}" placeholder="—"></label>
+    <label>Adj MMR (as-is)<input type="number" inputmode="numeric" step="50" id="e-mmr" value="${o.mmr??c.raw.mmr??''}" placeholder="${c.mmrSrc==='est'?'est '+c.mmr:''}"></label>
+    <label>Resale MMR (from the MMR tool)<input type="number" inputmode="numeric" step="50" id="e-sell" value="${o.mmrSell??c.raw.mmrSell??''}" placeholder="e.g. 15350"></label>
+    <label>…that MMR is at CR<input type="number" inputmode="decimal" step="0.1" id="e-sellat" value="${o.sellAt??c.raw.sellAt??''}" placeholder="${g1(S.sellGrade)}"></label>
+    <label class="wide">Est. bid<input type="number" inputmode="numeric" step="100" id="e-bid" value="${o.bid??c.raw.bid??''}" placeholder="${Math.round(c.mmr*S.hammerPct/100/100)*100}"></label>
+  </div></div>
+  <div class="card"><div class="sec-l">After the sale</div>
+  <div class="edits"><label class="wide">Sold for (hammer price, whether you bought it or not)<input type="number" inputmode="numeric" step="25" min="0" id="e-sold" data-sold="${c.vin}" value="${soldOf(c.vin)||''}" placeholder="$"></label></div></div>
+  <div class="sh-grid">
+    <details class="card" open><summary><h2>The math: buy, fix, resell</h2><span class="chev"></span></summary><div id="d-exits"></div></details>
+    <details class="card"><summary><h2>Recon <span class="mini" id="d-reconmini"></span></h2><span class="chev"></span></summary><div id="d-recon"></div>
+      <div id="d-ai" style="margin-top:12px"></div></details>
+    <details class="card"><summary><h2>Stress test &amp; odds</h2><span class="chev"></span></summary><div id="d-stress"></div></details>
+  </div>
+  ${metaRows.length?`<div class="card"><div class="meta">${metaRows.map(([k,v])=>`<div><span>${k}</span><span>${v}</span></div>`).join('')}</div></div>`:''}
+  </div>
+  <div class="sh-foot" id="d-foot"></div>`;
+  $('sheet').classList.add('on');$('backdrop').classList.add('on');document.body.style.overflow='hidden';
+  $('sh-body').scrollTop=0;
+  $('d-close').onclick=closeCar;
+  $('d-star').onclick=()=>{toggleStar(vin);$('d-star').classList.toggle('on',carBy(vin).star);};
+  const bind=(id,k)=>$(id).addEventListener('input',e=>{const v=e.target.value===''?null:+e.target.value;setOv(vin,k,(k==='cond'||k==='sellAt')&&v!=null?crGrade(v):v);recompute();updateDetail();renderListSoon();});
+  $('e-sold').onchange=()=>{const v=+$('e-sold').value||0;setSold(vin,v);toast(v>0?`Sold price saved: ${money(v)}`:'Sold price cleared');};
+  bind('e-cond','cond');bind('e-mmr','mmr');bind('e-sell','mmrSell');bind('e-sellat','sellAt');bind('e-bid','bid');
+  updateDetail();
+}
+let listT=null;function renderListSoon(){clearTimeout(listT);listT=setTimeout(()=>{renderList();if(tab==='live')renderLive();},250);}
+function closeCar(){openVin=null;$('sheet').classList.remove('on');$('backdrop').classList.remove('on');document.body.style.overflow='';}
+$('backdrop').onclick=closeCar;
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){if($('modal').classList.contains('on'))closeModal();else if(openVin)closeCar();}});
+function updateDetail(){
+  const c=carBy(openVin);if(!c){closeCar();return;}const S=ST.settings;
+  $('d-hero').innerHTML=`<div><div class="l">Profit at est. bid</div><div class="v ${pc(c.profit)}">${money(c.profit)}</div><div class="s">bid ${money(c.bidUsed)}</div></div>
+    <div><div class="l">Recon</div><div class="v ${c.recon>S.cap?'neg':''}">${money(c.recon)}</div><div class="s">cap ${money(S.cap)}</div></div>
+    <div><div class="l">Odds of ${kf(S.minP)}+</div><div class="v ${oc(c.pHit)}">${pc100(c.pHit)}</div><div class="s">${pc100(c.pLoss)} lose money</div></div>`;
+  $('d-aibox').innerHTML=aiBox(c);
+  if($('ai-off'))$('ai-off').onclick=e=>{e.preventDefault();setOv(c.vin,'noAi',true);recompute();updateDetail();renderListSoon();};
+  if($('ai-on'))$('ai-on').onclick=e=>{e.preventDefault();setOv(c.vin,'noAi',null);recompute();updateDetail();renderListSoon();};
+  $('d-badges').innerHTML=badges(c)+`<span class="reason">${esc(c.reason)}</span>`;if($('d-cr'))$('d-cr').textContent=g1(c.cond);
+  $('d-lift').innerHTML=`<div class="lift">
+      <div><div class="l">As-is · CR ${g1(c.cond)}</div><div class="v">${money(c.mmr)}${c.mmrSrc==='est'?tg('est'):''}</div></div>
+      <div class="arr">→</div>
+      <div><div class="l">After recon · CR ${g1(c.gradeAch)}</div><div class="v">${money(c.mmrAtSell)}${c.sellSrc==='est'?tg('est'):''}</div></div>
+      <div><div class="l">Grade lift</div><div class="v pos">+${money(c.lift)}</div></div></div>
+    ${c.gradeCapped?`<div class="callout red">${c.bodyPanels} repainted panel${c.bodyPanels>1?'s':''} → AutoGrade deducts for previous repairs, so this car realistically tops out at CR ${g1(c.gradeAch)}, not ${g1(S.sellGrade)}.</div>`:''}
+    ${c.sellSrc==='est'?`<div class="callout blue">MMR after recon is estimated at +${S.liftPct}% per grade point. Type the real resale MMR from the MMR tool below, and the grade it is for, to replace the guess.</div>`:c.sellAt!=null&&Math.abs(c.sellAt-c.gradeAch)>.05?`<div class="callout blue">Resale MMR of ${money(c.mmrSell)} is for CR ${g1(c.sellAt)}. This car is planned to reach CR ${g1(c.gradeAch)}, so the model uses ${money(c.mmrAtSell)}, on a straight line from ${money(c.mmr)} at CR ${g1(c.cond)}.</div>`:''}`;
+  // ladder
+  $('d-foot').innerHTML=c.status?`<div class="done"><span>${c.status==='won'?`Won at ${money(c.paid)}. It's in the Garage.`:`Marked lost${soldOf(c.vin)?`. It sold for ${money(soldOf(c.vin))}`:''}.`}</span><button class="b sm" id="d-undo">Undo</button></div>`
+    :`<button class="b bad" id="d-lost">Lost / passed</button><button class="b good" id="d-won">Won it</button>`;
+  $('d-ladder').innerHTML=`<div class="ladder">
+      <div><div class="l">Safe bid</div><div class="v pos">${c.safe?money(c.safe):'—'}</div><div class="s">${S.conf}% odds of ${kf(S.minP)}+</div></div>
+      <div class="mx"><div class="l">Max bid</div><div class="v maxbid">${c.max?money(c.max):'—'}</div><div class="s">${money(S.target)} on paper${c.pHitMax!=null?` · ${pc100(c.pHitMax)} odds`:''}</div></div>
+      <div><div class="l">Walk-away</div><div class="v warn">${c.walk?money(c.walk):'—'}</div><div class="s">${money(S.minP)} floor</div></div></div>
+    <p class="expect">Expected bid ${money(c.bidUsed)}${c.bidSrc==='assumed'?` (assumed ${S.hammerPct}% of MMR)`:''} → <b class="${pc(c.profit)}">${money(c.profit)}</b> profit, ${(c.roi*100).toFixed(1)}% on ${money(c.capital)} cash, ${money(c.ppd)}/day.</p>`;
+  $('d-notes').innerHTML=`${c.est.length?`<div class="callout red"><b>Estimated, not measured:</b> ${esc(c.est.join(', '))}. Fill ${c.est.length>1?'these':'it'} in below before bidding real money.</div>`:''}
+    ${c.buyNow?`<div class="callout ${c.buyNow<=c.safe?'green':'blue'}">Buy Now is ${money(c.buyNow)}${c.buyNow<=c.safe?', under the safe bid.':c.buyNow<=c.max?', between the safe bid and the max bid.':', over the max bid.'}</div>`:''}
+    ${c.mmrSrc==='base'?`<div class="callout blue">The list's MMR of ${money(c.mmrBase)} is treated as a base MMR for a CR ${g1(S.baseGrade)} car, so this car's as-is value is ${money(c.mmr)}. If the list's MMR is already adjusted for grade, change that in Settings.</div>`:''}
+    ${!c.max?'<div class="callout red"><b>No bid clears the target.</b> Pass unless the numbers change.</div>':c.bidUsed>c.walk?`<div class="callout red"><b>The expected bid is above walk-away.</b> Let it go unless it stalls under ${money(c.walk)}.</div>`:''}`.trim();
+  if($('d-won'))$('d-won').onclick=()=>askWon(c.vin);
+  if($('d-lost'))$('d-lost').onclick=()=>askLost(c.vin);
+  if($('d-undo'))$('d-undo').onclick=e=>{e.preventDefault();undoStatus(c.vin);};
+  // exits
+  const best=c.exits.slice().sort((a,b)=>b.profit-a.profit)[0];
+  $('d-exits').innerHTML=`${(()=>{const A=c.exitUsed==='auction';const ns=A?c.sellCosts-(S.tOut+S.sellFee+S.doc):0;const m=n=>'-'+money(n);
+    return `<table class="brk"><tbody>
+      <tr><td><b>Resale</b> at CR ${g1(c.gradeAch)}${A&&S.sellPct!==100?` · ${S.sellPct}% of ${money(c.mmrAtSell)} MMR`:''}, after ${c.days} days of market drift</td><td><b>${money(c.price)}</b></td></tr>
+      <tr><td>Hammer${c.bidSrc==='assumed'?` (assumed ${S.hammerPct}% of MMR)`:c.bidSrc==='paid'?' (paid)':''}</td><td>${m(c.bidUsed)}</td></tr>
+      <tr><td>Buyer fee${S.onlineFee||S.psi?' + online / PSI':''}</td><td>${m(c.fee)}</td></tr>
+      <tr><td>Transport in</td><td>${m(S.tIn)}</td></tr>
+      <tr><td>Recon</td><td>${m(c.recon)}</td></tr>
+      <tr><td>Surprise reserve</td><td>${m(S.reserve)}</td></tr>
+      ${A?`<tr><td>Transport out</td><td>${m(S.tOut)}</td></tr><tr><td>Seller fee + re-grade</td><td>${m(S.sellFee)}</td></tr><tr><td>Title / doc</td><td>${m(S.doc)}</td></tr>${ns>0?`<tr><td>No-sale allowance (avg ${(100/Math.max(5,S.sellThru)).toFixed(1)} runs)</td><td>${m(ns)}</td></tr>`:''}`
+        :`<tr><td>Selling costs (${EXIT_LABEL[c.exitUsed].toLowerCase()})</td><td>${m(c.sellCosts)}</td></tr>`}
+      <tr><td>Holding + interest (${c.days} days)</td><td>${m(c.holding)}</td></tr>
+      <tr class="tot"><td>Profit at this hammer</td><td class="${pc(c.profit)}">${money(c.profit)}</td></tr>
+      <tr><td>Hammer that leaves ${money(S.minP)}</td><td class="warn">${c.walk?money(c.walk):'none'}</td></tr>
+      <tr><td>Hammer that leaves ${money(S.target)}</td><td class="maxbid">${c.max?money(c.max):'none'}</td></tr></tbody></table>
+      <p class="hint" style="margin:8px 0 0">Everything that is not hammer or recon adds up to ${money(c.allIn-c.bidUsed-c.recon)} on this car. Resale minus hammer minus recon is not the profit.</p>`;})()}
+    <div class="l" style="margin-top:14px">Other ways out</div>
+    <table class="exits"><thead><tr><th>Exit</th><th>Sells for</th><th>Days</th><th>Profit</th><th>$/day</th></tr></thead><tbody>
+    ${c.exits.map(e=>`<tr class="${e.exit===c.exitUsed?'use':''}"><td>${({auction:'Auction',retail:'Retail',dealer:'To dealer'})[e.exit]}</td><td>${money(e.price)}</td><td>${e.days}</td><td class="${pc(e.profit)}">${money(e.profit)}</td><td>${money(e.ppd)}</td></tr>`).join('')}</tbody></table>
+    ${best.exit!==c.exitUsed&&best.profit-c.profit>300?`<div class="callout blue">${EXIT_LABEL[best.exit]} makes ${money(best.profit-c.profit)} more on this car${best.days>c.days?`, but ties up the cash ${best.days-c.days} days longer`:''}.</div>`:''}`;
+  // recon
+  const book=ST.book;const lines=c.lines;
+  const srcTxt={lines:'edited by you',parsed:'from announcements',list:'from your list',model:'grade-gap estimate',ai:'AI estimate'}[c.reconSrc];
+  $('d-reconmini').textContent=srcTxt;
+  const ids=Object.keys(lines).filter(id=>lines[id]>0);
+  let rh='';
+  if(c.reconSrc==='list')rh+=`<div class="callout blue" style="margin-top:0">Using the list's Recon Est of ${money(c.raw.recon)}${S.reconMult!==1?` × ${S.reconMult} calibration`:''}. Edit the lines below to price it yourself.</div>`;
+  if(c.reconSrc==='ai')rh+=`<div class="callout blue" style="margin-top:0">No announcements to read, so this uses the AI's estimate for this vehicle, kept between half and double the ${money(S.reconPt)} per grade point rule. Add lines to price it properly.</div>`;
+  if(c.reconSrc==='model')rh+=`<div class="callout blue" style="margin-top:0">No announcements to read, so this uses ${money(S.reconPt)} per grade point. Add lines to price it properly.</div>`;
+  rh+=ids.map(id=>{const it=book.find(b=>b.id===id);if(!it)return '';return `<div class="rline"><div class="nm">${esc(it.label)}${it.body?'<small>paint</small>':''}</div>
+    <div class="step"><button data-dec="${id}">−</button><span>${lines[id]}</span><button data-inc="${id}">+</button></div><div class="c">${money(it.cost*lines[id])}</div></div>`;}).join('');
+  rh+=`<div class="rline" style="border:0"><select id="d-add" style="flex:1"><option value="">+ Add a repair…</option>${book.map(b=>`<option value="${b.id}">${esc(b.label)} · ${money(b.cost)}</option>`).join('')}</select></div>
+    <table class="brk"><tbody><tr><td>Line total${S.reconMult!==1?` × ${S.reconMult} calibration`:''}</td><td>${money(c.reconSrc==='list'||c.reconSrc==='model'||c.reconSrc==='ai'?c.reconBase*S.reconMult:linesCost(book,lines).cost*S.reconMult)}</td></tr>
+    <tr class="tot"><td>Recon used</td><td class="${c.recon>S.cap?'neg':''}">${money(c.recon)} <span class="mini">cap ${money(S.cap)}</span></td></tr></tbody></table>
+    ${c.reconSrc==='lines'?'<div class="btns"><button class="b ghost" id="d-reset">Reset to automatic estimate</button></div>':''}`;
+  $('d-recon').innerHTML=rh;
+  const editLines=fn=>{const cur={...(ST.ov[c.vin]?.lines||c.lines)};fn(cur);for(const k in cur)if(cur[k]<=0)delete cur[k];setOv(c.vin,'lines',cur);recompute();updateDetail();renderListSoon();};
+  $('d-recon').querySelectorAll('[data-inc]').forEach(b=>b.onclick=()=>editLines(L=>L[b.dataset.inc]=(L[b.dataset.inc]||0)+1));
+  $('d-recon').querySelectorAll('[data-dec]').forEach(b=>b.onclick=()=>editLines(L=>L[b.dataset.dec]=(L[b.dataset.dec]||0)-1));
+  $('d-add').onchange=e=>{const id=e.target.value;if(id)editLines(L=>L[id]=(L[id]||0)+1);};
+  if($('d-reset'))$('d-reset').onclick=()=>{setOv(c.vin,'lines',null);recompute();updateDetail();renderListSoon();};
+  // AI (only build once per open so typed text survives)
+  if((SAMPLE||AI.on)&&!$('ai-text')){
+    $('d-ai').innerHTML=`<div style="border-top:1px solid var(--line);padding-top:12px"><div class="l" style="margin-bottom:6px">AI repair estimate</div>
+      <textarea id="ai-text" style="min-height:90px;font-family:inherit;font-size:16px" placeholder="Paste the full condition report (damage lines, tire tread, notes)…">${esc(c.notes||'')}</textarea>
+      <div class="btns"><button class="b primary" id="ai-go" style="grid-column:1/-1">Estimate recon from this report</button></div><div id="ai-out" class="hint" style="margin-top:8px"></div></div>`;
+    $('ai-go').onclick=()=>aiEstimate(c.vin);
+  }
+  // stress
+  $('d-stress').innerHTML=`<table class="brk"><tbody>
+    <tr><td>Plan · recon ${money(c.recon)}, CR ${g1(c.gradeAch)}</td><td class="${pc(c.profit)}">${money(c.profit)}</td></tr>
+    <tr><td>Recon runs ${S.overrun}% over</td><td class="${pc(c.sOver)}">${money(c.sOver)}</td></tr>
+    <tr><td>Only grades to CR ${g1(Math.min(c.gradeAch,S.shortGrade))}</td><td class="${pc(c.sShort)}">${money(c.sShort)}</td></tr>
+    <tr><td>Both go wrong</td><td class="${pc(c.sBoth)}">${money(c.sBoth)}</td></tr></tbody></table>
+    ${c.risk?'<div class="callout red">High risk: this car loses money if the recon or the grade misses. Bid closer to walk-away.</div>':c.down>=S.minP?'<div class="callout green">Holds the profit floor even if both go wrong.</div>':''}
+    <div class="l" style="margin-top:14px">Odds at the ${money(c.bidUsed)} bid · 300 replays</div>
+    <table class="brk"><tbody>
+    <tr><td>Makes ${money(S.minP)} or more</td><td class="${oc(c.pHit)}">${pc100(c.pHit)}</td></tr>
+    <tr><td>Loses money</td><td class="${c.pLoss>.25?'neg':''}">${pc100(c.pLoss)}</td></tr>
+    <tr><td>Bad day (1 in 10)</td><td class="${pc(c.p10)}">${money(c.p10)}</td></tr>
+    <tr><td>Typical</td><td class="${pc(c.p50)}">${money(c.p50)}</td></tr>
+    <tr><td>Good day (1 in 10)</td><td class="${pc(c.p90)}">${money(c.p90)}</td></tr></tbody></table>
+    <p class="hint" style="margin:8px 0 0">Each replay draws a grade miss (±${S.gradeSd}), recon spread (±${S.reconSd}%), sale price spread (±${S.priceSd}%), a ${S.sellThru}% chance to sell per run, and a ${S.lemonPct}% chance of a ${money(S.lemonCost)} hidden problem. Change these in Settings.</p>`;
+}
+async function aiEstimate(vin){
+  const c=carBy(vin);const text=$('ai-text').value.trim();if(!text){toast('Paste a condition report first');return;}
+  const out=$('ai-out');out.textContent='Reading the report…';$('ai-go').disabled=true;
+  const items=ST.book.map(b=>`${b.id}: ${b.label} ($${b.cost}${b.body?', repaint':''})`).join('\n');
+  const prompt=`You are a used-car reconditioning estimator for a dealer who buys rough auction cars and reconditions them to a Manheim CR grade of ${ST.settings.sellGrade}.
+Vehicle: ${c.year} ${c.make} ${c.model||''}, ${c.miles||'unknown'} miles, current CR grade ${c.cond??'unknown'}.
+Condition report:
+"""${text}"""
+
+Choose repairs ONLY from this price book (id: label (cost)):
+${items}
+
+Rules: include only repairs needed to reach a clean CR ${ST.settings.sellGrade}; use integer quantities; always include detail; count each panel that needs paint separately; skip anything not supported by the report.
+Reply with JSON only, no prose: {"lines":{"<id>":<qty>},"risks":"<one short sentence on anything that could blow up the cost, or empty>"}`;
+  try{
+    let res;
+    if(AI.on){const out=await aiAsk([aiCar(vin,c,text)]);const a=out[0];if(!a)throw {message:'No answer'};
+      const i=CARS.indexOf(c);if(i>=0)aiStore(vin,RAW[i],a);res={lines:Object.fromEntries((a.lines||[]).map(l=>[l.id,l.qty])),risks:a.reason};}
+    else if(typeof SAMPLE.json==='function')res=await SAMPLE.json(prompt,{modelTier:'default'});
+    else{const r=await SAMPLE(prompt,{modelTier:'default'});res=JSON.parse(r.text.replace(/^[^{]*/,'').replace(/[^}]*$/,''));}
+    const L={};for(const k in (res.lines||{})){if(ST.book.find(b=>b.id===k)){const q=Math.max(0,Math.round(+res.lines[k]));if(q)L[k]=q;}}
+    if(!Object.keys(L).length)throw {message:'No recognizable repairs came back'};
+    setOv(vin,'lines',L);recompute();updateDetail();renderListSoon();
+    out.innerHTML=`<span class="pos">Updated the recon lines from the report.</span>${res.risks?` <b style="color:var(--warn)">Watch:</b> ${esc(res.risks)}`:''}`;
+  }catch(e){
+    out.innerHTML=`<span class="neg">${e&&e.code==='not_granted'?'AI estimates are turned off for this page.':e&&e.code==='rate_limited'?'Too many requests. Try again in a minute.':e&&(e.code==='no_key'||e.code==='bad_key')?esc(e.message):'Couldn\'t read that report. Try again or add the lines by hand.'}</span>`;
+    if(e&&e.code==='not_granted'){SAMPLE=null;$('d-ai').innerHTML='';}
+  }
+  if($('ai-go'))$('ai-go').disabled=false;
+}
+
+/* ================= Won / Lost ================= */
+function askWon(vin){
+  const c=carBy(vin);
+  showModal(`<h2 style="margin:0 0 4px">Won lot ${esc(c.lot)}</h2><p class="hint">${c.year} ${esc(c.make)} ${esc(c.model||'')}. What was the hammer price?</p>
+    <input type="number" id="m-h" inputmode="numeric" value="${soldOf(vin)||c.bidUsed}" step="25">
+    <p class="hint" id="m-p" style="margin:8px 0 0"></p>
+    <div class="btns" style="display:grid;grid-template-columns:1fr 1fr"><button class="b" id="m-cancel">Cancel</button><button class="b primary" id="m-ok">Add to garage</button></div>`);
+  const upd=()=>{const h=+$('m-h').value||0;const e=exitCalc(ST.settings,c,c.exitUsed,{hammer:h});$('m-p').innerHTML=`Projected profit at ${money(h)}: <b class="${pc(e.profit)}">${money(e.profit)}</b>${h>c.walk?' <span class="neg">· above walk-away</span>':''}`;};
+  $('m-h').oninput=upd;upd();setTimeout(()=>{$('m-h').focus();$('m-h').select();},50);
+  $('m-cancel').onclick=closeModal;
+  $('m-ok').onclick=()=>{const h=+$('m-h').value;if(!h){toast('Enter the hammer price');return;}closeModal();markWon(vin,h);};
+}
+function markWon(vin,h){
+  const o=ov(vin);o.status='won';o.paid=h;persist();recompute();setSold(vin,h);
+  const c=carBy(vin);const S=ST.settings;
+  const id=`flip_${vin}_${Date.now().toString(36)}`;o.flipId=id;persist();
+  saveFlip({id,vin:c.realVin||'',lot:c.lot,year:c.year,make:c.make,model:c.model||'',crBuy:c.cond,mmrBuy:c.mmr,mmrSellProj:c.mmrAtSell,gradeProj:c.gradeAch,sellSrc:c.sellSrc,safeBid:c.safe,oddsAtBuy:simCar(S,c,300,h).pHit,
+    hammer:h,fee:c.fee,projRecon:c.recon,projPrice:c.price,projProfit:c.profit,exit:c.exitUsed,projDays:c.days,
+    stage:'bought',boughtAt:new Date().toISOString().slice(0,10),actualRecon:null,gradeSold:null,soldPrice:null,daysHeld:null,notes:'',lines:c.lines});
+  toast(`Lot ${c.lot} added to the garage`);renderAll();if(openVin)updateDetail();
+}
+function setStatus(vin,s){setOv(vin,'status',s);recompute();renderAll();if(openVin)updateDetail();}
+function askLost(vin){
+  const c=carBy(vin);
+  showModal(`<h2 style="margin:0 0 4px">Lost or passed lot ${esc(c.lot)}</h2><p class="hint">${c.year} ${esc(c.make)} ${esc(c.model||'')}. What did it sell for? This trains the model.</p>
+    <input type="number" id="m-h" inputmode="numeric" value="${soldOf(vin)||''}" placeholder="$ sale price" step="25">
+    <p class="hint" id="m-p" style="margin:8px 0 0"></p>
+    <div class="btns" style="display:grid;grid-template-columns:1fr 1fr"><button class="b" id="m-skip">Skip the price</button><button class="b primary" id="m-ok">Save</button></div>`);
+  const upd=()=>{const h=+$('m-h').value||0;$('m-p').textContent=h&&c.mmr?`That is ${(h/c.mmr*100).toFixed(0)}% of MMR${c.max?`, ${h>c.max?money(h-c.max)+' over':money(c.max-h)+' under'} the max bid`:''}.`:'';};
+  $('m-h').oninput=upd;upd();setTimeout(()=>$('m-h').focus(),50);
+  const done=h=>{closeModal();if(h>0)setSold(vin,h);setStatus(vin,'lost');};
+  $('m-skip').onclick=()=>done(0);
+  $('m-ok').onclick=()=>{const h=+$('m-h').value;if(!h){toast('Enter the sale price, or skip');return;}done(h);};
+}
+/* ===== Sold prices: what each car actually hammered for, bought or not ===== */
+function soldOf(vin){const r=(ST.results||{})[vin];return r?r.sold:null;}
+function setSold(vin,v){
+  ST.results=ST.results||{};const c=carBy(vin);
+  if(!(v>0)){delete ST.results[vin];}
+  else{const prev=ST.results[vin]||{};const o=ST.ov[vin]||{};
+    ST.results[vin]=c?{vin:c.realVin||'',lot:c.lot,auction:c.auction||'',saleAt:c.saleAt||'',year:c.year,make:c.make,model:c.model||'',miles:c.miles??null,cond:c.cond??null,mmr:c.mmr,mmrSrc:c.mmrSrc||'',
+      est:Math.round(c.mmr*ST.settings.hammerPct/100),safe:c.safe||null,max:c.max||null,walk:c.walk||null,verdict:c.mVerdict||c.verdict,ai:c.ai?c.ai.call:null,aiValue:c.ai?c.ai.value:null,sold:v,bought:o.status==='won',at:prev.at||Date.now()}:{...prev,sold:v};ST.results[vin].u=Date.now();}
+  shareSold(vin);
+  if(v>0&&c&&soldOdd(v,c.mmr))setTimeout(()=>toast(`Saved ${money(v)}, but that is ${Math.round(v/c.mmr*100)}% of MMR. Check for a typo. It is left out of the model's math.`),80);
+  persist();if(v>0)autoTune();
+  document.querySelectorAll('input[data-sold]').forEach(i=>{if(i.dataset.sold===vin&&document.activeElement!==i)i.value=v>0?v:'';});
+  renderSold();
+}
+const soldOdd=(sold,mmr)=>mmr>0&&(sold/mmr<.5||sold/mmr>1.4);   // under half or over 140% of MMR is almost always a typo
+function soldStats(){
+  const real=Object.values(ST.results||{}).filter(r=>r.sold>0&&r.mmr>0&&r.mmrSrc!=='est');
+  const rs=real.filter(r=>!soldOdd(r.sold,r.mmr));const odd=real.length-rs.length;
+  const med=a=>{if(!a.length)return null;const b=a.slice().sort((x,y)=>x-y);const m=b.length>>1;return b.length%2?b[m]:(b[m-1]+b[m])/2;};
+  const pct=r=>r.sold/r.mmr*100;
+  const grp=(l,f)=>{const g=rs.filter(f);return {l,n:g.length,med:med(g.map(pct))};};
+  return {odd,all:Object.values(ST.results||{}),n:rs.length,med:med(rs.map(pct)),
+    groups:[grp('CR 2.5 and under',r=>r.cond!=null&&r.cond<=2.5),grp('CR 2.6 to 3.5',r=>r.cond!=null&&r.cond>2.5&&r.cond<=3.5),grp('CR 3.6 and up',r=>r.cond!=null&&r.cond>3.5),grp('No grade',r=>r.cond==null)],
+    bought:rs.filter(r=>r.bought).length};
+}
+function soldCSV(){
+  const q=v=>{v=v==null?'':String(v);return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;};
+  const rows=Object.values(ST.results||{}).sort((a,b)=>a.at-b.at);
+  return ['Logged,Sale Date,Auction,Lot,VIN,Year,Make,Model,Odometer,CR Grade,MMR,Sold For,Sold % of MMR,Model Expected Bid,Safe Bid,Max Bid,Walk-away,Model Call,Bought'].concat(rows.map(r=>[new Date(r.at).toISOString().slice(0,10),r.saleAt?String(r.saleAt).slice(0,10):'',r.auction,r.lot,r.vin,r.year,r.make,r.model,r.miles,r.cond,r.mmr,r.sold,r.mmr?(r.sold/r.mmr*100).toFixed(1):'',r.est,r.safe,r.max,r.walk,r.verdict,r.bought?'yes':'no'].map(q).join(','))).join('\n');
+}
+function renderSold(){
+  const st=soldStats(),S=ST.settings;const sug=st.med!=null?Math.round(st.med):null;
+  const el=$('soldcal');
+  if(el){
+    el.innerHTML=!st.all.length?'':st.n<1?`<div class="callout blue" style="margin:0"><b>${st.all.length} sold price${st.all.length>1?'s':''} logged.</b></div>`
+      :`<div class="callout ${st.n>=10&&Math.abs(sug-S.hammerPct)>=2?'red':'blue'}" style="margin:0"><b>${st.n} sold price${st.n>1?'s':''} logged.</b> Cars sold at a median of ${st.med.toFixed(1)}% of MMR. The model expects ${S.hammerPct}%.${st.n<10?` Log ${10-st.n} more and the app will offer to update the model.`:Math.abs(sug-S.hammerPct)>=1?` <a href="#" id="useHammer" style="color:inherit;text-decoration:underline">Use ${sug}%</a>`:' They agree.'}</div>`;
+    if($('useHammer'))$('useHammer').onclick=e=>{e.preventDefault();ST.settings.hammerPct=sug;persist();recompute();renderAll();toast(`Expected sale price set to ${sug}% of MMR`);};
+  }
+  const lg=$('soldlog');
+  if(lg){
+    lg.innerHTML=`<h2>Sold prices log <span class="mini">${st.all.length} car${st.all.length===1?'':'s'}, ${st.bought} bought</span></h2>
+      <p class="hint">Type what each car sold for on the Run List, whether you bought it or not. This compares real sale prices with MMR so the model's expected bid can be set from results.</p>
+      ${st.n?`<table class="cal"><thead><tr><th>Cars</th><th>Count</th><th>Sold at (median % of MMR)</th><th>Model expects</th></tr></thead><tbody>
+        ${[{l:'All logged cars',n:st.n,med:st.med}].concat(st.groups.filter(g=>g.n)).map(g=>`<tr><td>${g.l}</td><td>${g.n}</td><td>${g.med.toFixed(1)}%</td><td>${S.hammerPct}%</td></tr>`).join('')}</tbody></table>`:'<div class="empty" style="padding:16px">No sold prices logged yet.</div>'}
+      ${st.all.length?'<div class="btns"><button class="b" id="soldExport">Download the log</button></div>':''}`;
+    if($('soldExport'))$('soldExport').onclick=()=>offerFile('sold-prices.csv',soldCSV());
+  }
+}
+function undoStatus(vin){
+  const o=ST.ov[vin]||{};
+  if(o.flipId&&FLIPS[o.flipId]&&FLIPS[o.flipId].soldPrice==null)deleteFlip(o.flipId);
+  delete o.status;delete o.paid;delete o.flipId;if(!Object.keys(o).length)delete ST.ov[vin];if(ST.results&&ST.results[vin])ST.results[vin].bought=false;persist();recompute();renderAll();if(openVin)updateDetail();
+}
+function showModal(html){$('modal').innerHTML=html;$('modal').classList.add('on');$('mback').classList.add('on');}
+function closeModal(){$('modal').classList.remove('on');$('mback').classList.remove('on');}
+$('mback').onclick=closeModal;
+
+/* ================= Live ================= */
+function renderLiveCount(){
+  const n=CARS.filter(c=>c.ok&&!c.status&&(c.inPlan||c.star)).length;const el=$('livecnt');
+  el.style.display=n?'':'none';el.textContent=n;
+}
+function renderLive(){
+  const S=ST.settings;$('budget').value=ST.budget;$('incMaybe').checked=ST.incMaybe;
+  const ok=CARS.filter(c=>c.ok);const won=ok.filter(c=>c.status==='won');
+  const spent=won.reduce((s,c)=>s+c.allIn,0),locked=won.reduce((s,c)=>s+c.profit,0);
+  const plan=ok.filter(c=>c.inPlan),planC=plan.reduce((s,c)=>s+c.allIn,0),planP=plan.reduce((s,c)=>s+c.profit,0);
+  const left=ST.budget-spent;
+  $('livekpis').innerHTML=[['Won',`${won.length}`,`${money(spent)} all-in`],['Cash left',money(left),left<0?'<span class="neg">over budget</span>':`${plan.length} more in plan (${money(planC)})`],['Projected profit',money(locked+planP),`${money(locked)} won + ${money(planP)} planned`]]
+    .map(([l,v,s])=>`<div class="kpi"><div class="l">${l}</div><div class="v">${v}</div><div class="s">${s}</div></div>`).join('');
+  const B=Math.max(ST.budget,spent+planC,1);
+  $('bbar').innerHTML=`<span style="width:${spent/B*100}%;background:var(--good)"></span><span style="width:${planC/B*100}%;background:var(--blue)"></span>`;
+  const next=ok.filter(c=>!c.status&&(c.inPlan||c.star)).sort((a,b)=>lotKey(a)>lotKey(b)?1:-1);
+  $('upnext').innerHTML=next.length?next.map(c=>`<div class="live-row" data-vin="${c.vin}">
+      <div class="lot"><small>LOT</small>${esc(c.lot)}</div>
+      <div style="min-width:0;cursor:pointer" data-open="${c.vin}"><div class="veh">${c.year} ${esc(c.make)} ${esc(c.model||'')}</div><div class="vin">CR ${g1(c.cond)} → ${g1(c.gradeAch)} · recon ${money(c.recon)} · ${money(c.profit)} at ${money(c.bidUsed)} · odds ${pc100(c.pHit)}</div>
+        <div class="tags">${c.inPlan?'<span class="badge b-plan">In plan</span>':''}${c.star?'<span class="badge b-maybe">★ Starred</span>':''}${c.risk?'<span class="badge b-risk">High risk</span>':''}</div></div>
+      <div class="lad-mini"><div><div class="l">Safe</div><div class="v pos">${c.safe?money(c.safe):'—'}</div></div><div><div class="l">Max</div><div class="v maxbid">${c.max?money(c.max):'—'}</div></div><div><div class="l">Walk</div><div class="v warn">${c.walk?money(c.walk):'—'}</div></div></div>
+      <div class="live-btns"><button class="b bad" data-lost="${c.vin}">Lost</button><button class="b good" data-won="${c.vin}">Won</button></div></div>`).join('')
+    :`<div class="empty">${RAW.length?'Nothing queued. Set a budget above, or ★ star cars on the Run List.':'Load a run list first.'}</div>`;
+  const dec=ok.filter(c=>c.status).sort((a,b)=>lotKey(a)>lotKey(b)?1:-1);
+  $('decmini').textContent=dec.length?`${dec.length} car${dec.length>1?'s':''}`:'';
+  $('declist').innerHTML=dec.length?dec.map(c=>`<div class="live-row dec"><div class="lot"><small>LOT</small>${esc(c.lot)}</div>
+      <div><div class="veh">${c.year} ${esc(c.make)} ${esc(c.model||'')}</div><div class="vin">${c.status==='won'?`Won ${money(c.paid)} · projected ${money(c.profit)}`:'Lost / passed'}</div></div>
+      <button class="b sm" data-undo="${c.vin}">Undo</button></div>`).join(''):'<div class="empty">Nothing decided yet.</div>';
+  $('upnext').querySelectorAll('[data-won]').forEach(b=>b.onclick=()=>askWon(b.dataset.won));
+  $('upnext').querySelectorAll('[data-lost]').forEach(b=>b.onclick=()=>askLost(b.dataset.lost));
+  $('upnext').querySelectorAll('[data-open]').forEach(b=>b.onclick=()=>openCar(b.dataset.open));
+  $('declist').querySelectorAll('[data-undo]').forEach(b=>b.onclick=()=>undoStatus(b.dataset.undo));
+}
+$('budget').addEventListener('input',e=>{ST.budget=+e.target.value||0;persist();recompute();renderLive();renderListSoon();});
+$('incMaybe').addEventListener('change',e=>{ST.incMaybe=e.target.checked;persist();recompute();renderLive();renderListSoon();});
+$('replan').textContent='Reset today';
+$('replan').onclick=()=>{showModal(`<h2 style="margin:0 0 6px">Reset today's decisions?</h2><p class="hint">Clears Won/Lost marks on the run list. Cars already in the Garage stay there.</p><div class="btns" style="display:grid;grid-template-columns:1fr 1fr"><button class="b" id="m-c">Cancel</button><button class="b bad" id="m-y">Reset</button></div>`);
+  $('m-c').onclick=closeModal;$('m-y').onclick=()=>{for(const v in ST.ov){delete ST.ov[v].status;delete ST.ov[v].paid;delete ST.ov[v].flipId;if(!Object.keys(ST.ov[v]).length)delete ST.ov[v];}persist();recompute();renderAll();closeModal();};};
+
+/* ================= Garage ================= */
+const STAGES=[['bought','Bought'],['recon','In recon'],['listed','Listed'],['sold','Sold']];
+function flipActual(f){
+  const S=ST.settings;if(f.soldPrice==null)return null;
+  const recon=f.actualRecon??f.projRecon;const days=f.daysHeld??f.projDays;
+  const sell=f.exit==='auction'?S.tOut+S.sellFee+S.doc:f.exit==='retail'?S.retailPrep+S.retailCost+S.doc:S.tOut+S.doc;
+  const fee=f.fee??buyerFee(S,f.hammer);const capital=f.hammer+fee+S.tIn+recon;
+  const hold=Math.round(days*S.perDay+capital*S.apr/100*days/365);
+  return f.soldPrice-(capital+sell+hold);
+}
+function renderGarage(){
+  const all=Object.values(FLIPS).sort((a,b)=>(b.boughtAt||'').localeCompare(a.boughtAt||'')||(b.id>a.id?1:-1));
+  const sold=all.filter(f=>f.soldPrice!=null),open=all.filter(f=>f.soldPrice==null);
+  const prof=sold.map(flipActual),tot=prof.reduce((s,p)=>s+p,0);
+  const hit=sold.length?prof.filter(p=>p>=ST.settings.minP).length/sold.length:0;
+  const tied=open.reduce((s,f)=>s+f.hammer+(f.fee||0)+(f.actualRecon??f.projRecon),0);
+  $('garkpis').innerHTML=[['In progress',open.length,`${money(tied)} tied up`],['Sold',sold.length,sold.length?`avg ${money(tot/sold.length)} / car`:'—'],['Actual profit',money(tot),sold.length?`vs ${money(sold.reduce((s,f)=>s+f.projProfit,0))} projected`:'—'],['Hit the floor',sold.length?`${Math.round(hit*100)}%`:'—',`of sold cars made ${money(ST.settings.minP)}+`],['Avg days held',sold.length?Math.round(sold.reduce((s,f)=>s+(f.daysHeld??f.projDays),0)/sold.length):'—','buy → sold']]
+    .map(([l,v,s])=>`<div class="kpi"><div class="l">${l}</div><div class="v">${v}</div><div class="s">${s}</div></div>`).join('');
+  const list=gfilt==='open'?open:gfilt==='sold'?sold:all;
+  $('flips').innerHTML=list.length?list.map(flipHTML).join(''):`<div class="empty">${gfilt==='open'?'No cars in progress. Mark a car “Won” in Live Auction or on any car\'s page.':'Nothing here yet.'}</div>`;
+  $('flips').querySelectorAll('[data-stage]').forEach(b=>b.onclick=()=>{const f=FLIPS[b.dataset.id];f.stage=b.dataset.stage;saveFlip(f);renderGarage();});
+  $('flips').querySelectorAll('input[data-f]').forEach(inp=>inp.onchange=()=>{const f=FLIPS[inp.dataset.id];const k=inp.dataset.f;const v=inp.value===''?null:(inp.type==='number'?+inp.value:inp.value);f[k]=v;if(k==='soldPrice'&&v!=null)f.stage='sold';saveFlip(f);renderGarage();});
+  $('flips').querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{showModal(`<h2 style="margin:0 0 6px">Remove this car?</h2><p class="hint">This deletes it from the garage and results.</p><div class="btns" style="display:grid;grid-template-columns:1fr 1fr"><button class="b" id="m-c">Cancel</button><button class="b bad" id="m-y">Remove</button></div>`);$('m-c').onclick=closeModal;$('m-y').onclick=async()=>{closeModal();await deleteFlip(b.dataset.del);renderGarage();};});
+  renderCalib(sold);
+}
+function flipHTML(f){
+  const act=flipActual(f);const done=f.soldPrice!=null;
+  const iv=(k,l,step,ph)=>`<label>${l}<input type="number" inputmode="decimal" data-id="${f.id}" data-f="${k}" step="${step}" value="${f[k]??''}" placeholder="${ph??''}"></label>`;
+  return `<div class="flip">
+    <div class="flip-top"><div style="flex:1;min-width:0"><div class="veh">${f.year||''} ${esc(f.make||'')} ${esc(f.model||'')} ${f.demo?'<span class="src">demo</span>':''}</div>
+      <div class="vin">Lot ${esc(f.lot||'—')} · bought ${esc(f.boughtAt||'')} at ${money(f.hammer)} · CR ${g1(f.crBuy)} → ${g1(f.gradeProj)} · ${EXIT_LABEL[f.exit]||''}</div></div>
+      <div class="flip-p"><div class="l">${done?'Actual profit':'Projected'}</div><div class="v ${pc(done?act:f.projProfit)}">${money(done?act:f.projProfit)}</div>${done?`<div class="vin">proj ${money(f.projProfit)}</div>`:''}</div></div>
+    <div class="stages">${STAGES.map(([k,l])=>`<button data-id="${f.id}" data-stage="${k}" class="${f.stage===k?'on':''}">${l}</button>`).join('')}</div>
+    <div class="fgrid">${iv('actualRecon','Actual recon $',25,'proj '+f.projRecon)}${iv('gradeSold','Grade at sale',0.1,'proj '+g1(f.gradeProj))}${iv('soldPrice','Sold for $',50,'proj '+f.projPrice)}${iv('daysHeld','Days held',1,'proj '+f.projDays)}${iv('runs','Runs to sell',1,'1')}
+      <label>Notes<input type="text" data-id="${f.id}" data-f="notes" value="${esc(f.notes||'')}" placeholder="What happened"></label></div>
+    <div class="flip-rm"><button class="b ghost sm" data-del="${f.id}">Remove</button></div></div>`;
+}
+function avg(a){return a.length?a.reduce((s,x)=>s+x,0)/a.length:null;}
+function renderCalib(sold){
+  const S=ST.settings;
+  if(sold.length<3){$('calib').innerHTML=`<div class="empty" style="padding:18px">${sold.length?`${sold.length} sold so far. Needs 3 to calibrate.`:'No sold cars yet.'}</div>`;return;}
+  const ham=avg(sold.filter(f=>f.mmrBuy).map(f=>f.hammer/f.mmrBuy*100));
+  const rr=avg(sold.filter(f=>f.actualRecon!=null&&f.projRecon).map(f=>f.actualRecon/f.projRecon));
+  const gs=sold.filter(f=>f.gradeSold!=null);const gAvg=avg(gs.map(f=>f.gradeSold)),gMin=gs.length?Math.min(...gs.map(f=>f.gradeSold)):null;
+  const auc=sold.filter(f=>f.exit==='auction'&&f.gradeSold!=null&&f.crBuy!=null&&f.gradeSold>f.crBuy&&f.mmrBuy);
+  const lift=avg(auc.map(f=>{const days=f.daysHeld??f.projDays;const undrift=f.soldPrice/(1-S.driftWk/100*days/7);return (undrift/f.mmrBuy-1)/(f.gradeSold-f.crBuy)*100;}));
+  const rows=[];const P=(v)=>v+'%';
+  if(ham!=null)rows.push(['Hammer vs. MMR',`${S.hammerPct}%`,`${ham.toFixed(0)}%`,'hammerPct',Math.round(ham),P]);
+  if(rr!=null)rows.push(['Recon vs. estimate',`×${S.reconMult}`,`×${(rr).toFixed(2)} of estimate`,'reconMult',Math.round(S.reconMult*rr*20)/20,v=>'×'+v]);
+  // sale price vs. the MMR the tool promised (only cars whose projection used a real MMR @ target)
+  const real=sold.filter(f=>f.exit==='auction'&&f.sellSrc==='mmr'&&f.mmrSellProj&&f.gradeSold!=null&&f.gradeProj!=null);
+  const sp=avg(real.map(f=>{const days=f.daysHeld??f.projDays;const exp=f.mmrSellProj*(1+S.liftPct/100*(f.gradeSold-f.gradeProj))*(1-S.driftWk/100*days/7);return f.soldPrice/exp*100;}));
+  if(real.length>=3)rows.push(['Re-run price vs. MMR at its grade',`${S.sellPct}%`,`${sp.toFixed(1)}% · ${real.length} cars`,'sellPct',Math.round(sp),P]);
+  else if(lift!=null)rows.push(['Value per grade point',`${S.liftPct}%`,`${lift.toFixed(1)}%`,'liftPct',Math.round(lift*2)/2,P]);
+  if(gMin!=null)rows.push(['Stress-test grade',g1(S.shortGrade),`avg ${g1(gAvg)} · worst ${g1(gMin)}`,'shortGrade',Math.round(gMin*10)/10,g1]);
+  const miss=gs.filter(f=>f.gradeProj!=null).map(f=>Math.max(0,f.gradeProj-f.gradeSold));
+  if(miss.length>=10)rows.push(['Grade miss',`±${S.gradeSd}`,`avg ${avg(miss).toFixed(2)} short of plan`,'gradeSd',Math.max(.1,Math.round(avg(miss)/.8*20)/20),v=>'±'+v]);
+  const lr=sold.filter(f=>f.actualRecon>0&&f.projRecon>0).map(f=>Math.log(f.actualRecon/f.projRecon));
+  if(lr.length>=10){const mu=avg(lr),sd=Math.sqrt(avg(lr.map(x=>(x-mu)**2)));rows.push(['Recon spread',`±${S.reconSd}%`,`±${Math.round(sd*100)}% around your average`,'reconSd',Math.max(10,Math.round(sd*100/5)*5),v=>'±'+v+'%']);}
+  const ad=sold.filter(f=>f.exit==='auction'&&f.daysHeld!=null);const rn=sold.filter(f=>f.exit==='auction'&&f.runs>0);
+  if(ad.length>=3){const first=median(ad.map(f=>f.daysHeld-((f.runs||1)-1)*(S.rerunDays??7)));rows.push(['Days to first re-run',`${S.auctionDays}`,`median ${Math.round(first)} · ${Math.round(median(ad.map(f=>f.daysHeld)))} to sold`,'auctionDays',Math.max(1,Math.round(first)),v=>v+' days']);}
+  if(rn.length>=10){const st=rn.length/rn.reduce((a,f)=>a+f.runs,0)*100;rows.push(['Chance it sells each run',`${S.sellThru}%`,`${Math.round(st)}% · ${rn.length} cars`,'sellThru',Math.round(st/5)*5,P]);}
+  // how wrong the model has been, in dollars
+  const errs=sold.filter(f=>f.projProfit!=null).map(f=>flipActual(f)-f.projProfit);const bias=avg(errs),mae=avg(errs.map(Math.abs));
+  const withOdds=sold.filter(f=>f.oddsAtBuy!=null);const expHit=avg(withOdds.map(f=>f.oddsAtBuy)),actHit=withOdds.length?withOdds.filter(f=>flipActual(f)>=S.minP).length/withOdds.length:null;
+  $('calib').innerHTML=`<div class="callout ${Math.abs(bias)<=250?'green':'red'}" style="margin:0 0 10px"><b>Model accuracy on ${errs.length} sold cars:</b> actual profit came in ${money(Math.abs(bias))} ${bias<0?'under':'over'} the projection on average, and a typical car missed by ${money(mae)} either way.${withOdds.length>=5?` The model gave these cars ${pc100(expHit)} odds of ${kf(S.minP)}+ and ${pc100(actHit)} made it.`:''} ${Math.abs(bias)<=250?'That is close.':bias<0?'The model is too optimistic. Apply the corrections below.':'The model is too cautious. Apply the corrections below.'}</div>
+    <table class="cal"><thead><tr><th>Assumption</th><th>Model uses</th><th>Your results</th><th>Suggest</th></tr></thead><tbody>
+    ${rows.map(r=>`<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td><b>${r[5](r[4])}</b></td></tr>`).join('')}</tbody></table>
+    <div class="btns"><button class="b primary" id="applyCal">Apply all ${rows.length} to the model</button></div>
+    <p class="hint" style="margin-top:8px">Based on ${sold.length} sold cars. Under 10 cars these swing a lot; past 30 they are solid. Fill in grade at sale, actual recon, days held and runs to sell on every car to feed this.</p>`;
+  $('applyCal').onclick=()=>{rows.forEach(r=>ST.settings[r[3]]=r[4]);persist();recompute();renderAll();toast('Model calibrated to your results');};
+}
+document.querySelectorAll('#gfilter button').forEach(b=>b.onclick=()=>{document.querySelectorAll('#gfilter button').forEach(x=>x.classList.remove('on'));b.classList.add('on');gfilt=b.dataset.g;renderGarage();});
+$('demoFlips').onclick=()=>{
+  DEMO_FLIPS.forEach(([lot,v,year,make,model,cr,mmr,ham,pr,pp,ar,gsold,sp,exit,days],i)=>{
+    const id=`flip_demo_${i}`;const S=ST.settings;
+    saveFlip({id,demo:true,vin:withCheck(v),lot,year,make,model,crBuy:cr,mmrBuy:mmr,mmrSellProj:Math.round(mmr*(1+S.liftPct/100*(S.sellGrade-cr))),gradeProj:S.sellGrade,hammer:ham,fee:buyerFee(S,ham),projRecon:pr,projPrice:Math.round(mmr*(1+S.liftPct/100*(S.sellGrade-cr))),projProfit:pp,exit,projDays:exit==='retail'?S.retailDays:S.auctionDays,stage:'sold',boughtAt:`2026-${String(8+Math.floor(i/2)).padStart(2,'0')}-${String(3+i*4).padStart(2,'0')}`,actualRecon:ar,gradeSold:gsold,soldPrice:sp,daysHeld:days,notes:''});
+  });
+  gfilt='sold';document.querySelectorAll('#gfilter button').forEach(x=>x.classList.toggle('on',x.dataset.g==='sold'));renderGarage();toast('Demo history loaded: 6 sold cars');
+};
+$('clearFlips').onclick=()=>{showModal(`<h2 style="margin:0 0 6px">Clear the whole garage?</h2><p class="hint">Deletes every car and result. This can't be undone.</p><div class="btns" style="display:grid;grid-template-columns:1fr 1fr"><button class="b" id="m-c">Cancel</button><button class="b bad" id="m-y">Delete all</button></div>`);
+  $('m-c').onclick=closeModal;$('m-y').onclick=async()=>{closeModal();for(const id of Object.keys(FLIPS))await deleteFlip(id);renderGarage();};};
+$('addFlip').onclick=()=>{
+  const id=`flip_manual_${Date.now().toString(36)}`;const S=ST.settings;
+  showModal(`<h2 style="margin:0 0 8px">Add a car you bought</h2><div class="edits" style="grid-template-columns:1fr 1fr">
+    <label>Year / make / model<input type="text" id="a-v" placeholder="2020 Honda CR-V"></label><label>Lot<input type="text" id="a-lot"></label>
+    <label>CR grade bought<input type="number" id="a-cr" step="0.1"></label><label>Adj MMR as-is<input type="number" id="a-mmr" step="50"></label>
+    <label>Hammer paid<input type="number" id="a-h" step="25"></label><label>Recon estimate<input type="number" id="a-r" step="25"></label></div>
+    <div class="btns" style="display:grid;grid-template-columns:1fr 1fr"><button class="b" id="m-c">Cancel</button><button class="b primary" id="m-y">Add</button></div>`);
+  $('m-c').onclick=closeModal;
+  $('m-y').onclick=()=>{const vv=$('a-v').value.trim().split(/\s+/);const cr=+$('a-cr').value||null,mmr=+$('a-mmr').value||null,h=+$('a-h').value||0,r=+$('a-r').value||0;
+    if(!h){toast('Enter the hammer price');return;}
+    const sellP=mmr?Math.round(mmr*(1+S.liftPct/100*Math.max(0,S.sellGrade-(cr??S.maxGrade)))):null;
+    const f={id,vin:'',lot:$('a-lot').value,year:+vv[0]||'',make:vv[1]||'',model:vv.slice(2).join(' '),crBuy:cr,mmrBuy:mmr,gradeProj:S.sellGrade,hammer:h,fee:buyerFee(S,h),projRecon:r,projPrice:sellP,exit:S.exitMode==='best'?'auction':S.exitMode,projDays:S.auctionDays,stage:'bought',boughtAt:new Date().toISOString().slice(0,10),actualRecon:null,gradeSold:null,soldPrice:null,daysHeld:null,notes:''};
+    f.projProfit=sellP?flipActual({...f,soldPrice:sellP}):0;saveFlip(f);closeModal();gfilt='open';renderGarage();};
+};
+
+/* ================= Settings ================= */
+const SCHEMA=[
+ ['g','Buy box & goals'],['maxGrade','Max CR grade to buy',.1],['sellGrade','Target grade after recon',.1],['cap','Recon cap per car ($)',100],['minP','Profit floor ($)',100],['target','Profit target ($)',100],['conf','Safe bid: odds of the floor needed (%)',5],['needSell','A Buy needs real MMR numbers',[['yes','Yes, no Buy on estimates'],['no','No, allow estimates']]],
+ ['g','Value'],['liftPct','MMR change per CR point (%)',.5],['panelPenalty','Grade lost per repainted panel',.05],['mmrKind','A plain “MMR” column on the list is',[['adj','Already adjusted for this car\'s grade (Manheim export)'],['base','Base MMR (average-condition car)']]],['baseGrade','Grade a base MMR assumes',.1],['hammerPct','Expected hammer if no bid (% of MMR)',1],['sellPct','Re-run sells at (% of MMR at its grade)',1],['driftWk','Market drift (% per week)',.1],
+ ['g','Exit'],['exitMode','How you sell',[['auction','Re-run at auction'],['retail','Retail on lot'],['dealer','Sell to a dealer'],['best','Best of the three, per car']]],['auctionDays','Days to re-run at auction',1],['sellThru','Chance it sells each run (%)',5],['rerunDays','Days added per no-sale',1],['noSaleFee','No-sale / re-run fee ($)',5],['rerunCut','Price drop per no-sale (%)',.5],['retailPct','Retail price (% of MMR)',1],['retailPrep','Retail-ready prep ($)',25],['retailCost','Retail selling cost ($)',25],['retailDays','Days to retail',1],['dealerPct','Dealer sale (% of MMR)',1],['dealerDays','Days to dealer sale',1],
+ ['g','Costs'],['feeMode','Buyer fee',[['tiered','Typical tiered schedule'],['flat','Flat $ per car'],['pct','% of hammer']]],['feeVal','Fee $ or % (if not tiered)',25],['onlineFee','Online (Simulcast) fee per buy ($)',5],['psi','Post-sale inspection per buy ($)',5],['tIn','Transport in ($)',25],['tOut','Transport out ($)',25],['sellFee','Seller fee + re-grade ($)',25],['doc','Title / doc ($)',25],['perDay','Holding cost per day ($)',1],['apr','Floor-plan interest (APR %)',.25],['fpFee','Floor-plan fee per car ($)',5],['reserve','Surprise reserve per car ($)',25],
+ ['g','Recon & risk'],['reconMult','Recon multiplier (calibration)',.05],['reconPt','Recon $/grade point (no announcements)',50],['overrun','Stress: recon over by (%)',5],['shortGrade','Stress: only grades to',.1],['flags','Auto-pass if announcements mention','text'],
+ ['g','AI and self-tuning'],['aiUse','AI checks every car on each upload',[['yes','On'],['no','Off']]],['autoTune','Model retunes itself from real results',[['yes','On'],['no','Off']]],
+ ['g','Odds (what goes wrong, and how often)'],['gradeSd','Grade miss (± points)',.05],['reconSd','Recon spread (± %)',5],['priceSd','Sale price spread (± %)',1],['lemonPct','Chance of a hidden problem (%)',1],['lemonCost','Hidden problem cost ($)',100],['liftSd','Value-per-point doubt when MMR @ target is missing (± %)',.5]
+];
+const openGroups=new Set([0]);   // which groups of assumptions are open
+function renderSettings(){
+  const S=ST.settings;
+  const groups=[];SCHEMA.forEach(row=>{if(row[0]==='g')groups.push({l:row[1],rows:[]});else groups[groups.length-1].rows.push(row);});
+  $('settingsForm').innerHTML=groups.map((g,i)=>`<details class="sgroup" data-g="${i}"${openGroups.has(i)?' open':''}><summary><span>${g.l}</span><small>${g.rows.length} setting${g.rows.length>1?'s':''}</small><span class="chev"></span></summary><div class="settings">${g.rows.map(([k,l,t])=>{
+    if(Array.isArray(t))return `<label class="full">${l}<select data-s="${k}">${t.map(([v,n])=>`<option value="${v}"${S[k]===v?' selected':''}>${n}</option>`).join('')}</select></label>`;
+    if(t==='text')return `<label class="full">${l}<input type="text" data-s="${k}" value="${esc(S[k])}"></label>`;
+    return `<label>${l}<input type="number" inputmode="decimal" data-s="${k}" step="${t}" value="${S[k]}"></label>`;
+  }).join('')}</div></details>`).join('');
+  $('settingsForm').querySelectorAll('.sgroup').forEach(d=>d.addEventListener('toggle',()=>{const i=+d.dataset.g;if(d.open)openGroups.add(i);else openGroups.delete(i);}));
+  $('settingsForm').querySelectorAll('[data-s]').forEach(el=>el.addEventListener('input',()=>{const k=el.dataset.s;ST.settings[k]=el.type==='number'?(+el.value||0):el.value;if(TUNED_KEYS.includes(k))pushTuned();persist();recompute();renderStrat();renderListSoon();}));
+  renderTuneLog();
+  const T=S.tiers&&S.tiers.length?S.tiers:(S.tiers=clone(DEFAULT_SETTINGS.tiers));
+  $('tiers').innerHTML=`<tr><td class="l">Hammer under</td><td class="l">Buyer fee</td></tr>`+T.map((t,i)=>`<tr><td>${i===T.length-1?'<span style="color:var(--muted)">Anything higher</span>':`<input type="number" data-t="${i}" data-k="0" value="${t[0]}" step="500">`}</td><td><input type="number" data-t="${i}" data-k="1" value="${t[1]}" step="5"></td></tr>`).join('');
+  $('tiers').querySelectorAll('[data-t]').forEach(el=>el.addEventListener('input',()=>{ST.settings.tiers[+el.dataset.t][+el.dataset.k]=+el.value||0;persist();recompute();renderListSoon();}));
+  $('book').innerHTML=`<tr><td class="l">Repair</td><td class="l">Cost</td><td class="l">Paint?</td></tr>`+ST.book.map((b,i)=>`<tr><td><input type="text" data-b="${i}" data-k="label" value="${esc(b.label)}"></td><td><input type="number" data-b="${i}" data-k="cost" value="${b.cost}" step="5"></td><td style="text-align:center"><input type="checkbox" data-b="${i}" data-k="body"${b.body?' checked':''}></td></tr>`).join('');
+  $('book').querySelectorAll('[data-b]').forEach(el=>el.addEventListener(el.type==='checkbox'?'change':'input',()=>{const b=ST.book[+el.dataset.b];const k=el.dataset.k;b[k]=el.type==='checkbox'?el.checked:el.type==='number'?(+el.value||0):el.value;persist();recompute();renderListSoon();}));
+}
+$('resetTiers').onclick=()=>{ST.settings.tiers=clone(DEFAULT_SETTINGS.tiers);persist();recompute();renderSettings();renderListSoon();toast('Fee table reset');};
+$('presetDFW').onclick=()=>{Object.assign(ST.settings,{tIn:150,tOut:150});persist();recompute();renderSettings();renderListSoon();toast('Transport set to $150 each way');};
+$('resetBook').onclick=()=>{ST.book=clone(DEFAULT_BOOK);persist();recompute();renderSettings();renderListSoon();toast('Price book reset');};
+$('resetSettings').onclick=()=>{ST.settings=clone(DEFAULT_SETTINGS);persist();recompute();renderSettings();renderListSoon();toast('Assumptions reset');};
+
+/* ================= Load / export ================= */
+function toast(m){const t=$('toast');t.textContent=m;t.classList.add('on');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('on'),m.length>50?5000:2000);}
+function listLabel(rows,name){
+  const r=rows.find(x=>x.auction||x.saleAt)||{};const d=r.saleAt?new Date(r.saleAt):null;
+  const ds=d&&!isNaN(d)?d.toLocaleDateString([], {weekday:'short',month:'short',day:'numeric'}):'';
+  return [r.auction,ds].filter(Boolean).join(' · ')||(name||'List').replace(/\.(csv|txt)$/i,'');
+}
+function loadList(text,msg,name){
+  const rows=parseInput(text);if(!rows.length){toast('Nothing to read in that list');return;}
+  ST.lists=ST.lists||[];if(ST.lists.some(L=>L.text===text)){toast('That list is already loaded');return;}
+  ST.lists.push({id:'l'+Date.now().toString(36)+Math.random().toString(36).slice(2,5),name:listLabel(rows,name),file:name||'',text,at:Date.now()});
+  const before=RAW.length;rebuildRaw();persist();recompute();$('input').value='';$('loadbox').open=false;renderAll();
+  autoTune();aiRun();
+  const add=RAW.length-before;toast(`${msg||'List added'} · ${add} new car${add===1?'':'s'}`);
+}
+function removeList(id){ST.lists=(ST.lists||[]).filter(L=>L.id!==id);rebuildRaw();persist();recompute();renderAll();toast('List removed');}
+function renderChips(){
+  const Ls=ST.lists||[];
+  $('listchips').innerHTML=Ls.length<1?'':(Ls.length>1?`<button class="chip${!listFilt?' on':''}" data-list="">All lists</button>`:'')
+    +Ls.map(L=>`<span class="chip${listFilt===L.id?' on':''}" data-list="${L.id}"><span>${esc(L.name)} · ${L.n||0}</span><button data-rm="${L.id}" aria-label="Remove this list" title="Remove this list">✕</button></span>`).join('');
+  $('listchips').querySelectorAll('[data-list]').forEach(el=>el.onclick=e=>{if(e.target.closest('[data-rm]'))return;if(Ls.length<2)return;listFilt=el.dataset.list||null;renderList();});
+  $('listchips').querySelectorAll('[data-rm]').forEach(b=>b.onclick=e=>{e.stopPropagation();removeList(b.dataset.rm);});
+}
+function clearAllData(){
+  showModal(`<h2 style="margin:0 0 4px">Clear everything on this device?</h2><p class="hint">This removes every loaded list, the edits made to cars, the garage and the sales history on this phone or computer. Settings and the shared sold-price log are kept.</p>
+    <div class="btns" style="display:grid;grid-template-columns:1fr 1fr"><button class="b" id="m-cancel">Cancel</button><button class="b bad" id="m-ok">Clear all</button></div>`);
+  $('m-cancel').onclick=closeModal;
+  $('m-ok').onclick=()=>{closeModal();ST.lists=[];ST.ov={};ST.ai={};ST.btText='';if(window.claude)ST.results={};Object.keys(FLIPS).forEach(id=>deleteFlip(id,SHARE.on));
+    try{localStorage.removeItem('aff3_bt');}catch(e){}rebuildRaw();persist();recompute();setTab('list');renderAll();toast('Everything on this device is cleared');};
+}
+$('analyze').onclick=()=>loadList($('input').value,'List added','Pasted list');
+$('sample').onclick=()=>loadList(sampleCSV(),'Sample list added','Sample list');
+$('clearAll').onclick=clearAllData;
+function readListFile(f){if(!f)return;if(f.size>8e6){toast('That file is too big to be a run list');return;}
+  const rd=new FileReader();rd.onload=()=>{if(tab==='backtest')setBtText(rd.result,`Loaded ${f.name}`);else{if(tab!=='list')setTab('list');loadList(rd.result,`Added ${f.name}`,f.name);}};rd.readAsText(f);}
+['file','file2','file3'].forEach(id=>$(id).onchange=e=>{[...e.target.files].forEach(readListFile);e.target.value='';});
+// drag a file anywhere on the page
+let dragN=0;const hasFiles=e=>e.dataTransfer&&[...(e.dataTransfer.types||[])].includes('Files');
+window.addEventListener('dragenter',e=>{if(!hasFiles(e))return;e.preventDefault();dragN++;$('dropveil').classList.add('on');});
+window.addEventListener('dragover',e=>{if(hasFiles(e))e.preventDefault();});
+window.addEventListener('dragleave',e=>{if(!hasFiles(e))return;dragN=Math.max(0,dragN-1);if(!dragN)$('dropveil').classList.remove('on');});
+window.addEventListener('drop',e=>{if(!hasFiles(e))return;e.preventDefault();dragN=0;$('dropveil').classList.remove('on');[...e.dataTransfer.files].slice(0,tab==='backtest'?1:20).forEach(readListFile);});
+$('tmpl').onclick=()=>{$('tmplbox').classList.toggle('on');$('tmpltext').value=TEMPLATE;};
+$('copytmpl').onclick=()=>copyText(TEMPLATE,'tmplbox','tmpltext');
+async function copyText(txt,box,area){try{await navigator.clipboard.writeText(txt);toast('Copied');}catch(e){$(box).classList.add('on');$(area).value=txt;$(area).select();toast('Select all and copy from the box');}}
+async function offerFile(name,csv){
+  if(!window.claude){try{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download=name;document.body.appendChild(a);a.click();a.remove();toast('Saved '+name);return;}catch(e){}}
+  if(DL){try{await DL.save({filename:name,data:csv});toast('Saved '+name);return;}catch(e){if(e&&e.code&&/declin|cancel|abort/i.test(e.code+e.message))return;}}
+  copyText(csv,'resbox','restext');
+}
+const q=s=>`"${String(s??'').replace(/"/g,'""')}"`;
+$('exportList').onclick=()=>{
+  if(!CARS.length){toast('Nothing to export yet');return;}
+  const h='Rank,Lot,VIN,Year,Make,Model,CR Now,CR Reach,Adj MMR,MMR @ Reach,Recon,Recon Source,Est Bid,All-in,Exit,Sells For,Profit,Stress Test,Odds of Floor,Odds of Loss,Safe Bid,Max Bid,Walk-away,Call,In Plan,Starred,Reason,Auction';
+  const rows=CARS.filter(c=>c.ok).sort((a,b)=>a.rank-b.rank).map(c=>[c.rank,q(c.lot),q(c.realVin),c.year,q(c.make),q(c.model),c.cond??'',c.gradeAch,c.mmr,c.mmrAtSell,c.recon,c.reconSrc,c.bidUsed,c.allIn,EXIT_LABEL[c.exitUsed],c.price,c.profit,c.down,pc100(c.pHit),pc100(c.pLoss),c.safe,c.max,c.walk,VL[c.verdict],c.inPlan?'Y':'',c.star?'Y':'',q(c.reason),q(c.auction)].join(','));
+  offerFile('auction-run-list.csv',h+'\n'+rows.join('\n'));
+};
+$('exportFlips').onclick=()=>{
+  const all=Object.values(FLIPS);if(!all.length){toast('Garage is empty');return;}
+  const h='Lot,VIN,Year,Make,Model,Bought,CR Bought,Adj MMR,Hammer,Proj Recon,Actual Recon,Proj Grade,Grade Sold,Proj Price,Sold For,Days Held,Exit,Proj Profit,Actual Profit,Stage,Notes';
+  const rows=all.map(f=>[q(f.lot),f.vin,f.year,q(f.make),q(f.model),f.boughtAt,f.crBuy??'',f.mmrBuy??'',f.hammer,f.projRecon,f.actualRecon??'',f.gradeProj??'',f.gradeSold??'',f.projPrice??'',f.soldPrice??'',f.daysHeld??'',f.exit,f.projProfit,flipActual(f)??'',f.stage,q(f.notes)].join(','));
+  offerFile('flip-results.csv',h+'\n'+rows.join('\n'));
+};
+document.querySelectorAll('#filter button').forEach(b=>b.onclick=()=>{document.querySelectorAll('#filter button').forEach(x=>x.classList.remove('on'));b.classList.add('on');filt=b.dataset.f;renderList();});
+$('search').addEventListener('input',e=>{query=e.target.value;renderList();});
+$('sortsel').onchange=e=>{sortKey=e.target.value;sortDir=1;renderList();};
+
+const TH_SUN='<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>',TH_MOON='<svg viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>';
+function applyTheme(t){document.documentElement.dataset.theme=t;try{localStorage.setItem('aff_theme',t);}catch(e){}
+  const m=document.querySelector('meta[name=theme-color]');if(m)m.content=t==='dark'?'#0b0d11':'#ffffff';
+  document.querySelectorAll('#themeSeg button').forEach(x=>x.classList.toggle('on',x.dataset.th===t));
+  const b=$('themeBtn');b.innerHTML=t==='dark'?TH_SUN:TH_MOON;b.title=t==='dark'?'Switch to light mode':'Switch to dark mode';}
+$('themeBtn').onclick=()=>applyTheme(document.documentElement.dataset.theme==='dark'?'light':'dark');
+document.querySelectorAll('#themeSeg button').forEach(x=>x.onclick=()=>applyTheme(x.dataset.th));
+// parts that only make sense on the website (sign out, shared data)
+if(AI.on)document.querySelectorAll('[data-site]').forEach(e=>e.hidden=false);
+// phone: drag the top of a car's page down to close it
+(function(){let y0=null;const sh=$('sheet');
+  sh.addEventListener('touchstart',e=>{y0=e.target.closest('.sh-head')&&!e.target.closest('button')?e.touches[0].clientY:null;},{passive:true});
+  sh.addEventListener('touchmove',e=>{if(y0==null)return;sh.style.transition='none';sh.style.transform=`translateY(${Math.max(0,e.touches[0].clientY-y0)}px)`;},{passive:true});
+  sh.addEventListener('touchend',e=>{if(y0==null)return;const d=e.changedTouches[0].clientY-y0;y0=null;sh.style.transition='';sh.style.transform='';if(d>90)closeCar();},{passive:true});
+})();
+applyTheme(document.documentElement.dataset.theme==='dark'?'dark':'light');
+document.querySelector('.notices').addEventListener('click',e=>{if(e.target.closest('a'))return;const c=e.target.closest('.callout');if(c)c.classList.toggle('open');});
+function renderAll(){renderList();if(tab==='live')renderLive();if(tab==='garage')renderGarage();renderLiveCount();}
+
+/* ================= Boot ================= */
+loadLocal();
+rebuildRaw();
+recompute();
+const startTab=(location.hash||'').replace('#','');
+
+
+/* ================= Backtest tab ================= */
+let BT={rows:[],pairs:[],missing:[]},btfilt='box';
+function btOpts(){ST.bt=Object.assign({reconPt:ST.settings.reconPt,maxDays:120,maxMiles:1500,minDays:3},ST.bt||{});return ST.bt;}
+function runBacktest(){
+  const o=btOpts();const {rows,missing}=parseSales(ST.btText||'');
+  BT.rows=rows;BT.missing=missing;
+  BT.pairs=pairSales(rows,{minDays:o.minDays,maxDays:o.maxDays,maxMiles:o.maxMiles}).map(p=>evalPair(ST.settings,p,o.reconPt));
+}
+function pct(x){return x==null?'—':Math.round(x*100)+'%';}
+function renderBacktest(){
+  renderSold();
+  const o=btOpts();const S=ST.settings;
+  ['reconPt','maxDays','maxMiles','minDays'].forEach(k=>{const el=$('bt_'+k);if(document.activeElement!==el)el.value=o[k];});
+  $('btmini').textContent=BT.rows.length?`${BT.rows.length} sales loaded`:'';
+  if(!ST.btText){$('btload').open=true;}
+  const P=BT.pairs;
+  if(!BT.rows.length){
+    $('btkpis').innerHTML='';$('btlanecard').style.display='none';$('btbuckets').innerHTML=$('btmodels').innerHTML=$('btcal').innerHTML='';$('btpairs').innerHTML='';
+    $('btheadline').innerHTML=`<div class="empty" style="padding:14px">${ST.btText&&BT.missing.length?`Couldn't find these columns: <b>${BT.missing.join(', ')}</b>. Check the header row.`:'Open “Load sales history” above and add the auction\'s past sales to see who already ran this play, and whether it paid.'}</div>`;['btgrid','btcalcard','btpaircard'].forEach(id=>$(id).style.display='none');return;
+  }
+  ['btgrid','btcalcard','btpaircard'].forEach(id=>$(id).style.display='');
+  const box=P.filter(p=>p.inBox),rec=P.filter(p=>p.flipType==='reconditioned');
+  const sb=summarize(S,box),sa=summarize(S,P);
+  $('btkpis').innerHTML=[
+    ['Sales loaded',BT.rows.length,`${new Set(BT.rows.map(r=>r.vin||r.i)).size} vehicles`],
+    ['Repeat sales',P.length,`${P.filter(p=>p.match==='VIN').length} by VIN · ${P.filter(p=>p.match==='Odometer').length} by mileage`],
+    ['In your buy box',box.length,`bought ≤ ${g1(S.maxGrade)}, sold ≥ ${g1(S.sellGrade)}`],
+    ['Box: made money',pct(sb.profitable),`${pct(sb.hitFloor)} cleared ${money(S.minP)}`],
+    ['Box: median profit',money(sb.medProfit),`after est. recon · all flips ${money(sa.medProfit)}`]
+  ].map(([l,v,s])=>`<div class="kpi"><div class="l">${l}</div><div class="v">${v}</div><div class="s">${s}</div></div>`).join('');
+  $('btheadline').innerHTML=box.length?`<div class="headline">Of <b>${box.length}</b> cars bought at CR ${g1(S.maxGrade)} or under and resold at ${g1(S.sellGrade)}+ here, <b class="${(sb.profitable||0)>=.5?'pos':'neg'}">${pct(sb.profitable)}</b> made money after estimated recon, with a median of <b class="${pc(sb.medProfit)}">${money(sb.medProfit)}</b>. The median buyer could have spent up to <b>${money(sb.medSpread)}</b> on recon and still broken even, and resold in <b>${Math.round(sb.medDays)} days</b>.</div>
+    <p class="hint" style="margin:8px 0 0">Compared with all ${P.length} repeat sales: median ${money(sa.medProfit)}, ${pct(sa.profitable)} profitable. ${rec.length-box.length>0?`${rec.length-box.length} reconditioned flips fell outside your buy box.`:''}</p>`
+    :`<div class="headline">No repeat sales match your buy box (bought ≤ ${g1(S.maxGrade)}, sold ≥ ${g1(S.sellGrade)}) in this data. ${P.length} repeat sales overall.</div>`;
+  // buckets
+  const B=[['≤ 1.5',0,1.5],['1.6–2.0',1.6,2.0],['2.1–2.5',2.1,2.5],['2.6–3.0',2.6,3.0],['3.1+',3.1,9]];
+  const rowsB=B.map(([l,lo,hi])=>{const L=rec.filter(p=>p.a.grade>=lo-1e-9&&p.a.grade<=hi+1e-9);const s=summarize(S,L);return [l,L.length,s];}).filter(r=>r[1]);
+  $('btbuckets').innerHTML=rowsB.length?`<table class="cal"><thead><tr><th>Bought at</th><th>Flips</th><th>Break-even recon</th><th>Made money</th><th>Median profit</th></tr></thead><tbody>${rowsB.map(([l,n,s])=>`<tr><td>CR ${l}</td><td>${n}</td><td>${money(s.medSpread)}</td><td>${pct(s.profitable)}</td><td class="${pc(s.medProfit)}">${money(s.medProfit)}</td></tr>`).join('')}</tbody></table><p class="hint" style="margin:8px 0 0">Reconditioned flips only (sold 1+ grade higher).</p>`:'<div class="empty" style="padding:14px">No reconditioned flips found.</div>';
+  // models
+  const M={};rec.forEach(p=>{const k=`${p.make} ${p.model}`.trim();(M[k]=M[k]||[]).push(p);});
+  const rowsM=Object.entries(M).filter(([,L])=>L.length>=2).map(([k,L])=>[k,L.length,summarize(S,L)]).sort((a,b)=>(b[2].medProfit??-1e9)-(a[2].medProfit??-1e9)).slice(0,10);
+  $('btmodels').innerHTML=rowsM.length?`<table class="cal"><thead><tr><th>Model</th><th>Flips</th><th>Break-even</th><th>Median profit</th></tr></thead><tbody>${rowsM.map(([k,n,s])=>`<tr><td>${esc(k)}</td><td>${n}</td><td>${money(s.medSpread)}</td><td class="${pc(s.medProfit)}">${money(s.medProfit)}</td></tr>`).join('')}</tbody></table>`:'<div class="empty" style="padding:14px">Not enough repeat flips per model yet.</div>';
+  // lane to lane
+  const LM=laneMatrix(S,rec);$('btlanecard').style.display=LM.length?'':'none';
+  $('btlanes').innerHTML=LM.length?`<table class="cal"><thead><tr><th>Bought → sold</th><th>Flips</th><th>Days</th><th>Break-even recon</th><th>Median profit</th></tr></thead><tbody>${LM.map(r=>`<tr><td>${esc(r.from)} → ${esc(r.to)}${r.same?'':' <span class="src">cross</span>'}</td><td>${r.n}</td><td>${r.medDays!=null?Math.round(r.medDays):'—'}</td><td>${money(r.medSpread)}</td><td class="${r.medProfit==null?'':pc(r.medProfit)}">${money(r.medProfit)}</td></tr>`).join('')}</tbody></table><p class="hint" style="margin:8px 0 0">Reconditioned flips only. Fewer than 10 flips in a row is too few to trust.</p>`:'';
+  // calibration
+  const lifts=rec.map(p=>p.liftPerPt).filter(x=>x!=null&&isFinite(x));const ml=median(lifts);
+  const md=median(rec.map(p=>p.days));
+  $('btcal').innerHTML=rec.length>=3?`<table class="cal"><thead><tr><th>Assumption</th><th>Model uses</th><th>This auction</th></tr></thead><tbody>
+    <tr><td>Price gain per grade point</td><td>${S.liftPct}%</td><td><b>${ml!=null?ml.toFixed(1)+'%':'—'}</b> <span class="mini">median of ${lifts.length}</span></td></tr>
+    <tr><td>Days to resell at auction</td><td>${S.auctionDays}</td><td><b>${md!=null?Math.round(md):'—'}</b></td></tr></tbody></table>
+    <p class="hint" style="margin:8px 0 0">Price gain is measured hammer-to-hammer, which runs a bit hotter than MMR-to-MMR because rough cars often sell under their MMR. Treat it as an upper bound.</p>
+    <div class="btns"><button class="b primary" id="btapply">Use these in the model</button></div>`:'<div class="empty" style="padding:14px">Needs 3+ reconditioned flips.</div>';
+  if($('btapply'))$('btapply').onclick=()=>{if(ml!=null)ST.settings.liftPct=Math.round(ml*2)/2;if(md!=null)ST.settings.auctionDays=Math.round(md);persist();recompute();runBacktest();renderBacktest();renderListSoon();toast('Model updated from market data');};
+  // pairs
+  let L=btfilt==='box'?box:btfilt==='recon'?rec:P.slice();
+  L=L.slice().sort((a,b)=>(b.estProfit??b.spread)-(a.estProfit??a.spread));
+  $('btpairs').innerHTML=L.length?L.slice(0,200).map(p=>{
+    const v=p.estProfit??p.spread;const cls=v>=S.minP?'p-good':v>=0?'p-mid':'p-bad';
+    return `<div class="pair ${cls}">
+      <div class="veh-cell"><div class="veh">${p.year||''} ${esc(p.make)} ${esc(p.model)} ${esc(p.trim)}</div><div class="vin"><span class="badge ${p.match==='VIN'?'b-vin':'b-odo'}" style="padding:1px 7px;font-size:10.5px">${p.match==='VIN'?'VIN match':'Mileage match'}</span> ${p.vin?'…'+p.vin.slice(-8):''} · ${p.a.miles!=null?Math.round(p.a.miles/1000)+'k mi':''}</div></div>
+      <div class="sale"><div class="s">Bought ${fmtDate(p.a.date)} · CR ${g1(p.a.grade)}</div><div class="v">${money(p.a.price)}</div></div>
+      <div class="arrow">→ <span class="mini">${p.days}d</span></div>
+      <div class="sale"><div class="s">Sold ${fmtDate(p.b.date)} · CR ${g1(p.b.grade)}</div><div class="v">${money(p.b.price)}</div></div>
+      <div class="num"><div class="l">Break-even recon</div><div style="font-weight:800" class="${p.spread<0?'neg':''}">${money(p.spread)}</div></div>
+      <div class="num"><div class="l">Est. profit</div><div style="font-weight:800" class="${p.estProfit==null?'':pc(p.estProfit)}">${p.estProfit==null?'—':money(p.estProfit)}</div><div class="mini" style="margin:0">recon ~${p.estRecon==null?'—':money(p.estRecon)}</div></div></div>`;}).join('')
+    :'<div class="empty">Nothing in this view.</div>';
+}
+document.querySelectorAll('#btfilter button').forEach(b=>b.onclick=()=>{document.querySelectorAll('#btfilter button').forEach(x=>x.classList.remove('on'));b.classList.add('on');btfilt=b.dataset.b;renderBacktest();});
+function setBtText(t,msg){ST.btText=t;persistBt();runBacktest();$('btinput').value=t;if(BT.rows.length)$('btload').open=false;renderBacktest();if(msg)toast(msg);}
+function persistBt(){
+  // big sales files stay on this device; the cloud copy keeps only settings
+  if((ST.btText||'').length>150000){try{localStorage.setItem('aff3_bt',ST.btText);}catch(e){}const t=ST.btText;ST.btText='';persist();ST.btText=t;}
+  else persist();
+}
+$('btrun').onclick=()=>setBtText($('btinput').value);
+$('btdemo').onclick=()=>setBtText(demoSales(),'Demo sales history loaded');
+$('btfile').onchange=e=>{const f=e.target.files[0];if(!f)return;const rd=new FileReader();rd.onload=()=>setBtText(rd.result,`Loaded ${f.name}`);rd.readAsText(f);e.target.value='';};
+$('bttmpl').onclick=()=>{$('bttmplbox').classList.toggle('on');$('bttmpltext').value=SALES_TEMPLATE;};
+$('btcopytmpl').onclick=()=>copyText(SALES_TEMPLATE,'bttmplbox','bttmpltext');
+['reconPt','maxDays','maxMiles','minDays'].forEach(k=>$('bt_'+k).addEventListener('input',e=>{btOpts()[k]=+e.target.value||0;persist();runBacktest();renderBacktest();}));
+$('btexport').onclick=()=>{
+  if(!BT.pairs.length){toast('Nothing to export yet');return;}
+  const h='Year,Make,Model,Trim,VIN,Match,Bought,Buy Price,Buy Grade,Sold,Sell Price,Sell Grade,Days,Break-even Recon,Est Recon,Est Profit,In Buy Box';
+  const rows=BT.pairs.map(p=>[p.year,q(p.make),q(p.model),q(p.trim),p.vin,p.match,fmtDate(p.a.date),p.a.price,p.a.grade??'',fmtDate(p.b.date),p.b.price,p.b.grade??'',p.days,p.spread,p.estRecon??'',p.estProfit??'',p.inBox?'Y':''].join(','));
+  offerFile('auction-backtest.csv',h+'\n'+rows.join('\n'));
+};
+(function(){try{if(!ST.btText){const t=localStorage.getItem('aff3_bt');if(t)ST.btText=t;}}catch(e){}if(ST.btText){$('btinput').value=ST.btText;runBacktest();}})();
+
+setTab(['list','live','garage','backtest','settings'].includes(startTab)?startTab:'list');
+initCloud();
+setTimeout(async()=>{await shareSync();autoTune();aiRun();},600);
+setInterval(()=>{if(document.visibilityState==='visible')shareSync();},5*60*1000);
+
+</script>
+</body>
+</html>

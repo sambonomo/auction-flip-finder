@@ -15,7 +15,7 @@ Every page is behind a team login.
 
 ## Updating the app page
 
-`python3 build.py <app source html>` regenerates `public/index.html`.
+The page is written in `app-source.html` (styles, markup, the model math script, then the screen script). Edit that file, then run `python3 build.py app-source.html` to regenerate `public/index.html`. The first `<script>` holds the model math; the second holds everything on screen.
 
 ## AI review and shared log
 
