@@ -198,6 +198,7 @@ table.t tbody tr:hover{background:#1b232c}
 .toast.on{opacity:1}
 .copybox{display:none;margin-top:10px}.copybox.on{display:block}
 .dropzone{display:flex;flex-direction:column;align-items:center;gap:3px;padding:20px 12px;margin-bottom:10px;border:2px dashed #41505f;border-radius:12px;background:var(--panel2);cursor:pointer;text-align:center}
+.dropzone.has{flex-direction:row;justify-content:center;flex-wrap:wrap;gap:4px 10px;padding:10px 12px}.dropzone.has b{font-size:13px}
 .dropzone b{font-size:15px;color:var(--accent)}.dropzone span{font-size:12px;color:var(--muted)}.dropzone input{display:none}
 .primary-file{background:var(--accent);color:#1a1300;border-color:var(--accent);height:40px}
 .dropveil{display:none;position:fixed;inset:0;z-index:60;background:rgba(15,20,25,.88);align-items:center;justify-content:center;padding:24px}
@@ -334,17 +335,17 @@ table.t td:last-child{white-space:normal}table.t td:last-child .badge{margin:1px
   <nav class="topnav" id="topnav">
     <button data-tab="list" class="on">Run List</button><button data-tab="live">Live Auction</button><button data-tab="garage">Garage</button><button data-tab="backtest">Backtest</button><button data-tab="settings">Settings</button>
   </nav>
-  <div class="sync" id="sync"><i></i><span>This device</span></div>
+  <div class="sync" id="sync"><i></i><span>This device</span></div><a href="/api/logout" style="margin-left:10px;font-size:12px;color:var(--muted);white-space:nowrap">Sign out</a>
 </header>
 
 <main>
 <!-- ============ RUN LIST ============ -->
 <section id="tab-list" class="on">
+  <label class="dropzone" id="dropzone"><input type="file" id="file2" accept=".csv,.txt,text/csv,text/plain,text/comma-separated-values,application/vnd.ms-excel"><b id="dzT">Drop the Manheim export here</b><span id="dzS">or tap to pick the file. The model runs as soon as it loads.</span></label>
   <div class="card strat" id="strat"></div>
   <details class="card" id="loadbox">
-    <summary><h2>Load run list <span class="mini" id="loadmini"></span></h2><span class="chev">▼</span></summary>
+    <summary><h2>Paste a list or load a sample <span class="mini" id="loadmini"></span></h2><span class="chev">▼</span></summary>
     <p class="hint">Paste or upload the auction list. A Manheim export file (Export.csv) loads as it is. Best columns: <b>Auction, Lane, Run (or Lot / Work Order), Year, Make, Model, CR Grade, Adj MMR, MMR @ 4.0, Est Bid, Announcements</b>. The real <b>MMR @ 4.0</b> from the MMR tool matters most: without it the sell value is a guess. VIN is optional. Column order doesn't matter, and the app turns announcements into a repair estimate automatically.</p>
-    <label class="dropzone" id="dropzone"><input type="file" id="file2" accept=".csv,.txt,text/csv,text/plain,text/comma-separated-values,application/vnd.ms-excel"><b>Tap to pick the Manheim export</b><span>or drag the file anywhere onto this page</span></label>
     <textarea id="input" spellcheck="false" placeholder="Lot,VIN,Model,Odometer,CR Grade,Adj MMR,MMR @ 4.0,Est Bid,Recon Est,Announcements"></textarea>
     <div class="btns">
       <button class="b primary" id="analyze">Run the model</button>
@@ -1123,6 +1124,9 @@ function renderList(){
   renderStrat();
   const ok=CARS.filter(c=>c.ok),S=ST.settings;
   $('loadmini').textContent=RAW.length?`${RAW.length} cars loaded`:'';
+  $('dropzone').classList.toggle('has',!!RAW.length);
+  $('dzT').textContent=RAW.length?`${RAW.length} cars loaded`:'Drop the Manheim export here';
+  $('dzS').textContent=RAW.length?'Drop or tap to load a new list':'or tap to pick the file. The model runs as soon as it loads.';
   const inBox=ok.filter(c=>c.verdict!=='skip'),buys=ok.filter(c=>c.verdict==='buy'),maybes=ok.filter(c=>c.verdict==='maybe');
   const plan=ok.filter(c=>c.inPlan),bad=CARS.length-ok.length;
   const pP=plan.reduce((s,c)=>s+c.profit,0),pC=plan.reduce((s,c)=>s+c.allIn,0),pD=plan.reduce((s,c)=>s+c.down,0);
@@ -1148,7 +1152,7 @@ function renderList(){
   if(filt==='plan')list=list.filter(c=>c.inPlan);
   const key={rank:c=>c.rank,profit:c=>-c.profit,ppd:c=>-c.ppd,down:c=>-c.down,odds:c=>-c.pHit,lift:c=>-c.lift,lot:lotKey}[sortKey]||(c=>c.rank);
   list.sort((a,b)=>{if(!a.ok)return 1;if(!b.ok)return -1;const x=key(a),y=key(b);return (x>y?1:x<y?-1:0)*sortDir;});
-  const empty=RAW.length?'Nothing matches.':'Load the sample list or paste a run list to start.';
+  const empty=RAW.length?'Nothing matches.':'Drop the Manheim export at the top of this page to start.';
   if(!list.length){$('cards').innerHTML=`<div class="empty">${empty}</div>`;$('tbody').innerHTML=`<tr><td colspan="13" class="empty">${empty}</td></tr>`;}
   else{
     $('cards').innerHTML=list.map(cardHTML).join('');
@@ -1601,7 +1605,6 @@ function renderAll(){renderList();if(tab==='live')renderLive();if(tab==='garage'
 
 /* ================= Boot ================= */
 loadLocal();
-if(!ST.listText)ST.listText=sampleCSV();
 RAW=parseInput(ST.listText);$('input').value=ST.listText;
 recompute();
 const startTab=(location.hash||'').replace('#','');
