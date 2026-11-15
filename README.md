@@ -26,6 +26,9 @@ Environment variables on Vercel (Project Settings, Environment Variables):
 | `ANTHROPIC_API_KEY` | Claude API key used by `api/ai.js`. Never sent to the browser. |
 | `AI_MODEL` | Optional. Defaults to `claude-opus-5-5`. |
 | `SUPABASE_URL`, `SUPABASE_KEY` | The Supabase project URL and its publishable key, used by `api/results.js`. |
+| `CRON_SECRET` | Lets Vercel Cron call `api/retune.js` (Mondays 12:00 UTC). Vercel sends it automatically. |
 | `AFF_DB_SECRET` | Secret the server sends to the database functions. Only its hash is stored in the database. |
 
 The database is set up by `supabase/001_shared_log.sql`. The tables have row-level security on with no policies, so the public API cannot read them. The site reaches them only through the `aff_*` functions, which check the secret.
+
+`supabase/002_shared_kv.sql` adds one more closed table, `aff_kv`, for the shared Garage, saved AI results and the tuned model numbers. `lib/tune.js` holds the weekly retune rules.

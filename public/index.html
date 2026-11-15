@@ -1141,12 +1141,13 @@ async function pushState(){
 }
 const flipTimers={};
 function saveFlip(f){
-  FLIPS[f.id]=f;try{localStorage.setItem('aff3_flips',JSON.stringify(FLIPS));}catch(e){}
+  f.u=Date.now();if(f.rm==null)f.rm=ST.settings.reconMult;f.actualProfit=f.soldPrice!=null?flipActual(f):null;
+  FLIPS[f.id]=f;kvPut('flip',f.id,f);try{localStorage.setItem('aff3_flips',JSON.stringify(FLIPS));}catch(e){}
   if(!DB||!UID)return;clearTimeout(flipTimers[f.id]);
   flipTimers[f.id]=setTimeout(()=>DB.doc(`data/users/${UID}/${f.id}`).set(JSON.parse(JSON.stringify(FLIPS[f.id]||f))).catch(()=>{}),600);
 }
-async function deleteFlip(id){
-  delete FLIPS[id];try{localStorage.setItem('aff3_flips',JSON.stringify(FLIPS));}catch(e){}
+async function deleteFlip(id,localOnly){
+  delete FLIPS[id];if(!localOnly)kvPut('flip',id,null);try{localStorage.setItem('aff3_flips',JSON.stringify(FLIPS));}catch(e){}
   if(DB&&UID){try{await DB.doc(`data/users/${UID}/${id}`).delete();}catch(e){}}
 }
 function setSync(on,label){const el=$('sync');el.classList.toggle('on',!!on);el.querySelector('span').textContent=label||(on?'Saved to account':'This device');}
@@ -1220,6 +1221,7 @@ function aiStore(k,r,a){
   ST.ai=ST.ai||{};
   ST.ai[k]={h:aiHash(r),call:a.call,conf:a.confidence,recon:Math.max(0,Math.round(a.recon_est||0)),value:Math.round(a.value_at_target||0),retail:Math.round(a.retail_est||0),
     flags:(a.flags||[]).slice(0,3).map(x=>String(x).slice(0,90)),reason:String(a.reason||'').slice(0,240),fixes:(a.fixes||[]).slice(0,4).map(f=>({field:f.field,value:+f.value||0,why:String(f.why||'').slice(0,160)})),at:Date.now()};
+  kvPut('ai',k,ST.ai[k]);
   const ks=Object.keys(ST.ai);if(ks.length>3000)ks.sort((x,y)=>ST.ai[x].at-ST.ai[y].at).slice(0,ks.length-3000).forEach(x=>delete ST.ai[x]);
 }
 async function aiRun(){
@@ -1281,6 +1283,43 @@ async function shareSold(k){
   try{if(ST.results[k]){await shareCall('POST',{rows:[shareRow(k)]});if(!(ST.sharedKeys||[]).includes(k))(ST.sharedKeys=ST.sharedKeys||[]).push(k);}else{await shareCall('DELETE',{key:k});ST.sharedKeys=(ST.sharedKeys||[]).filter(x=>x!==k);}persist();setSync(true,'Shared log');}
   catch(e){setSync(false,'Not shared yet');}
 }
+const kvT={},kvQ={};
+function kvPut(kind,key,data){   // data null marks the row removed for everyone
+  if(!SHARE.on)return;(kvQ[kind]=kvQ[kind]||{})[key]={key,u:Date.now(),gone:data==null,data:data==null?{}:JSON.parse(JSON.stringify(data))};
+  clearTimeout(kvT[kind]);kvT[kind]=setTimeout(()=>kvFlush(kind),700);
+}
+async function kvFlush(kind){
+  const rows=Object.values(kvQ[kind]||{});if(!rows.length||!SHARE.ok)return;kvQ[kind]={};
+  try{for(let i=0;i<rows.length;i+=100)await shareCall2('POST',{kind,rows:rows.slice(i,i+100)});}
+  catch(e){rows.forEach(r=>{if(!(kvQ[kind]||{})[r.key])(kvQ[kind]=kvQ[kind]||{})[r.key]=r;});}
+}
+async function shareCall2(method,body,qs){
+  const r=await fetch('/api/share'+(qs||''),{method,headers:{'Content-Type':'application/json'},credentials:'same-origin',body:body?JSON.stringify(body):undefined});
+  if(!r.ok)throw {status:r.status};return r.json();
+}
+const TUNED_KEYS=['hammerPct','reconMult','liftPct'];
+function pushTuned(){
+  ST.tunedU=Date.now();const values={};TUNED_KEYS.forEach(k=>values[k]=ST.settings[k]);
+  kvPut('tuned','current',{values,log:(ST.tuneLog||[]).slice(-60),weekly:(ST.weekly||[]).slice(-12)});
+}
+async function shareMore(){
+  // Garage
+  const fl=(await shareCall2('GET',null,'?kind=flip')).rows||[];const seen={};let ch=false;
+  fl.forEach(r=>{seen[r.key]=r;const l=FLIPS[r.key];if(r.gone){if(l&&(l.u||0)<=r.u){delete FLIPS[r.key];ch=true;}}else if(!l||(r.u||0)>(l.u||0)){FLIPS[r.key]={...r.data,u:r.u};ch=true;}});
+  Object.values(FLIPS).forEach(f=>{const r=seen[f.id];if(!r||(f.u||0)>r.u){if(!f.u)f.u=Date.now();(kvQ.flip=kvQ.flip||{})[f.id]={key:f.id,u:f.u,gone:false,data:f};}});
+  if(ch){try{localStorage.setItem('aff3_flips',JSON.stringify(FLIPS));}catch(e){}if(tab==='garage')renderGarage();}
+  await kvFlush('flip');
+  // AI results: anything another device already paid for is reused here
+  ST.kvSince=ST.kvSince||{};const ai=(await shareCall2('GET',null,'?kind=ai&since='+(ST.kvSince.ai||0))).rows||[];let got=0;ST.ai=ST.ai||{};
+  ai.forEach(r=>{ST.kvSince.ai=Math.max(ST.kvSince.ai||0,r.u);if(r.gone)return;const l=ST.ai[r.key];if(!l||(r.data.at||0)>(l.at||0)){ST.ai[r.key]=r.data;got++;}});
+  // tuned numbers and the weekly note
+  const t=((await shareCall2('GET',null,'?kind=tuned')).rows||[]).find(r=>r.key==='current'&&!r.gone);let tuned=false;
+  if(t&&t.u>(ST.tunedU||0)){ST.tunedU=t.u;const v=t.data.values||{};
+    if(ST.settings.autoTune!=='no')TUNED_KEYS.forEach(k=>{if(v[k]>0&&v[k]!==ST.settings[k])ST.settings[k]=v[k];});
+    ST.tuneLog=Array.isArray(t.data.log)?t.data.log:(ST.tuneLog||[]);ST.weekly=Array.isArray(t.data.weekly)?t.data.weekly:[];tuned=true;}
+  else if(!t&&(ST.tuneLog||[]).length)pushTuned();
+  if(got||tuned){persist();recompute();renderAll();if(tab==='settings')renderSettings();}
+}
 async function shareSync(){
   if(!SHARE.on)return;
   try{
@@ -1291,12 +1330,13 @@ async function shareSync(){
     const up=Object.keys(ST.results).filter(k=>ST.results[k].sold>0&&(!remote[k]||(ST.results[k].u||ST.results[k].at||0)>remote[k].u)).map(shareRow);
     for(let i=0;i<up.length;i+=200)await shareCall('POST',{rows:up.slice(i,i+200)});
     setSync(true,'Shared log');ST.sharedKeys=Object.keys(ST.results);persist();
+    try{await shareMore();}catch(e){}
     if(got){autoTune();renderAll();if(typeof renderBacktest==='function'&&tab==='backtest')renderBacktest();}
   }catch(e){SHARE.ok=false;if(e.code!=='no_db')setSync(false,'Not shared yet');}
 }
 /* ================= Self-tuning from real results ================= */
 // Small, limited steps only, each one logged in Settings with an undo.
-const TUNE={hammerPct:{lo:80,hi:102,step:1.5,n:10,label:'Expected sale price (% of MMR)'},liftPct:{lo:5,hi:14,step:.5,n:10,label:'MMR change per CR point (%)'}};
+const TUNE={reconMult:{label:'Recon multiplier'},hammerPct:{lo:80,hi:102,step:1.5,n:10,label:'Expected sale price (% of MMR)'},liftPct:{lo:5,hi:14,step:.5,n:10,label:'MMR change per CR point (%)'}};
 function tuneSet(key,to,why){
   ST.tuneLog=ST.tuneLog||[];ST.tuneLog.push({at:Date.now(),key,from:ST.settings[key],to,why});if(ST.tuneLog.length>40)ST.tuneLog.shift();ST.settings[key]=to;
 }
@@ -1309,14 +1349,16 @@ function autoTune(){
   if(g.n>=TUNE.hammerPct.n)nudge('hammerPct',g.med,g.n,`${g.n} logged sales of CR 2.5 and under cars sold at a median of ${g.med.toFixed(1)}% of MMR`);
   else if(st.n>=TUNE.hammerPct.n)nudge('hammerPct',st.med,st.n,`${st.n} logged sales sold at a median of ${st.med.toFixed(1)}% of MMR`);
   const LL=listLift(S,CARS);if(LL.n>=TUNE.liftPct.n)nudge('liftPct',LL.med,LL.n,`${LL.n} cars with both MMR values show ${LL.med.toFixed(1)}% per grade point`);
-  if(ch){persist();recompute();renderAll();if(tab==='settings')renderSettings();const e=ST.tuneLog[ST.tuneLog.length-1];toast(`Model updated itself: ${TUNE[e.key].label} ${e.from} to ${e.to}`);}
+  if(ch){pushTuned();persist();recompute();renderAll();if(tab==='settings')renderSettings();const e=ST.tuneLog[ST.tuneLog.length-1];toast(`Model updated itself: ${TUNE[e.key].label} ${e.from} to ${e.to}`);}
   return ch;
 }
 function renderTuneLog(){
   const el=$('tunelog');if(!el)return;const log=(ST.tuneLog||[]).slice().reverse();
-  el.innerHTML=log.length?log.map((e,i)=>`<div class="rline"><div class="nm">${esc(TUNE[e.key]?TUNE[e.key].label:e.key)}: ${e.from} to ${e.to}${e.undone?' <span class="mini">undone</span>':''}<small>${new Date(e.at).toLocaleDateString([], {month:'short',day:'numeric'})} · ${esc(e.why)}</small></div>${e.undone?'':`<button class="b" data-undo="${log.length-1-i}">Undo</button>`}</div>`).join('')
-    :'<p class="hint" style="margin:0">Nothing yet. After 10 sold prices are logged, the model starts moving its expected sale price toward what cars really sell for, at most 1.5 points a day.</p>';
-  el.querySelectorAll('[data-undo]').forEach(b=>b.onclick=()=>{const e=ST.tuneLog[+b.dataset.undo];ST.settings[e.key]=e.from;e.undone=true;e.at=Date.now();persist();recompute();renderSettings();renderListSoon();toast('Change undone. The model will leave this number alone for a week.');});
+  const wk=(ST.weekly||[]).slice(-1)[0];
+  const wkH=wk?`<div class="callout blue" style="margin:0 0 10px"><b>Weekly retune, ${new Date(wk.at).toLocaleDateString([], {weekday:'short',month:'short',day:'numeric'})}.</b> ${esc(wk.text)}</div>`:'';
+  el.innerHTML=wkH+(log.length?log.map((e,i)=>`<div class="rline"><div class="nm">${esc(TUNE[e.key]?TUNE[e.key].label:e.key)}: ${e.from} to ${e.to}${e.undone?' <span class="mini">undone</span>':''}<small style="display:block;color:var(--muted);font-weight:500">${new Date(e.at).toLocaleDateString([], {month:'short',day:'numeric'})} · ${esc(e.why)}</small></div>${e.undone?'':`<button class="b" data-undo="${log.length-1-i}">Undo</button>`}</div>`).join('')
+    :'<p class="hint" style="margin:0">Nothing yet. After 10 sold prices are logged, the model starts moving its expected sale price toward what cars really sell for, at most 1.5 points a day. Every Monday morning a retune also checks recon costs and value per grade point against finished flips in the Garage.</p>');
+  el.querySelectorAll('[data-undo]').forEach(b=>b.onclick=()=>{const e=ST.tuneLog[+b.dataset.undo];ST.settings[e.key]=e.from;e.undone=true;e.at=Date.now();pushTuned();persist();recompute();renderSettings();renderListSoon();toast('Change undone. The model will leave this number alone for a week.');});
 }
 function recompute(){
   const S=ST.settings;
@@ -1860,7 +1902,7 @@ function renderSettings(){
     if(t==='text')return `<label class="full">${l}<input type="text" data-s="${k}" value="${esc(S[k])}"></label>`;
     return `<label>${l}<input type="number" data-s="${k}" step="${t}" value="${S[k]}"></label>`;
   }).join('');
-  $('settingsForm').querySelectorAll('[data-s]').forEach(el=>el.addEventListener('input',()=>{const k=el.dataset.s;ST.settings[k]=el.type==='number'?(+el.value||0):el.value;persist();recompute();renderStrat();renderListSoon();}));
+  $('settingsForm').querySelectorAll('[data-s]').forEach(el=>el.addEventListener('input',()=>{const k=el.dataset.s;ST.settings[k]=el.type==='number'?(+el.value||0):el.value;if(TUNED_KEYS.includes(k))pushTuned();persist();recompute();renderStrat();renderListSoon();}));
   renderTuneLog();
   const T=S.tiers&&S.tiers.length?S.tiers:(S.tiers=clone(DEFAULT_SETTINGS.tiers));
   $('tiers').innerHTML=`<tr><td class="l">Hammer under</td><td class="l">Buyer fee</td></tr>`+T.map((t,i)=>`<tr><td>${i===T.length-1?'<span style="color:var(--muted)">Anything higher</span>':`<input type="number" data-t="${i}" data-k="0" value="${t[0]}" step="500">`}</td><td><input type="number" data-t="${i}" data-k="1" value="${t[1]}" step="5"></td></tr>`).join('');
@@ -1900,7 +1942,7 @@ function clearAllData(){
   showModal(`<h2 style="margin:0 0 4px">Clear everything on this device?</h2><p class="hint">This removes every loaded list, the edits made to cars, the garage and the sales history on this phone or computer. Settings and the shared sold-price log are kept.</p>
     <div class="btns" style="display:grid;grid-template-columns:1fr 1fr"><button class="b" id="m-cancel">Cancel</button><button class="b bad" id="m-ok">Clear all</button></div>`);
   $('m-cancel').onclick=closeModal;
-  $('m-ok').onclick=()=>{closeModal();ST.lists=[];ST.ov={};ST.ai={};ST.btText='';if(window.claude)ST.results={};Object.keys(FLIPS).forEach(id=>deleteFlip(id));
+  $('m-ok').onclick=()=>{closeModal();ST.lists=[];ST.ov={};ST.ai={};ST.btText='';if(window.claude)ST.results={};Object.keys(FLIPS).forEach(id=>deleteFlip(id,SHARE.on));
     try{localStorage.removeItem('aff3_bt');}catch(e){}rebuildRaw();persist();recompute();setTab('list');renderAll();toast('Everything on this device is cleared');};
 }
 $('analyze').onclick=()=>loadList($('input').value,'List added','Pasted list');
@@ -2044,7 +2086,7 @@ $('btexport').onclick=()=>{
 
 setTab(['list','live','garage','backtest','settings'].includes(startTab)?startTab:'list');
 initCloud();
-setTimeout(()=>{autoTune();aiRun();shareSync();},600);
+setTimeout(async()=>{await shareSync();autoTune();aiRun();},600);
 setInterval(()=>{if(document.visibilityState==='visible')shareSync();},5*60*1000);
 
 </script>

@@ -1,6 +1,6 @@
 // Gate every page behind the team login. Runs on Vercel before any file is served.
 export const config = {
-  matcher: ['/((?!login\\.html$|api/login$|api/logout$|icon\\.svg$|manifest\\.webmanifest$|robots\\.txt$).*)'],
+  matcher: ['/((?!login\\.html$|api/login$|api/logout$|api/retune$|icon\\.svg$|manifest\\.webmanifest$|robots\\.txt$).*)'],
 };
 
 const enc = new TextEncoder();

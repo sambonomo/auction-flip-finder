@@ -1,30 +1,11 @@
 // Shared sold-price log. The session cookie is already checked by middleware.js.
 // Talks to Supabase from the server only; the database secret never reaches the browser.
-const URL_ = process.env.SUPABASE_URL;
-const KEY = process.env.SUPABASE_KEY;
-const SECRET = process.env.AFF_DB_SECRET;
-
-function readBody(req) {
-  const b = req.body;
-  if (b && typeof b === 'object' && !Buffer.isBuffer(b)) return b;
-  try { return JSON.parse(Buffer.isBuffer(b) ? b.toString('utf8') : String(b || '{}')); } catch (e) { return {}; }
-}
-const userOf = (req) => { const m = /(?:^|;\s*)aff_s=([^;.]+)\./.exec(req.headers.cookie || ''); return m ? m[1].slice(0, 40) : ''; };
-
-async function rpc(fn, args) {
-  const r = await fetch(`${URL_}/rest/v1/rpc/${fn}`, {
-    method: 'POST',
-    headers: { apikey: KEY, Authorization: `Bearer ${KEY}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ p_secret: SECRET, ...args }),
-  });
-  if (!r.ok) { const t = await r.text(); throw new Error(`db ${r.status} ${t.slice(0, 200)}`); }
-  return r.json();
-}
+const { ready, rpc, readBody, userOf } = require('../lib/db');
 
 module.exports = async (req, res) => {
   res.setHeader('Cache-Control', 'no-store');
   const send = (code, obj) => { res.statusCode = code; res.setHeader('Content-Type', 'application/json'); res.end(JSON.stringify(obj)); };
-  if (!URL_ || !KEY || !SECRET) return send(503, { error: 'no_db', message: 'The shared log is not set up yet.' });
+  if (!ready()) return send(503, { error: 'no_db', message: 'The shared log is not set up yet.' });
   try {
     if (req.method === 'GET') {
       const rows = await rpc('aff_list', {});
