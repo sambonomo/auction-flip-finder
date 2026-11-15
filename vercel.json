@@ -1,1 +1,1 @@
-{"outputDirectory":"public","buildCommand":"","framework":null,"headers":[{"source":"/(.*)","headers":[{"key":"X-Robots-Tag","value":"noindex, nofollow"},{"key":"Cache-Control","value":"no-cache"}]}]}
+{"outputDirectory":"public","buildCommand":"","framework":null,"headers":[{"source":"/(.*)","headers":[{"key":"X-Robots-Tag","value":"noindex, nofollow"},{"key":"Cache-Control","value":"no-cache"}]}],"functions":{"api/ai.js":{"maxDuration":60}}}

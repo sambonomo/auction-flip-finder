@@ -90,7 +90,7 @@ table.t tbody tr:hover{background:var(--panel2)}
 .vin{font-family:"JetBrains Mono",monospace;font-size:11px;color:var(--muted)}
 .badge{display:inline-block;padding:3px 9px;border-radius:999px;font-size:11.5px;font-weight:700;white-space:nowrap}
 .b-buy{background:var(--good-bg);color:var(--good)}.b-maybe{background:var(--warn-bg);color:var(--warn)}.b-pass{background:var(--bad-bg);color:var(--bad)}.b-skip,.b-err{background:var(--neutral-bg);color:var(--muted)}
-.b-risk{background:var(--bad-bg);color:var(--bad)}.b-plan{background:var(--blue-bg);color:var(--blue)}.b-won{background:var(--good-bg);color:var(--good)}.b-lost{background:var(--neutral-bg);color:var(--muted)}
+.b-risk{background:var(--bad-bg);color:var(--bad)}.b-ai{background:var(--blue-bg);color:var(--blue);white-space:normal}.b-plan{background:var(--blue-bg);color:var(--blue)}.b-won{background:var(--good-bg);color:var(--good)}.b-lost{background:var(--neutral-bg);color:var(--muted)}
 .pos{color:var(--good);font-weight:700}.neg{color:var(--bad);font-weight:700}.warn{color:var(--warn);font-weight:700}.maxbid{color:var(--blue);font-weight:800}
 .rank{color:var(--muted);font-weight:700}
 .src{font-size:10px;color:var(--muted);border:1px solid var(--line);border-radius:5px;padding:0 5px;margin-left:5px;font-weight:600;vertical-align:1px}
@@ -347,7 +347,7 @@ button.b.good{background:var(--good-bg);border-color:var(--good-line);color:var(
 .dropzone.has{padding:12px 14px;border:1px solid var(--line);flex-direction:row;justify-content:space-between;gap:4px 12px}
 .dropzone.has .dz-ic{display:none}.dropzone.has b{font-size:14px}.dropzone.has span{font-size:13px;font-weight:600;color:var(--accent)}
 #tab-list.nolist{max-width:640px;margin:6vh auto 0}
-.nolist #listchips,.nolist #strat,.nolist #kpis,.nolist #liftcal,.nolist #soldcal,.nolist #listcard,.nolist #howbox{display:none}
+.nolist #listchips,.nolist #strat,.nolist #kpis,.nolist #liftcal,.nolist #soldcal,.nolist #aistat,.nolist #listcard,.nolist #howbox{display:none}
 #kpis{grid-template-columns:repeat(3,1fr)}
 #loadbox,#howbox{background:none;border:0;box-shadow:none;padding:0 4px}
 #loadbox>summary,#howbox>summary{justify-content:center;gap:6px;color:var(--muted)}
@@ -426,10 +426,11 @@ button.chip{padding:6px 12px}
   <section class="kpis" id="kpis"></section>
   <div id="liftcal"></div>
   <div id="soldcal"></div>
+  <div id="aistat"></div>
   <div class="card" id="listcard">
     <div class="toolbar">
       <div class="seg" id="filter">
-        <button data-f="all" class="on">All</button><button data-f="buy">Buy</button><button data-f="maybe">Maybe</button><button data-f="star">★</button><button data-f="pass">Pass</button>
+        <button data-f="all" class="on">All</button><button data-f="buy">Buy</button><button data-f="maybe">Maybe</button><button data-f="star">★</button><button data-f="pass">Pass</button><button data-f="ai" id="f-ai">AI flags</button>
       </div>
       <input type="search" id="search" placeholder="Search" style="max-width:200px">
       <select id="sortsel" style="max-width:200px">
@@ -546,6 +547,11 @@ button.chip{padding:6px 12px}
     <div class="settings" id="settingsForm"></div>
   </div>
   <div class="card">
+    <h2>Changes the model made on its own</h2>
+    <p class="hint">Each change is small, based on real logged results, and can be undone here.</p>
+    <div id="tunelog"></div>
+  </div>
+  <div class="card">
     <h2>Buyer fee table <span class="mini">used when Buyer fee is set to the tiered schedule</span></h2>
     <p class="hint">Manheim doesn't publish one national buyer fee schedule; each location sets its own. These rows are placeholders. Copy the real numbers from the Manheim Dallas and Dallas-Fort Worth fee sheets (they are in the Manheim account under each location). If the two lanes differ, enter the higher one.</p>
     <table class="book" id="tiers"></table>
@@ -627,7 +633,7 @@ function roughMMR(d,miles){
 
 /* ================= Defaults ================= */
 const DEFAULT_SETTINGS={
-  maxGrade:2.5,sellGrade:4.0,cap:2000,minP:750,target:1500,
+  maxGrade:2.5,sellGrade:4.0,cap:2000,minP:750,target:1500,aiUse:'yes',autoTune:'yes',
   liftPct:9,panelPenalty:0.2,hammerPct:92,driftWk:0.3,
   exitMode:'auction',auctionDays:21,retailPct:112,retailPrep:400,retailCost:600,retailDays:45,dealerPct:96,dealerDays:10,
   feeMode:'tiered',feeVal:500,tIn:150,tOut:150,sellFee:300,doc:100,perDay:10,apr:9,reserve:150,
@@ -722,13 +728,14 @@ function buildCar(S,book,raw,ov){
   if(ov.lines){o.lines=ov.lines;o.reconSrc='lines';}
   else if(raw.recon!=null){o.lines=parsed.lines;o.reconSrc='list';}
   else if(parsed.parsed){o.lines=parsed.lines;o.reconSrc='parsed';}
-  else{o.lines={};o.reconSrc='model';}
+  else{o.lines={};o.reconSrc=ov.aiRecon>0?'ai':'model';}
   const lc=linesCost(book,o.lines);
   o.bodyPanels=lc.body;
   const gNow=o.cond??S.maxGrade;
   let base;
   if(o.reconSrc==='lines'||o.reconSrc==='parsed')base=lc.cost;
   else if(o.reconSrc==='list')base=raw.recon;
+  else if(o.reconSrc==='ai'){const m0=Math.max(0,S.sellGrade-gNow)*S.reconPt;base=Math.min(Math.max(ov.aiRecon,m0*.5),Math.max(m0*2,ov.aiRecon>0?600:0));}
   else base=Math.max(0,S.sellGrade-gNow)*S.reconPt;
   o.reconBase=Math.round(base);
   o.recon=Math.round(base*S.reconMult/25)*25;
@@ -1088,7 +1095,7 @@ const clone=o=>JSON.parse(JSON.stringify(o));
 const money=n=>n==null||isNaN(n)?'—':(n<0?'-$':'$')+Math.abs(Math.round(n)).toLocaleString();
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const g1=n=>n==null?'—':Number(n).toFixed(1);
-let ST={settings:clone(DEFAULT_SETTINGS),book:clone(DEFAULT_BOOK),listText:'',lists:[],results:{},resetRev:2,ov:{},budget:150000,incMaybe:false,updatedAt:0};
+let ST={settings:clone(DEFAULT_SETTINGS),book:clone(DEFAULT_BOOK),listText:'',lists:[],results:{},ai:{},tuneLog:[],resetRev:2,ov:{},budget:150000,incMaybe:false,updatedAt:0};
 let FLIPS={};          // id -> flip
 let RAW=[],CARS=[],PLAN=new Set(),listFilt=null;
 // all loaded lists become one set of cars; a car that is on two lists is kept once, from the newest list
@@ -1114,7 +1121,7 @@ function mergeState(s){
   if(rv<4&&out.settings.liftPct===10)out.settings.liftPct=9;   // first real MMR pair: $12,700 at CR 2.2 to $15,350 at 4.5 = 9.1% per point
   if(rv<5&&out.settings.minP===1000)out.settings.minP=750;   // floor lowered from $1,000 to $750
   out.settings.rev=5;   // Manheim's export MMR is confirmed grade-adjusted
-  out.book=Array.isArray(s.book)&&s.book.length?s.book:clone(DEFAULT_BOOK);out.ov=s.ov||{};out.results=s.results||{};
+  out.book=Array.isArray(s.book)&&s.book.length?s.book:clone(DEFAULT_BOOK);out.ov=s.ov||{};out.results=s.results||{};out.ai=s.ai||{};out.tuneLog=Array.isArray(s.tuneLog)?s.tuneLog:[];
   out.lists=Array.isArray(s.lists)?s.lists:(s.listText?[{id:'l0',name:'Saved list',file:'',text:s.listText,at:s.updatedAt||0}]:[]);out.listText='';
   if((s.resetRev||0)<2){out.lists=[];out.ov={};out.results={};out.btText='';}   // clean start requested 2026-11-15: test lists and results are dropped once
   out.resetRev=2;return out;
@@ -1172,9 +1179,120 @@ async function initCloud(){
 }
 
 /* ================= Compute ================= */
+/* ================= AI second opinion ================= */
+// The website asks its own server (/api/ai), which holds the key. Results are kept per car and reused until the car's data changes.
+const AI={on:typeof window!=='undefined'&&!window.claude&&/^https?:/.test(location.protocol),busy:false,done:0,total:0,err:'',fails:0};
+const aiHash=r=>[r.year,r.make,r.model,r.miles,r.cond,r.mmr].join('|');
+function aiFor(k,r){if(ST.settings.aiUse==='no')return null;const a=(ST.ai||{})[k];if(!a||a.h!==aiHash(r))return null;if((ST.ov[k]||{}).noAi)return null;return a;}
+function aiOv(ov,a){
+  if(!a)return ov;const o={...(ov||{})};
+  (a.fixes||[]).forEach(f=>{if((f.field==='mmr'||f.field==='cond')&&o[f.field]==null&&f.value>0)o[f.field]=f.value;});   // only clear data-entry errors, and never over a number typed by hand
+  if(a.recon>0)o.aiRecon=a.recon;
+  return o;
+}
+const VR={buy:2,maybe:1,pass:0,skip:0};
+function applyAi(c,a){
+  c.mVerdict=c.verdict;c.mReason=c.reason;c.ai=a||null;c.aiDis=false;c.aiFixed=false;
+  if(!a||!c.ok||c.verdict==='skip')return;
+  c.aiFixed=(a.fixes||[]).some(f=>f.field==='mmr'||f.field==='cond');
+  c.aiDis=VR[a.call]!==VR[c.verdict];
+  // the AI can hold a car back, it cannot promote one: a Buy needs both to agree
+  if(a.call==='pass'&&c.verdict==='buy'){c.verdict='maybe';c.reason='AI would pass: '+a.reason;}
+  else if(a.call==='pass'&&c.verdict==='maybe'&&a.conf==='high'){c.verdict='pass';c.reason='AI would pass: '+a.reason;}
+  else if(a.call==='maybe'&&c.verdict==='buy'){c.verdict='maybe';c.reason='AI wants a closer look: '+a.reason;}
+}
+function aiCtx(){
+  const S=ST.settings,st=soldStats();
+  const sold=st.n?`${st.n} sold prices logged, median ${st.med.toFixed(1)}% of MMR. `+st.groups.filter(g=>g.n).map(g=>`${g.l}: ${g.n} cars at ${g.med.toFixed(1)}%`).join('; '):'';
+  return {sellGrade:S.sellGrade,minP:S.minP,target:S.target,cap:S.cap,liftPct:S.liftPct,reconPt:S.reconPt,hammerPct:S.hammerPct,sold,book:ST.book.map(b=>({id:b.id,label:b.label,cost:b.cost}))};
+}
+function aiCar(k,c,report){
+  return {id:k,year:c.year,make:c.make,model:c.model||'',miles:c.miles??null,cond:c.raw.cond??c.cond,mmr:c.raw.mmr??c.mmr,mmrEst:c.mmrSrc==='est',seller:c.seller||'',auction:c.auction||'',notes:c.notes||'',report:report||'',
+    verdict:c.mVerdict||c.verdict,recon:c.recon,resale:c.mmrAtSell,max:c.max||null,bid:c.bidUsed,profit:c.profit,odds:Math.round((c.pHit||0)*100)};
+}
+async function aiAsk(cars){
+  const r=await fetch('/api/ai',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify({cars,ctx:aiCtx()})});
+  let j={};try{j=await r.json();}catch(e){}
+  if(!r.ok)throw {status:r.status,code:j.error||'',message:j.message||'The AI review failed.'};
+  return j.cars||[];
+}
+function aiStore(k,r,a){
+  ST.ai=ST.ai||{};
+  ST.ai[k]={h:aiHash(r),call:a.call,conf:a.confidence,recon:Math.max(0,Math.round(a.recon_est||0)),value:Math.round(a.value_at_target||0),retail:Math.round(a.retail_est||0),
+    flags:(a.flags||[]).slice(0,3).map(x=>String(x).slice(0,90)),reason:String(a.reason||'').slice(0,240),fixes:(a.fixes||[]).slice(0,4).map(f=>({field:f.field,value:+f.value||0,why:String(f.why||'').slice(0,160)})),at:Date.now()};
+  const ks=Object.keys(ST.ai);if(ks.length>3000)ks.sort((x,y)=>ST.ai[x].at-ST.ai[y].at).slice(0,ks.length-3000).forEach(x=>delete ST.ai[x]);
+}
+async function aiRun(){
+  if(!AI.on||AI.busy||ST.settings.aiUse==='no')return;
+  const S=ST.settings,todo=[];
+  RAW.forEach((r,i)=>{const c=CARS[i];if(!c||!c.ok||c.cond==null||c.cond>S.maxGrade+1e-9)return;const k=carKey(r,i);const a=(ST.ai||{})[k];if(a&&a.h===aiHash(r))return;todo.push({k,r,c});});
+  if(!todo.length)return;
+  todo.splice(300);AI.busy=true;AI.done=0;AI.total=todo.length;AI.err='';AI.fails=0;renderAi();
+  const batches=[];for(let i=0;i<todo.length;i+=6)batches.push(todo.slice(i,i+6));
+  const worker=async()=>{
+    while(batches.length&&!AI.err){
+      const b=batches.shift();let tries=0;
+      for(;;){
+        try{const out=await aiAsk(b.map(x=>aiCar(x.k,x.c)));out.forEach(a=>{const x=b.find(y=>y.k===a.id);if(x)aiStore(x.k,x.r,a);});AI.fails=0;break;}
+        catch(e){
+          if(e.code==='no_key'||e.code==='bad_key'||e.status===401||e.status===302){AI.err=e.message||'AI is not set up yet.';break;}
+          if(e.status===429&&tries++<3){await new Promise(r=>setTimeout(r,4000*tries));continue;}
+          if(++AI.fails>=3)AI.err=e.message||'The AI review stopped after several errors.';break;
+        }
+      }
+      AI.done+=b.length;persist();recompute();renderAll();
+    }
+  };
+  await Promise.all([worker(),worker(),worker()]);
+  AI.busy=false;persist();recompute();renderAll();
+}
+function renderAi(){
+  const el=$('aistat');if(!el)return;
+  if(!AI.on||ST.settings.aiUse==='no'||!RAW.length){el.innerHTML='';return;}
+  const rev=CARS.filter(c=>c.ai),dis=rev.filter(c=>c.aiDis).length,fx=rev.filter(c=>c.aiFixed).length;
+  if(AI.err)el.innerHTML=`<div class="callout red" style="margin:0"><b>AI review stopped.</b> ${esc(AI.err)} <a href="#" id="aiRetry" style="color:inherit;text-decoration:underline">Try again</a></div>`;
+  else if(AI.busy)el.innerHTML=`<div class="callout blue" style="margin:0"><b>AI is checking this upload:</b> ${Math.min(AI.done,AI.total)} of ${AI.total} cars. Calls update as it goes.</div>`;
+  else if(rev.length)el.innerHTML=`<div class="callout ${dis?'red':'green'}" style="margin:0"><b>AI checked ${rev.length} car${rev.length>1?'s':''}.</b> ${dis?`It disagrees with the model on ${dis}.`:'It agrees with the model on all of them.'}${fx?` It corrected data on ${fx}.`:''} ${dis?'<a href="#" id="aiShow" style="color:inherit;text-decoration:underline">Show them</a>':''}</div>`;
+  else el.innerHTML='';
+  if($('aiRetry'))$('aiRetry').onclick=e=>{e.preventDefault();AI.err='';aiRun();};
+  if($('aiShow'))$('aiShow').onclick=e=>{e.preventDefault();document.querySelectorAll('#filter button').forEach(x=>x.classList.toggle('on',x.dataset.f==='ai'));filt='ai';renderList();};
+}
+function aiBox(c){
+  const a=c.ai;if(!a)return AI.on&&ST.settings.aiUse!=='no'&&(ST.ov[c.vin]||{}).noAi?`<div class="callout blue">AI is ignored for this car. <a href="#" id="ai-on" style="color:inherit;text-decoration:underline">Use it again</a></div>`:'';
+  const S=ST.settings,fx=(a.fixes||[]).filter(f=>f.value>0);
+  return `<div class="callout ${c.aiDis?'red':'blue'}"><b>AI second opinion: ${VL[a.call]}</b> <span class="mini">${a.conf} confidence</span>${c.aiDis?` · the model alone says ${VL[c.mVerdict]}`:' · agrees with the model'}<br>${esc(a.reason)}
+    ${a.flags&&a.flags.length?`<div style="margin-top:6px">${a.flags.map(f=>`<span class="badge b-ai">${esc(f)}</span>`).join(' ')}</div>`:''}
+    <div style="margin-top:8px">AI estimates: ${a.value?`${money(a.value)} at auction at CR ${g1(S.sellGrade)} (model ${money(c.mmrAtSell)})`:''}${a.retail?` · ${money(a.retail)} retail`:''}${a.recon?` · ${money(a.recon)} recon`:''}.</div>
+    ${fx.map(f=>`<div style="margin-top:6px"><b>Corrected ${f.field==='mmr'?'MMR':f.field==='cond'?'CR grade':esc(f.field)} to ${f.field==='mmr'?money(f.value):f.value}:</b> ${esc(f.why)}${f.field!=='mmr'&&f.field!=='cond'?' (shown only, not applied)':''}</div>`).join('')}
+    <div class="mini" style="margin-top:8px">These are the AI's own estimates from general market knowledge. They are not KBB or MMR quotes. <a href="#" id="ai-off" style="color:inherit;text-decoration:underline">Ignore AI for this car</a></div></div>`;
+}
+/* ================= Self-tuning from real results ================= */
+// Small, limited steps only, each one logged in Settings with an undo.
+const TUNE={hammerPct:{lo:80,hi:102,step:1.5,n:10,label:'Expected sale price (% of MMR)'},liftPct:{lo:5,hi:14,step:.5,n:10,label:'MMR change per CR point (%)'}};
+function tuneSet(key,to,why){
+  ST.tuneLog=ST.tuneLog||[];ST.tuneLog.push({at:Date.now(),key,from:ST.settings[key],to,why});if(ST.tuneLog.length>40)ST.tuneLog.shift();ST.settings[key]=to;
+}
+function autoTune(){
+  const S=ST.settings;if(S.autoTune==='no')return false;const now=Date.now();const log=ST.tuneLog||[];let ch=false;
+  const ready=k=>{const e=log.filter(x=>x.key===k).pop();return !e||now-e.at>(e.undone?7*24:20)*3600e3;};
+  const nudge=(k,want,n,why)=>{const T=TUNE[k];if(n<T.n||!ready(k)||!(want>0))return;const cur=S[k];const d=Math.min(T.hi,Math.max(T.lo,want))-cur;if(Math.abs(d)<T.step/1.5)return;
+    tuneSet(k,Math.round((cur+Math.max(-T.step,Math.min(T.step,d)))*2)/2,why);ch=true;};
+  const st=soldStats(),g=st.groups[0];
+  if(g.n>=TUNE.hammerPct.n)nudge('hammerPct',g.med,g.n,`${g.n} logged sales of CR 2.5 and under cars sold at a median of ${g.med.toFixed(1)}% of MMR`);
+  else if(st.n>=TUNE.hammerPct.n)nudge('hammerPct',st.med,st.n,`${st.n} logged sales sold at a median of ${st.med.toFixed(1)}% of MMR`);
+  const LL=listLift(S,CARS);if(LL.n>=TUNE.liftPct.n)nudge('liftPct',LL.med,LL.n,`${LL.n} cars with both MMR values show ${LL.med.toFixed(1)}% per grade point`);
+  if(ch){persist();recompute();renderAll();if(tab==='settings')renderSettings();const e=ST.tuneLog[ST.tuneLog.length-1];toast(`Model updated itself: ${TUNE[e.key].label} ${e.from} to ${e.to}`);}
+  return ch;
+}
+function renderTuneLog(){
+  const el=$('tunelog');if(!el)return;const log=(ST.tuneLog||[]).slice().reverse();
+  el.innerHTML=log.length?log.map((e,i)=>`<div class="rline"><div class="nm">${esc(TUNE[e.key]?TUNE[e.key].label:e.key)}: ${e.from} to ${e.to}${e.undone?' <span class="mini">undone</span>':''}<small>${new Date(e.at).toLocaleDateString([], {month:'short',day:'numeric'})} · ${esc(e.why)}</small></div>${e.undone?'':`<button class="b" data-undo="${log.length-1-i}">Undo</button>`}</div>`).join('')
+    :'<p class="hint" style="margin:0">Nothing yet. After 10 sold prices are logged, the model starts moving its expected sale price toward what cars really sell for, at most 1.5 points a day.</p>';
+  el.querySelectorAll('[data-undo]').forEach(b=>b.onclick=()=>{const e=ST.tuneLog[+b.dataset.undo];ST.settings[e.key]=e.from;e.undone=true;e.at=Date.now();persist();recompute();renderSettings();renderListSoon();toast('Change undone. The model will leave this number alone for a week.');});
+}
 function recompute(){
   const S=ST.settings;
-  CARS=RAW.map((r,i)=>{const c=buildCar(S,ST.book,r,ST.ov[carKey(r,i)]);c.listId=r._list;return c;});
+  CARS=RAW.map((r,i)=>{const k=carKey(r,i);const a=aiFor(k,r);const c=buildCar(S,ST.book,r,aiOv(ST.ov[k],a));c.listId=r._list;applyAi(c,a);return c;});
   const ok=CARS.filter(c=>c.ok);
   ok.sort((a,b)=>score(b)-score(a)).forEach((c,i)=>c.rank=i+1);
   const spent=wonSpend();
@@ -1205,6 +1323,8 @@ function badges(c){
   else if(c.status==='lost')b+=`<span class="badge b-lost">Lost</span>`;
   else if(c.inPlan)b+=`<span class="badge b-plan">In plan</span>`;
   if(c.risk&&c.status!=='won')b+=`<span class="badge b-risk">High risk</span>`;
+  if(c.aiDis&&c.status!=='won')b+=`<span class="badge b-ai">AI: ${VL[c.ai.call]}</span>`;
+  if(c.aiFixed)b+=`<span class="badge b-ai">AI fixed data</span>`;
   return b;
 }
 function renderStrat(){
@@ -1239,6 +1359,7 @@ function renderList(){
   if(filt==='buy'||filt==='maybe')list=list.filter(c=>c.ok&&c.verdict===filt);
   if(filt==='pass')list=list.filter(c=>!c.ok||c.verdict==='pass'||c.verdict==='skip');
   if(listFilt)list=list.filter(c=>c.listId===listFilt);
+  if(filt==='ai')list=list.filter(c=>c.aiDis||c.aiFixed);
   if(filt==='star')list=list.filter(c=>c.star);
   if(filt==='plan')list=list.filter(c=>c.inPlan);
   const key={rank:c=>c.rank,profit:c=>-c.profit,ppd:c=>-c.ppd,down:c=>-c.down,odds:c=>-c.pHit,lift:c=>-c.lift,lot:lotKey}[sortKey]||(c=>c.rank);
@@ -1252,7 +1373,7 @@ function renderList(){
   $('thead').innerHTML=['','Lot','Vehicle','CR','MMR → resale','Recon','Safe bid','Max bid','Profit at est. bid','Odds','Call','Sold for'].map((h,i)=>`<th class="${i>2&&i<10||i===11?'num':''}">${h}</th>`).join('');
   document.querySelectorAll('#cards .vcard[data-vin],#tbody tr[data-vin]').forEach(el=>el.onclick=e=>{if(e.target.closest('.star,.vc-sold,.sold-in'))return;openCar(el.dataset.vin);});
   document.querySelectorAll('input[data-sold]').forEach(i=>{i.onchange=()=>{const v=+i.value||0;setSold(i.dataset.sold,v);toast(v>0?`Sold price saved: ${money(v)}`:'Sold price cleared');};i.onkeydown=e=>{if(e.key==='Enter')i.blur();};});
-  renderSold();
+  renderSold();renderAi();if($('f-ai'))$('f-ai').style.display=AI.on&&ST.settings.aiUse!=='no'?'':'none';
   document.querySelectorAll('.star[data-star]').forEach(b=>b.onclick=e=>{e.stopPropagation();toggleStar(b.dataset.star);});
   renderLiveCount();
 }
@@ -1307,6 +1428,7 @@ function openCar(vin){
   ${c.notes?`<p class="hint" style="margin:0 0 10px;color:${c.flag?'var(--bad)':'var(--muted)'}"><b>Announcements:</b> ${esc(c.notes)}</p>`:'<p class="hint" style="margin:0 0 10px;color:var(--warn)"><b>No announcements on the list.</b> Recon below is a grade-gap guess. Paste the condition report into the AI estimate, or add the repair lines by hand.</p>'}
   <div id="d-ladder" style="margin-bottom:12px"></div>
   <div class="hero" id="d-hero"></div>
+  <div id="d-aibox"></div>
   <div id="d-lift"></div>
   <div class="sec-l">Change the numbers</div>
   <div class="edits">
@@ -1342,6 +1464,9 @@ function updateDetail(){
   $('d-hero').innerHTML=`<div><div class="l">Profit at est. bid</div><div class="v ${pc(c.profit)}">${money(c.profit)}</div><div class="s">bid ${money(c.bidUsed)}</div></div>
     <div><div class="l">Recon</div><div class="v ${c.recon>S.cap?'neg':''}">${money(c.recon)}</div><div class="s">cap ${money(S.cap)}</div></div>
     <div><div class="l">Odds of ${kf(S.minP)}+</div><div class="v ${oc(c.pHit)}">${pc100(c.pHit)}</div><div class="s">${pc100(c.pLoss)} lose money</div></div>`;
+  $('d-aibox').innerHTML=aiBox(c);
+  if($('ai-off'))$('ai-off').onclick=e=>{e.preventDefault();setOv(c.vin,'noAi',true);recompute();updateDetail();renderListSoon();};
+  if($('ai-on'))$('ai-on').onclick=e=>{e.preventDefault();setOv(c.vin,'noAi',null);recompute();updateDetail();renderListSoon();};
   $('d-badges').innerHTML=badges(c)+`<span class="reason r-${c.verdict}" style="margin:2px 0 0 4px">${esc(c.reason)}</span>`;
   $('d-lift').innerHTML=`<div class="lift">
       <div><div class="l">As-is · CR ${g1(c.cond)}</div><div class="v">${money(c.mmr)}${c.mmrSrc==='est'?tg('est'):''}</div></div>
@@ -1389,16 +1514,17 @@ function updateDetail(){
     ${best.exit!==c.exitUsed&&best.profit-c.profit>300?`<div class="callout blue">${EXIT_LABEL[best.exit]} makes ${money(best.profit-c.profit)} more on this car${best.days>c.days?`, but ties up the cash ${best.days-c.days} days longer`:''}.</div>`:''}`;
   // recon
   const book=ST.book;const lines=c.lines;
-  const srcTxt={lines:'edited by you',parsed:'from announcements',list:'from your list',model:'grade-gap estimate'}[c.reconSrc];
+  const srcTxt={lines:'edited by you',parsed:'from announcements',list:'from your list',model:'grade-gap estimate',ai:'AI estimate'}[c.reconSrc];
   $('d-reconmini').textContent=srcTxt;
   const ids=Object.keys(lines).filter(id=>lines[id]>0);
   let rh='';
   if(c.reconSrc==='list')rh+=`<div class="callout blue" style="margin-top:0">Using the list's Recon Est of ${money(c.raw.recon)}${S.reconMult!==1?` × ${S.reconMult} calibration`:''}. Edit the lines below to price it yourself.</div>`;
+  if(c.reconSrc==='ai')rh+=`<div class="callout blue" style="margin-top:0">No announcements to read, so this uses the AI's estimate for this vehicle, kept between half and double the ${money(S.reconPt)} per grade point rule. Add lines to price it properly.</div>`;
   if(c.reconSrc==='model')rh+=`<div class="callout blue" style="margin-top:0">No announcements to read, so this uses ${money(S.reconPt)} per grade point. Add lines to price it properly.</div>`;
   rh+=ids.map(id=>{const it=book.find(b=>b.id===id);if(!it)return '';return `<div class="rline"><div class="nm">${esc(it.label)}${it.body?'<small>paint</small>':''}</div>
     <div class="step"><button data-dec="${id}">−</button><span>${lines[id]}</span><button data-inc="${id}">+</button></div><div class="c">${money(it.cost*lines[id])}</div></div>`;}).join('');
   rh+=`<div class="rline" style="border:0"><select id="d-add" style="flex:1"><option value="">+ Add a repair…</option>${book.map(b=>`<option value="${b.id}">${esc(b.label)} · ${money(b.cost)}</option>`).join('')}</select></div>
-    <table class="brk"><tbody><tr><td>Line total${S.reconMult!==1?` × ${S.reconMult} calibration`:''}</td><td>${money(c.reconSrc==='list'||c.reconSrc==='model'?c.reconBase*S.reconMult:linesCost(book,lines).cost*S.reconMult)}</td></tr>
+    <table class="brk"><tbody><tr><td>Line total${S.reconMult!==1?` × ${S.reconMult} calibration`:''}</td><td>${money(c.reconSrc==='list'||c.reconSrc==='model'||c.reconSrc==='ai'?c.reconBase*S.reconMult:linesCost(book,lines).cost*S.reconMult)}</td></tr>
     <tr class="tot"><td>Recon used</td><td class="${c.recon>S.cap?'neg':''}">${money(c.recon)} <span class="mini">cap ${money(S.cap)}</span></td></tr></tbody></table>
     ${c.reconSrc==='lines'?'<div class="btns"><button class="b ghost" id="d-reset">Reset to automatic estimate</button></div>':''}`;
   $('d-recon').innerHTML=rh;
@@ -1408,7 +1534,7 @@ function updateDetail(){
   $('d-add').onchange=e=>{const id=e.target.value;if(id)editLines(L=>L[id]=(L[id]||0)+1);};
   if($('d-reset'))$('d-reset').onclick=()=>{setOv(c.vin,'lines',null);recompute();updateDetail();renderListSoon();};
   // AI (only build once per open so typed text survives)
-  if(SAMPLE&&!$('ai-text')){
+  if((SAMPLE||AI.on)&&!$('ai-text')){
     $('d-ai').innerHTML=`<div style="border-top:1px solid var(--line);padding-top:12px"><div class="l" style="margin-bottom:6px">AI repair estimate</div>
       <textarea id="ai-text" style="min-height:80px;font-family:Inter;font-size:13px" placeholder="Paste the full condition report (damage lines, tire tread, notes)…">${esc(c.notes||'')}</textarea>
       <div class="btns"><button class="b primary" id="ai-go" style="grid-column:1/-1">Estimate recon from this report</button></div><div id="ai-out" class="hint" style="margin-top:8px"></div></div>`;
@@ -1446,14 +1572,16 @@ Rules: include only repairs needed to reach a clean CR ${ST.settings.sellGrade};
 Reply with JSON only, no prose: {"lines":{"<id>":<qty>},"risks":"<one short sentence on anything that could blow up the cost, or empty>"}`;
   try{
     let res;
-    if(typeof SAMPLE.json==='function')res=await SAMPLE.json(prompt,{modelTier:'default'});
+    if(AI.on){const out=await aiAsk([aiCar(vin,c,text)]);const a=out[0];if(!a)throw {message:'No answer'};
+      const i=CARS.indexOf(c);if(i>=0)aiStore(vin,RAW[i],a);res={lines:Object.fromEntries((a.lines||[]).map(l=>[l.id,l.qty])),risks:a.reason};}
+    else if(typeof SAMPLE.json==='function')res=await SAMPLE.json(prompt,{modelTier:'default'});
     else{const r=await SAMPLE(prompt,{modelTier:'default'});res=JSON.parse(r.text.replace(/^[^{]*/,'').replace(/[^}]*$/,''));}
     const L={};for(const k in (res.lines||{})){if(ST.book.find(b=>b.id===k)){const q=Math.max(0,Math.round(+res.lines[k]));if(q)L[k]=q;}}
     if(!Object.keys(L).length)throw {message:'No recognizable repairs came back'};
     setOv(vin,'lines',L);recompute();updateDetail();renderListSoon();
     out.innerHTML=`<span class="pos">Updated the recon lines from the report.</span>${res.risks?` <b style="color:var(--warn)">Watch:</b> ${esc(res.risks)}`:''}`;
   }catch(e){
-    out.innerHTML=`<span class="neg">${e&&e.code==='not_granted'?'AI estimates are turned off for this page.':e&&e.code==='rate_limited'?'Too many requests. Try again in a minute.':'Couldn\'t read that report. Try again or add the lines by hand.'}</span>`;
+    out.innerHTML=`<span class="neg">${e&&e.code==='not_granted'?'AI estimates are turned off for this page.':e&&e.code==='rate_limited'?'Too many requests. Try again in a minute.':e&&(e.code==='no_key'||e.code==='bad_key')?esc(e.message):'Couldn\'t read that report. Try again or add the lines by hand.'}</span>`;
     if(e&&e.code==='not_granted'){SAMPLE=null;$('d-ai').innerHTML='';}
   }
   if($('ai-go'))$('ai-go').disabled=false;
@@ -1500,8 +1628,8 @@ function setSold(vin,v){
   if(!(v>0)){delete ST.results[vin];}
   else{const prev=ST.results[vin]||{};const o=ST.ov[vin]||{};
     ST.results[vin]=c?{vin:c.realVin||'',lot:c.lot,auction:c.auction||'',saleAt:c.saleAt||'',year:c.year,make:c.make,model:c.model||'',miles:c.miles??null,cond:c.cond??null,mmr:c.mmr,mmrSrc:c.mmrSrc||'',
-      est:Math.round(c.mmr*ST.settings.hammerPct/100),safe:c.safe||null,max:c.max||null,walk:c.walk||null,verdict:c.verdict,sold:v,bought:o.status==='won',at:prev.at||Date.now()}:{...prev,sold:v};}
-  persist();
+      est:Math.round(c.mmr*ST.settings.hammerPct/100),safe:c.safe||null,max:c.max||null,walk:c.walk||null,verdict:c.mVerdict||c.verdict,ai:c.ai?c.ai.call:null,aiValue:c.ai?c.ai.value:null,sold:v,bought:o.status==='won',at:prev.at||Date.now()}:{...prev,sold:v};}
+  persist();if(v>0)autoTune();
   document.querySelectorAll('input[data-sold]').forEach(i=>{if(i.dataset.sold===vin&&document.activeElement!==i)i.value=v>0?v:'';});
   renderSold();
 }
@@ -1689,6 +1817,7 @@ const SCHEMA=[
  ['g','Exit'],['exitMode','How he sells',[['auction','Re-run at auction'],['retail','Retail on lot'],['dealer','Sell to a dealer'],['best','Best of the three, per car']]],['auctionDays','Days to re-run at auction',1],['sellThru','Chance it sells each run (%)',5],['rerunDays','Days added per no-sale',1],['noSaleFee','No-sale / re-run fee ($)',5],['rerunCut','Price drop per no-sale (%)',.5],['retailPct','Retail price (% of MMR)',1],['retailPrep','Retail-ready prep ($)',25],['retailCost','Retail selling cost ($)',25],['retailDays','Days to retail',1],['dealerPct','Dealer sale (% of MMR)',1],['dealerDays','Days to dealer sale',1],
  ['g','Costs'],['feeMode','Buyer fee',[['tiered','Typical tiered schedule'],['flat','Flat $ per car'],['pct','% of hammer']]],['feeVal','Fee $ or % (if not tiered)',25],['onlineFee','Online (Simulcast) fee per buy ($)',5],['psi','Post-sale inspection per buy ($)',5],['tIn','Transport in ($)',25],['tOut','Transport out ($)',25],['sellFee','Seller fee + re-grade ($)',25],['doc','Title / doc ($)',25],['perDay','Holding cost per day ($)',1],['apr','Floor-plan interest (APR %)',.25],['fpFee','Floor-plan fee per car ($)',5],['reserve','Surprise reserve per car ($)',25],
  ['g','Recon & risk'],['reconMult','Recon multiplier (calibration)',.05],['reconPt','Recon $/grade point (no announcements)',50],['overrun','Stress: recon over by (%)',5],['shortGrade','Stress: only grades to',.1],['flags','Auto-pass if announcements mention','text'],
+ ['g','AI and self-tuning'],['aiUse','AI checks every car on each upload',[['yes','On'],['no','Off']]],['autoTune','Model retunes itself from real results',[['yes','On'],['no','Off']]],
  ['g','Odds (what goes wrong, and how often)'],['gradeSd','Grade miss (± points)',.05],['reconSd','Recon spread (± %)',5],['priceSd','Sale price spread (± %)',1],['lemonPct','Chance of a hidden problem (%)',1],['lemonCost','Hidden problem cost ($)',100],['liftSd','Value-per-point doubt when MMR @ target is missing (± %)',.5]
 ];
 function renderSettings(){
@@ -1700,6 +1829,7 @@ function renderSettings(){
     return `<label>${l}<input type="number" data-s="${k}" step="${t}" value="${S[k]}"></label>`;
   }).join('');
   $('settingsForm').querySelectorAll('[data-s]').forEach(el=>el.addEventListener('input',()=>{const k=el.dataset.s;ST.settings[k]=el.type==='number'?(+el.value||0):el.value;persist();recompute();renderStrat();renderListSoon();}));
+  renderTuneLog();
   const T=S.tiers&&S.tiers.length?S.tiers:(S.tiers=clone(DEFAULT_SETTINGS.tiers));
   $('tiers').innerHTML=`<tr><td class="l">Hammer under</td><td class="l">Buyer fee</td></tr>`+T.map((t,i)=>`<tr><td>${i===T.length-1?'<span style="color:var(--muted)">Anything higher</span>':`<input type="number" data-t="${i}" data-k="0" value="${t[0]}" step="500">`}</td><td><input type="number" data-t="${i}" data-k="1" value="${t[1]}" step="5"></td></tr>`).join('');
   $('tiers').querySelectorAll('[data-t]').forEach(el=>el.addEventListener('input',()=>{ST.settings.tiers[+el.dataset.t][+el.dataset.k]=+el.value||0;persist();recompute();renderListSoon();}));
@@ -1723,6 +1853,7 @@ function loadList(text,msg,name){
   ST.lists=ST.lists||[];if(ST.lists.some(L=>L.text===text)){toast('That list is already loaded');return;}
   ST.lists.push({id:'l'+Date.now().toString(36)+Math.random().toString(36).slice(2,5),name:listLabel(rows,name),file:name||'',text,at:Date.now()});
   const before=RAW.length;rebuildRaw();persist();recompute();$('input').value='';$('loadbox').open=false;renderAll();
+  autoTune();aiRun();
   const add=RAW.length-before;toast(`${msg||'List added'} · ${add} new car${add===1?'':'s'}`);
 }
 function removeList(id){ST.lists=(ST.lists||[]).filter(L=>L.id!==id);rebuildRaw();persist();recompute();renderAll();toast('List removed');}
@@ -1737,7 +1868,7 @@ function clearAllData(){
   showModal(`<h2 style="margin:0 0 4px">Clear everything on this device?</h2><p class="hint">This removes every loaded list, the edits made to cars, the garage and the sales history on this phone or computer. Settings and the shared sold-price log are kept.</p>
     <div class="btns" style="display:grid;grid-template-columns:1fr 1fr"><button class="b" id="m-cancel">Cancel</button><button class="b bad" id="m-ok">Clear all</button></div>`);
   $('m-cancel').onclick=closeModal;
-  $('m-ok').onclick=()=>{closeModal();ST.lists=[];ST.ov={};ST.btText='';if(window.claude)ST.results={};Object.keys(FLIPS).forEach(id=>deleteFlip(id));
+  $('m-ok').onclick=()=>{closeModal();ST.lists=[];ST.ov={};ST.ai={};ST.btText='';if(window.claude)ST.results={};Object.keys(FLIPS).forEach(id=>deleteFlip(id));
     try{localStorage.removeItem('aff3_bt');}catch(e){}rebuildRaw();persist();recompute();setTab('list');renderAll();toast('Everything on this device is cleared');};
 }
 $('analyze').onclick=()=>loadList($('input').value,'List added','Pasted list');
@@ -1881,6 +2012,7 @@ $('btexport').onclick=()=>{
 
 setTab(['list','live','garage','backtest','settings'].includes(startTab)?startTab:'list');
 initCloud();
+setTimeout(()=>{autoTune();aiRun();},600);
 
 </script>
 </body>
