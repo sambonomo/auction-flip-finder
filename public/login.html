@@ -4,23 +4,26 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow">
-<meta name="theme-color" content="#0f1419">
+<meta name="theme-color" content="#ffffff">
 <title>Sign in · Auction Flip Finder</title>
 <link rel="icon" href="/icon.svg">
+<script>try{document.documentElement.dataset.theme=localStorage.getItem('aff_theme')==='dark'?'dark':'light'}catch(e){document.documentElement.dataset.theme='light'}</script>
 <style>
+:root{--bg:#f6f8fb;--panel:#fff;--line:#dfe5ee;--line2:#c3ccd9;--text:#0f1b2d;--muted:#566275;--accent:#2f6fed;--on-accent:#fff;--bad:#c4282f;--bad-bg:#fde8e9;--bad-line:#f2b9bc;color-scheme:light}
+:root[data-theme=dark]{--bg:#0d1117;--panel:#161c24;--line:#2e3a49;--line2:#46556a;--text:#f2f5f9;--muted:#a7b3c2;--accent:#6aa5ff;--on-accent:#08111f;--bad:#ff8a8f;--bad-bg:#401c1f;--bad-line:#6a2e32;color-scheme:dark}
 *{box-sizing:border-box}
 html,body{height:100%}
-body{margin:0;background:#0f1419;color:#e6edf3;font:16px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;display:flex;align-items:center;justify-content:center;padding:16px}
-form{width:100%;max-width:360px;background:#171e26;border:1px solid #27323e;border-radius:16px;padding:24px 20px}
-.brand{display:flex;align-items:center;gap:12px;margin-bottom:20px}
+body{margin:0;background:var(--bg);color:var(--text);font:16px/1.4 Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;display:flex;align-items:center;justify-content:center;padding:16px}
+form{width:100%;max-width:360px;background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:28px 22px;box-shadow:0 1px 2px rgba(15,27,45,.05)}
+.brand{display:flex;align-items:center;gap:12px;margin-bottom:22px}
 .logo{width:42px;height:42px;border-radius:11px;background:#f5a524;color:#1a1300;font-weight:800;font-size:24px;display:flex;align-items:center;justify-content:center}
-h1{font-size:18px;margin:0}
-.sub{font-size:12px;color:#8b98a5}
-label{display:block;font-size:13px;color:#8b98a5;margin:14px 0 6px}
-input{width:100%;padding:13px 12px;font-size:16px;color:#e6edf3;background:#0f1419;border:1px solid #33414f;border-radius:10px;outline:none}
-input:focus{border-color:#f5a524}
-button{width:100%;margin-top:20px;padding:14px;font-size:16px;font-weight:700;color:#1a1300;background:#f5a524;border:0;border-radius:10px;cursor:pointer}
-.err{display:none;margin-top:14px;padding:10px 12px;font-size:14px;color:#ffb4a8;background:#3a1d1a;border:1px solid #6b2c25;border-radius:10px}
+h1{font-size:18px;margin:0;font-weight:700}
+.sub{font-size:13px;color:var(--muted)}
+label{display:block;font-size:13px;font-weight:600;color:var(--muted);margin:14px 0 6px}
+input{width:100%;padding:13px 12px;font-size:16px;color:var(--text);background:var(--panel);border:1px solid var(--line2);border-radius:10px;outline:none}
+input:focus{border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 25%,transparent)}
+button{width:100%;margin-top:22px;padding:14px;font-size:16px;font-weight:700;color:var(--on-accent);background:var(--accent);border:0;border-radius:10px;cursor:pointer}
+.err{display:none;margin-top:14px;padding:10px 12px;font-size:14px;color:var(--bad);background:var(--bad-bg);border:1px solid var(--bad-line);border-radius:10px}
 .err.on{display:block}
 </style>
 </head>
