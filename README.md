@@ -32,3 +32,14 @@ Environment variables on Vercel (Project Settings, Environment Variables):
 The database is set up by `supabase/001_shared_log.sql`. The tables have row-level security on with no policies, so the public API cannot read them. The site reaches them only through the `aff_*` functions, which check the secret.
 
 `supabase/002_shared_kv.sql` adds one more closed table, `aff_kv`, for the shared Garage, saved AI results and the tuned model numbers. `lib/tune.js` holds the weekly retune rules.
+
+## Research numbers
+
+Make, model, segment and season adjustments live in a `RESEARCH` block inside `app-source.html`.
+It is generated from the research file, never edited by hand:
+
+    python3 tools/make-params.py /path/to/model-params.json
+    python3 build.py app-source.html
+
+Each car is priced with the Settings shifted by its segment, its model and the month it should sell in (`carS`).
+Turn this off in Settings under "AI and self-tuning".

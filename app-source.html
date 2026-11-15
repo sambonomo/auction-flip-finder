@@ -710,18 +710,45 @@ function roughMMR(d,miles){
   return Math.max(1500,Math.round(v*.84/50)*50);
 }
 
+/* ================= Research numbers (make / model / segment / season) =================
+   Generated from model-params.json by tools/make-params.py. Do not edit by hand. */
+/*RESEARCH:BEGIN*/const RESEARCH={"v":"1.0","date":"2026-11-15","def":{"sellPct":98,"sellLo":94,"sellHi":101,"sellThru":50,"reconPt":750,"driftWk":0.45,"lemonPct":10,"lemonCost":1800},"months":{"1":[0.5,55,0.0],"2":[0.8,56,-0.5],"3":[0.9,60,-0.3],"4":[0.3,58,0.1],"5":[0.0,54,0.2],"6":[-0.1,51,0.45],"7":[-0.2,49,0.65],"8":[0.0,52,0.4],"9":[-0.2,49,0.7],"10":[-0.5,49,0.65],"11":[-0.6,47,0.8],"12":[0.0,50,0.3]},"seg":{"truck/mid":{"reconPt":940,"driftMult":1.5},"truck/keep":{"sellPct":99,"sellThru":55,"reconPt":940,"lemonPct":7,"driftMult":1.5},"truck/low":{"sellPct":97,"sellThru":45,"reconPt":940,"lemonPct":13,"driftMult":1.5},"truck/lux":{"sellPct":97,"sellThru":45,"reconPt":1310,"lemonPct":14,"lemonCost":2800,"driftMult":1.5},"truck/ev":{"sellPct":96,"sellLo":88,"sellThru":45,"reconPt":845,"lemonPct":12,"lemonCost":4000,"driftMult":1.5},"suv/mid":{"reconPt":825,"driftMult":1.15},"suv/keep":{"sellPct":99,"sellThru":55,"reconPt":825,"lemonPct":7,"driftMult":1.15},"suv/low":{"sellPct":97,"sellThru":45,"reconPt":825,"lemonPct":13,"driftMult":1.15},"suv/lux":{"sellPct":97,"sellThru":45,"reconPt":1155,"lemonPct":14,"lemonCost":2800,"driftMult":1.15},"suv/ev":{"sellPct":96,"sellLo":88,"sellThru":45,"reconPt":745,"lemonPct":12,"lemonCost":4000,"driftMult":1.15},"car/mid":{"reconPt":750,"driftMult":0.7},"car/keep":{"sellPct":99,"sellThru":55,"reconPt":750,"lemonPct":7,"driftMult":0.7},"car/low":{"sellPct":97,"sellThru":45,"reconPt":750,"lemonPct":13,"driftMult":0.7},"car/lux":{"sellPct":97,"sellThru":45,"reconPt":1050,"lemonPct":14,"lemonCost":2800,"driftMult":0.7},"car/ev":{"sellPct":96,"sellLo":88,"sellThru":45,"reconPt":675,"lemonPct":12,"lemonCost":4000,"driftMult":0.7}},"models":{"gmc terrain":[{"lemonPct":45,"lemonCost":2500,"y":[2010,2017],"avoid":1,"rating":"avoid","flag":"2010-2017 2.4L: oil consumption and timing chain. GM coverage found only for 2010-2013, none for 2015. Listen for cold-start rattle, check oil level."}],"chevrolet equinox":[{"lemonPct":45,"lemonCost":2500,"y":[2010,2017],"avoid":1,"rating":"avoid","flag":"2010-2017 2.4L: same oil consumption and timing chain problem as the Terrain."},{"lemonPct":7,"lemonCost":1500,"y":[2018,2024],"rating":"low","flag":"2018-2024 1.5T: few complaints from 2022 on. Best risk profile on the list."}],"chevrolet colorado":[{"lemonPct":20,"lemonCost":1800,"y":[2017,2019],"rating":"medium","flag":"2017-2019 3.6L 8-speed: torque converter shudder (TSB 18-NA-355, fluid exchange). No recall. Feel for shudder at light throttle 25-80 mph."}],"gmc canyon":[{"lemonPct":20,"lemonCost":1800,"y":[2017,2019],"rating":"medium","flag":"Same truck as the Colorado: 2017-2019 3.6L 8-speed shudder."}],"chevrolet bolt euv":[{"sellLo":88,"sellThru":40,"lemonPct":12,"lemonCost":4000,"rating":"high","flag":"EV. Over 100k miles it is likely past battery warranty (terms not yet verified). 2023 is NOT in the 2017-2022 fire recall. Value swings; ask for the battery health score."}],"chevrolet bolt ev":[{"sellLo":88,"lemonPct":12,"lemonCost":4000,"rating":"high","flag":"EV. 2017-2022 had the battery fire recall: confirm the pack was replaced. Past 100k miles likely out of battery warranty."}],"gmc acadia":[{"lemonPct":30,"lemonCost":3000,"y":[2017,2023],"rating":"medium-high","flag":"2017-2023 3.6L 9-speed: transmission shudder / valve body, 'Shift to Park' message. Source for numbers is weak."}],"chevrolet silverado 1500":[{"lemonPct":15,"lemonCost":1800,"y":[2019,2024],"rating":"medium","flag":"2.7L turbo: no lifter or 6.2L recall exposure. 5.3L has lifter failures; 6.2L has the big engine recall (N252494001). Check which engine."}],"ford escape":[{"lemonPct":40,"lemonCost":5000,"y":[2017,2019],"avoid":1,"rating":"avoid","flag":"2017-2019 1.5L EcoBoost: coolant leaks into cylinders, fix is a short block (Ford program 21N12). Codes P0300-P0304, P0316, P0217, P1285, P1299; white smoke, low coolant."},{"lemonPct":15,"lemonCost":2000,"y":[2020,2022],"rating":"medium","flag":"2020-2022 1.5L 3-cyl: open injector fire recall 25S76 (NHTSA 25V467), interim software only as of mid-2025. 2.0L is lower risk."}],"ford explorer":[{"lemonPct":25,"lemonCost":2000,"y":[2011,2019],"rating":"medium","flag":"2011-2019: check rear toe link recalls (19V-435, 26V-101) done. Water pump problem is 3.5L V6 only, PTU is AWD only. High miles is the main risk on 2.3L FWD."}],"ford bronco sport":[{"lemonPct":25,"lemonCost":2500,"y":[2021,2024],"rating":"medium-high","flag":"2021-2024 1.5L 3-cyl: open injector fire recall 25S76 (NHTSA 25V467). High miles on a small turbo 3-cyl."}],"ram 3500":[{"lemonPct":40,"lemonCost":5000,"y":[2019,2020],"rating":"medium, big dollars","flag":"2019-2020 6.7L Cummins: confirm fuel pump recall Y78 (NHTSA 21V880) was done. Emissions parts (DPF/EGR/DEF) are costly past 200k miles."}],"ram 2500":[{"lemonPct":40,"lemonCost":5000,"y":[2019,2020],"rating":"medium, big dollars","flag":"2019-2020 6.7L Cummins: confirm fuel pump recall Y78 (NHTSA 21V880) was done."}],"ram 1500":[{"lemonPct":15,"lemonCost":1500,"y":[2019,2024],"rating":"low-medium","flag":"3.6L: oil cooler housing leaks are the only sourced issue. eTorque failures not verified."}],"jeep renegade":[{"lemonPct":50,"lemonCost":4000,"y":[2015,2021],"avoid":1,"rating":"avoid","flag":"2.4L Tigershark burns oil and stalls. Settlement covers 2015-2018 only, so no coverage on 2019-2021. Check the dipstick."}],"kia forte":[{"lemonPct":10,"lemonCost":1800,"y":[2019,2024],"rating":"low-medium","flag":"2022+ has an immobilizer. Not in the Soul/Seltos engine recall. Easy re-run."}],"kia soul":[{"lemonPct":30,"lemonCost":3500,"y":[2020,2023],"rating":"high","flag":"2021-2023 2.0L: recall SC336 for piston oil rings (engine replaced if needed). Key-start cars through 2022 have no immobilizer (theft). OK only with recall and anti-theft update documented; then about 10%."}],"kia optima":[{"lemonPct":40,"lemonCost":4000,"y":[2011,2019],"avoid":1,"rating":"avoid","flag":"2011-2019 2.4 GDI / 2.0T Theta II: rod bearing failure. Lifetime engine warranty excludes dealers and can be denied without the knock-sensor update. Listen for knock."}],"nissan kicks":[{"lemonPct":12,"lemonCost":2500,"rating":"medium","flag":"CVT, no extension coverage found. 50k miles on a 2025 suggests rental or fleet use."}],"nissan murano":[{"lemonPct":25,"lemonCost":3500,"y":[2015,2024],"rating":"medium-high","flag":"CVT coverage extension is 2015-2018 only, so 2019+ has none. Check 2020 suspension recalls 21V402 and 21V170."}],"toyota camry":[{"lemonPct":12,"lemonCost":2000,"y":[2018,2024],"rating":"low-medium","flag":"2018-2020: fuel pump recalls (20V012, 20V682, 25V028). 8-speed shift complaints. Easy re-run."}],"toyota c-hr":[{"lemonPct":35,"lemonCost":5000,"y":[2018,2019],"rating":"high","flag":"2018-2019 CVT bearing failure, average about 73k miles, quoted $10,000-14,000 at retail; no US coverage found. Listen for a whine that rises with speed."}],"mazda cx-30":[{"lemonPct":7,"lemonCost":1500,"rating":"low","flag":"Only recall found is liftgate software (21V086). Easy re-run."}],"mitsubishi mirage":[{"sellPct":96,"sellThru":40,"lemonPct":15,"lemonCost":1500,"rating":"medium","flag":"Mechanical risk is modest; the problem is thin demand and a low price ceiling."}],"volkswagen tiguan":[{"lemonPct":18,"lemonCost":1800,"y":[2018,2024],"rating":"medium","flag":"2024: rear camera recall 25V082 and follow-up 26V321. Coolant and sunroof leak reports not verified."}],"mitsubishi mirage g4":[{"sellPct":96,"sellThru":40,"lemonPct":15,"lemonCost":1500,"rating":"medium","flag":"Mechanical risk is modest; the problem is thin demand and a low price ceiling."}]}};/*RESEARCH:END*/
+function researchFor(o){
+  const seg=(RESEARCH.seg||{})[`${o.type}/${o.cls==='truck'?'mid':o.cls}`]||{};   // the VIN table's 'truck' class is the domestic makes: mainstream
+  const name=`${o.make||''} ${o.model||''}`.toLowerCase().replace(/\s+/g,' ').trim();
+  let key=null;for(const k in (RESEARCH.models||{}))if((name===k||name.startsWith(k+' '))&&(!key||k.length>key.length))key=k;
+  const blk=key?RESEARCH.models[key].find(b=>!b.y||(o.year>=b.y[0]&&o.year<=b.y[1])):null;
+  return {seg,model:blk||null,key:blk?key:null};
+}
+// The settings this one car is priced with: your Settings, shifted by what research says about its
+// segment, its model and the month it will sell in. Your own tuning still moves every car.
+function carS(S,o){
+  if(S.useResearch==='no'||!RESEARCH.def)return S;
+  const R=researchFor(o),D=RESEARCH.def,T={...S};
+  const lay=b=>{for(const k of ['sellPct','sellLo','sellHi','sellThru'])if(b[k]!=null)T[k]=S[k]+(b[k]-D[k]);
+    if(b.reconPt!=null)T.reconPt=Math.round(S.reconPt*b.reconPt/D.reconPt/5)*5;
+    for(const k of ['lemonPct','lemonCost'])if(b[k]!=null)T[k]=b[k];};
+  lay(R.seg);if(R.model)lay(R.model);
+  const m=S.season==='no'?null:RESEARCH.months[new Date(Date.now()+((S.auctionDays||21)+7)*864e5).getMonth()+1];
+  if(m){T.sellPct+=m[0];T.sellLo+=m[0];T.sellHi+=m[0];T.sellThru+=m[1]-D.sellThru;T.driftWk=S.driftWk+(m[2]-D.driftWk);}
+  T.driftWk=Math.round(T.driftWk*(R.seg.driftMult||1)*100)/100;
+  T.sellThru=Math.min(95,Math.max(20,T.sellThru));
+  for(const k of ['sellPct','sellLo','sellHi'])T[k]=Math.round(T[k]*10)/10;
+  o.research=R;return T;
+}
+
 /* ================= Defaults ================= */
 const DEFAULT_SETTINGS={
-  maxGrade:2.5,sellGrade:4.0,cap:2000,minP:750,target:1500,aiUse:'yes',autoTune:'yes',
-  liftPct:9,panelPenalty:0.2,hammerPct:92,driftWk:0.3,
+  maxGrade:2.5,sellGrade:4.0,cap:2000,minP:750,target:1500,aiUse:'yes',autoTune:'yes',useResearch:'yes',season:'yes',
+  liftPct:9,panelPenalty:0.2,hammerPct:96,driftWk:0.45,
   exitMode:'auction',auctionDays:21,retailPct:112,retailPrep:400,retailCost:600,retailDays:45,dealerPct:96,dealerDays:10,
-  feeMode:'tiered',feeVal:500,tIn:150,tOut:150,sellFee:300,doc:100,perDay:10,apr:9,reserve:150,
+  feeMode:'tiered',feeVal:500,tIn:150,tOut:150,sellFee:500,doc:100,perDay:10,apr:9,reserve:150,
   reconMult:1,reconPt:750,overrun:25,shortGrade:3.5,
-  mmrKind:'adj',baseGrade:3.2,rev:6,
-  sellPct:100,sellLo:98,sellHi:108,cheapMMR:10000,sellThru:60,rerunDays:7,noSaleFee:50,onlineFee:0,psi:0,
-  gradeSd:0.3,reconSd:25,priceSd:4,lemonPct:5,lemonCost:1500,
+  mmrKind:'adj',baseGrade:3.2,rev:7,
+  sellPct:98,sellLo:94,sellHi:101,cheapMMR:10000,sellThru:50,rerunDays:7,noSaleFee:50,onlineFee:0,psi:0,
+  gradeSd:0.4,reconSd:25,priceSd:4,lemonPct:10,lemonCost:1800,
   liftSd:2.5,rerunCut:1,fpFee:0,conf:70,needSell:'yes',
-  tiers:[[1000,225],[3000,350],[5000,450],[7500,525],[10000,600],[15000,700],[20000,800],[30000,925],[40000,1050],[1e9,1200]],
+  tiers:[[500,260],[1000,270],[1500,295],[2000,305],[3000,340],[4000,365],[5000,385],[6000,395],[7000,410],[8000,420],[9000,445],[10000,470],[11000,485],[12000,500],[13000,510],[14000,520],[15000,540],[16000,565],[17000,590],[18000,600],[19000,620],[20000,640],[21000,660],[22000,715],[23000,725],[24000,740],[25000,755],[26000,805],[27000,815],[28000,835],[29000,845],[30000,860],[31000,875],[36000,960],[1e9,1080]],
   flags:'frame, structural, flood, salvage, rebuilt, TMU, odometer, airbag, buyback, fire, hail, engine noise, transmission, does not run'
 };
 // body:true = repaint / panel repair (AutoGrade deducts for previous repairs per panel)
@@ -793,6 +820,7 @@ function buildCar(S,book,raw,ov){
   if(v.noVin){const mk=(raw.make||'').toLowerCase();d={year:raw.year,make:raw.make,type:guessType(raw.model),cls:MAKE_CLS[mk]||'mid'};}
   else d=decodeVin(v.vin);
   o.year=raw.year||d.year;o.make=raw.make||d.make||'Unknown make';
+  o.type=d.type;o.cls=d.cls;S=carS(S,o);o.S=S;   // from here on, S is this car's own set of numbers
   const cond=ov.cond??raw.cond;o.condGiven=cond!=null;o.cond=cond!=null?Math.round(cond*10)/10:null;
   const mmr=ov.mmr??raw.mmr;
   if(mmr!=null&&ov.mmr==null&&!raw.mmrAdj&&S.mmrKind==='base'&&o.cond!=null){
@@ -934,6 +962,7 @@ function evaluate(S,o){
   if(o.cond==null){o.verdict='pass';o.reason='No CR grade on the list';}
   else if(o.cond>S.maxGrade+1e-9){o.verdict='skip';o.reason=`CR ${o.cond.toFixed(1)} is above the ${S.maxGrade.toFixed(1)} buy box`;}
   else if(o.flag){o.verdict='pass';o.reason=`Announced: ${o.flag}`;}
+  else if(o.research&&o.research.model&&o.research.model.avoid){o.verdict='pass';o.reason='Known problem model for these years. Avoid';}
   else if(o.recon>S.cap){o.verdict='pass';o.reason=`Recon ${money(o.recon)} is over the ${money(S.cap)} cap`;}
   else if(o.typ>=S.target&&S.needSell==='yes'&&o.mmrSrc==='est'){o.verdict='maybe';o.reason='Looks like a buy, but the Adj MMR is a guess from the VIN. Get the real one first';}
   else if(o.typ>=S.target&&S.needSell==='yes'&&o.sellSrc==='est'){o.verdict='maybe';o.reason=`Looks like a buy, but needs the real MMR @ ${S.sellGrade.toFixed(1)} first`;}
@@ -944,6 +973,7 @@ function evaluate(S,o){
   else{o.verdict='pass';o.reason=o.typ<0?'Typically loses money at the expected bid':`Typically only ${money(o.typ)} profit, under the ${money(S.minP)} floor`;}
   o.risk=(o.verdict==='buy'||o.verdict==='maybe')&&(o.down<0||o.pLoss>.25);
   if(o.gradeCapped&&(o.verdict==='buy'||o.verdict==='maybe'))o.reason+=` · paint caps it at CR ${o.gradeAch.toFixed(1)}`;
+  if(o.research&&o.research.model&&o.research.model.flag&&(o.verdict==='buy'||o.verdict==='maybe'))o.reason+=' · known issue, check notes';
   if(o.cheap&&(o.verdict==='buy'||o.verdict==='maybe'))o.reason+=` · under ${money(S.cheapMMR)} MMR, thin margin`;
 }
 
@@ -1045,7 +1075,7 @@ const DEMO_FLIPS=[
  ['102','KNDPM3AC0K7542210',2019,'Kia','Sportage LX',2.3,13900,12600,1200,1250,1150,4.0,16950,'retail',38],
  ['105','JTMBFREV0KD004331',2019,'Toyota','RAV4 XLE',2.1,21200,19500,1500,1700,1610,3.8,24100,'auction',21]
 ];
-if(typeof module!=='undefined')module.exports={carKey,parseInput,buildCar,DEFAULT_SETTINGS,DEFAULT_BOOK,sampleCSV,planBudget,parseRecon,exitCalc,simCar,typBidFor,maxBidFor,laneRange};
+if(typeof module!=='undefined')module.exports={carKey,parseInput,buildCar,DEFAULT_SETTINGS,DEFAULT_BOOK,sampleCSV,planBudget,parseRecon,exitCalc,simCar,typBidFor,maxBidFor,laneRange,carS,researchFor,RESEARCH};
 
 /* ================= Backtest: repeat sales at the same auction ================= */
 function parseDate(s){
@@ -1222,7 +1252,11 @@ function mergeState(s){
   if(rv<5&&out.settings.minP===1000)out.settings.minP=750;   // floor lowered from $1,000 to $750
   if(rv<6){const sp=(s.settings||{}).sellPct;   // resale is now a low / middle / high range
     if(sp==null||sp===98)out.settings.sellPct=100;else{out.settings.sellLo=sp-2;out.settings.sellHi=sp+2;}}
-  out.settings.rev=6;   // Manheim's export MMR is confirmed grade-adjusted
+  if(rv<7){const sv=s.settings||{},mv=(k,was,now)=>{if(sv[k]==null||sv[k]===was)out.settings[k]=now;};   // research pass, Nov 2026
+    mv('hammerPct',92,96);mv('sellThru',60,50);mv('lemonPct',5,10);mv('lemonCost',1500,1800);mv('gradeSd',.3,.4);mv('sellFee',300,500);mv('driftWk',.3,.45);
+    if(sv.sellPct==null||sv.sellPct===98||sv.sellPct===100){out.settings.sellPct=98;out.settings.sellLo=94;out.settings.sellHi=101;}
+    if(!sv.tiers||JSON.stringify(sv.tiers)==='[[1000,225],[3000,350],[5000,450],[7500,525],[10000,600],[15000,700],[20000,800],[30000,925],[40000,1050],[1000000000,1200]]')out.settings.tiers=clone(DEFAULT_SETTINGS.tiers);}
+  out.settings.rev=7;   // Manheim's export MMR is confirmed grade-adjusted
   out.book=Array.isArray(s.book)&&s.book.length?s.book:clone(DEFAULT_BOOK);out.ov=s.ov||{};out.results=s.results||{};out.ai=s.ai||{};out.tuneLog=Array.isArray(s.tuneLog)?s.tuneLog:[];
   out.lists=Array.isArray(s.lists)?s.lists:(s.listText?[{id:'l0',name:'Saved list',file:'',text:s.listText,at:s.updatedAt||0}]:[]);out.listText='';
   if((s.resetRev||0)<2){out.lists=[];out.ov={};out.results={};out.btText='';}   // clean start requested 2026-11-15: test lists and results are dropped once
@@ -1657,7 +1691,7 @@ function closeCar(){openVin=null;$('sheet').classList.remove('on');$('backdrop')
 $('backdrop').onclick=closeCar;
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){if($('modal').classList.contains('on'))closeModal();else if(openVin)closeCar();}});
 function updateDetail(){
-  const c=carBy(openVin);if(!c){closeCar();return;}const S=ST.settings;
+  const c=carBy(openVin);if(!c){closeCar();return;}const S=ST.settings,CS=c.S||S,RM=c.research&&c.research.model;
   $('d-hero').innerHTML=`<div><div class="l">Typical profit</div><div class="v ${pc(c.typ)}">${money(c.typ)}</div><div class="s">at est. bid ${money(c.bidUsed)}</div></div>
     <div><div class="l">Recon</div><div class="v ${c.recon>S.cap?'neg':''}">${money(c.recon)}</div><div class="s">cap ${money(S.cap)}</div></div>
     <div><div class="l">Odds of ${kf(S.minP)}+</div><div class="v ${oc(c.pHit)}">${pc100(c.pHit)}</div><div class="s">${pc100(c.pLoss)} lose money</div></div>`;
@@ -1683,6 +1717,7 @@ function updateDetail(){
   $('d-notes').innerHTML=`${c.est.length?`<div class="callout red"><b>Estimated, not measured:</b> ${esc(c.est.join(', '))}. Fill ${c.est.length>1?'these':'it'} in below before bidding real money.</div>`:''}
     ${c.buyNow?`<div class="callout ${c.buyNow<=c.safe?'green':'blue'}">Buy Now is ${money(c.buyNow)}${c.buyNow<=c.safe?', under the safe bid.':c.buyNow<=c.max?', between the safe bid and the max bid.':', over the max bid.'}</div>`:''}
     ${c.mmrSrc==='base'?`<div class="callout blue">The list's MMR of ${money(c.mmrBase)} is treated as a base MMR for a CR ${g1(S.baseGrade)} car, so this car's as-is value is ${money(c.mmr)}. If the list's MMR is already adjusted for grade, change that in Settings.</div>`:''}
+    ${RM&&RM.flag?`<div class="callout ${RM.avoid?'red':'amber'}"><b>${RM.avoid?'Avoid this model.':'Known issue on this model.'}</b> ${esc(RM.flag)} The odds here assume a ${CS.lemonPct}% chance of a ${money(CS.lemonCost)} hidden problem.</div>`:''}
     ${c.cheap&&c.verdict!=='skip'?`<div class="callout amber"><b>Under ${money(S.cheapMMR)} MMR.</b> Fees, transport and holding cost about ${money(c.allIn-c.bidUsed-c.recon)} no matter what the car is worth, so cheap cars need a very low hammer to work.</div>`:''}
     ${!c.max?'<div class="callout red"><b>No bid clears the target.</b> Pass unless the numbers change.</div>':c.bidUsed>c.walk?`<div class="callout red"><b>The expected bid is above walk-away.</b> Let it go unless it stalls under ${money(c.walk)}.</div>`:''}`.trim();
   if($('d-won'))$('d-won').onclick=()=>askWon(c.vin);
@@ -1692,13 +1727,13 @@ function updateDetail(){
   const best=c.exits.slice().sort((a,b)=>b.profit-a.profit)[0];
   $('d-exits').innerHTML=`${(()=>{const A=c.exitUsed==='auction';const ns=A?c.sellCosts-(S.tOut+S.sellFee+S.doc):0;const m=n=>'-'+money(n);
     return `<table class="brk"><tbody>
-      <tr><td><b>Resale</b> at CR ${g1(c.gradeAch)}${A&&S.sellPct!==100?` · ${S.sellPct}% of ${money(c.mmrAtSell)} MMR`:''}, after ${c.days} days of market drift</td><td><b>${money(c.price)}</b></td></tr>
+      <tr><td><b>Resale</b> at CR ${g1(c.gradeAch)}${A&&(c.S||S).sellPct!==100?` · ${(c.S||S).sellPct}% of ${money(c.mmrAtSell)} MMR`:''}, after ${c.days} days of market drift</td><td><b>${money(c.price)}</b></td></tr>
       <tr><td>Hammer${c.bidSrc==='assumed'?` (assumed ${S.hammerPct}% of MMR)`:c.bidSrc==='paid'?' (paid)':''}</td><td>${m(c.bidUsed)}</td></tr>
       <tr><td>Buyer fee${S.onlineFee||S.psi?' + online / PSI':''}</td><td>${m(c.fee)}</td></tr>
       <tr><td>Transport in</td><td>${m(S.tIn)}</td></tr>
       <tr><td>Recon</td><td>${m(c.recon)}</td></tr>
       <tr><td>Surprise reserve</td><td>${m(S.reserve)}</td></tr>
-      ${A?`<tr><td>Transport out</td><td>${m(S.tOut)}</td></tr><tr><td>Seller fee + re-grade</td><td>${m(S.sellFee)}</td></tr><tr><td>Title / doc</td><td>${m(S.doc)}</td></tr>${ns>0?`<tr><td>No-sale allowance (avg ${(100/Math.max(5,S.sellThru)).toFixed(1)} runs)</td><td>${m(ns)}</td></tr>`:''}`
+      ${A?`<tr><td>Transport out</td><td>${m(S.tOut)}</td></tr><tr><td>Seller fee + re-grade</td><td>${m(S.sellFee)}</td></tr><tr><td>Title / doc</td><td>${m(S.doc)}</td></tr>${ns>0?`<tr><td>No-sale allowance (avg ${(100/Math.max(5,(c.S||S).sellThru)).toFixed(1)} runs)</td><td>${m(ns)}</td></tr>`:''}`
         :`<tr><td>Selling costs (${EXIT_LABEL[c.exitUsed].toLowerCase()})</td><td>${m(c.sellCosts)}</td></tr>`}
       <tr><td>Holding + interest (${c.days} days)</td><td>${m(c.holding)}</td></tr>
       <tr class="tot"><td>Profit at this hammer, if all goes to plan</td><td class="${pc(c.profit)}">${money(c.profit)}</td></tr>
@@ -1751,7 +1786,7 @@ function updateDetail(){
     <tr><td>Bad day (1 in 10)</td><td class="${pc(c.p10)}">${money(c.p10)}</td></tr>
     <tr><td>Typical</td><td class="${pc(c.p50)}">${money(c.p50)}</td></tr>
     <tr><td>Good day (1 in 10)</td><td class="${pc(c.p90)}">${money(c.p90)}</td></tr></tbody></table>
-    <p class="hint" style="margin:8px 0 0">Each replay draws a grade miss (±${S.gradeSd}), recon spread (±${S.reconSd}%), sale price spread (±${S.priceSd}%), a re-run lane that pays ${laneRange(S)[0]} to ${laneRange(S)[2]}% of MMR (most often near ${S.sellPct}%), a ${S.sellThru}% chance to sell per run, and a ${S.lemonPct}% chance of a ${money(S.lemonCost)} hidden problem. Change these in Settings.</p>`;
+    <p class="hint" style="margin:8px 0 0">Each replay draws a grade miss (±${CS.gradeSd}), recon spread (±${CS.reconSd}%), sale price spread (±${CS.priceSd}%), a re-run lane that pays ${laneRange(CS)[0]} to ${laneRange(CS)[2]}% of MMR (most often near ${CS.sellPct}%), a ${CS.sellThru}% chance to sell per run, and a ${CS.lemonPct}% chance of a ${money(CS.lemonCost)} hidden problem.${c.research?` These are your Settings adjusted for this ${c.type==='car'?'car':c.type}'s segment${c.research.model?', this model':''}${S.season!=='no'?' and the month it should sell in':''}.`:' Change these in Settings.'}</p>`;
 }
 async function aiEstimate(vin){
   const c=carBy(vin);const text=$('ai-text').value.trim();if(!text){toast('Paste a condition report first');return;}
@@ -1791,7 +1826,7 @@ function askWon(vin){
     <input type="number" id="m-h" inputmode="numeric" value="${soldOf(vin)||c.bidUsed}" step="25">
     <p class="hint" id="m-p" style="margin:8px 0 0"></p>
     <div class="btns" style="display:grid;grid-template-columns:1fr 1fr"><button class="b" id="m-cancel">Cancel</button><button class="b primary" id="m-ok">Add to garage</button></div>`);
-  const upd=()=>{const h=+$('m-h').value||0;const e=exitCalc(ST.settings,c,c.exitUsed,{hammer:h});$('m-p').innerHTML=`Projected profit at ${money(h)}: <b class="${pc(e.profit)}">${money(e.profit)}</b>${h>c.walk?' <span class="neg">· above walk-away</span>':''}`;};
+  const upd=()=>{const h=+$('m-h').value||0;const e=exitCalc(c.S||ST.settings,c,c.exitUsed,{hammer:h});$('m-p').innerHTML=`Projected profit at ${money(h)}: <b class="${pc(e.profit)}">${money(e.profit)}</b>${h>c.walk?' <span class="neg">· above walk-away</span>':''}`;};
   $('m-h').oninput=upd;upd();setTimeout(()=>{$('m-h').focus();$('m-h').select();},50);
   $('m-cancel').onclick=closeModal;
   $('m-ok').onclick=()=>{const h=+$('m-h').value;if(!h){toast('Enter the hammer price');return;}closeModal();markWon(vin,h);};
@@ -1800,7 +1835,7 @@ function markWon(vin,h){
   const o=ov(vin);o.status='won';o.paid=h;persist();recompute();setSold(vin,h);
   const c=carBy(vin);const S=ST.settings;
   const id=`flip_${vin}_${Date.now().toString(36)}`;o.flipId=id;persist();
-  saveFlip({id,vin:c.realVin||'',lot:c.lot,year:c.year,make:c.make,model:c.model||'',crBuy:c.cond,mmrBuy:c.mmr,mmrSellProj:c.mmrAtSell,gradeProj:c.gradeAch,sellSrc:c.sellSrc,safeBid:c.safe,oddsAtBuy:simCar(S,c,300,h).pHit,
+  saveFlip({id,vin:c.realVin||'',lot:c.lot,year:c.year,make:c.make,model:c.model||'',crBuy:c.cond,mmrBuy:c.mmr,mmrSellProj:c.mmrAtSell,gradeProj:c.gradeAch,sellSrc:c.sellSrc,safeBid:c.safe,oddsAtBuy:simCar(c.S||S,c,300,h).pHit,
     hammer:h,fee:c.fee,projRecon:c.recon,projPrice:c.price,projProfit:c.profit,exit:c.exitUsed,projDays:c.days,
     stage:'bought',boughtAt:new Date().toISOString().slice(0,10),actualRecon:null,gradeSold:null,soldPrice:null,daysHeld:null,notes:'',lines:c.lines});
   toast(`Lot ${c.lot} added to the garage`);renderAll();if(openVin)updateDetail();
@@ -2018,7 +2053,7 @@ const SCHEMA=[
  ['g','Exit'],['exitMode','How you sell',[['auction','Re-run at auction'],['retail','Retail on lot'],['dealer','Sell to a dealer'],['best','Best of the three, per car']]],['auctionDays','Days to re-run at auction',1],['sellThru','Chance it sells each run (%)',5],['rerunDays','Days added per no-sale',1],['noSaleFee','No-sale / re-run fee ($)',5],['rerunCut','Price drop per no-sale (%)',.5],['retailPct','Retail price (% of MMR)',1],['retailPrep','Retail-ready prep ($)',25],['retailCost','Retail selling cost ($)',25],['retailDays','Days to retail',1],['dealerPct','Dealer sale (% of MMR)',1],['dealerDays','Days to dealer sale',1],
  ['g','Costs'],['feeMode','Buyer fee',[['tiered','Typical tiered schedule'],['flat','Flat $ per car'],['pct','% of hammer']]],['feeVal','Fee $ or % (if not tiered)',25],['onlineFee','Online (Simulcast) fee per buy ($)',5],['psi','Post-sale inspection per buy ($)',5],['tIn','Transport in ($)',25],['tOut','Transport out ($)',25],['sellFee','Seller fee + re-grade ($)',25],['doc','Title / doc ($)',25],['perDay','Holding cost per day ($)',1],['apr','Floor-plan interest (APR %)',.25],['fpFee','Floor-plan fee per car ($)',5],['reserve','Surprise reserve per car ($)',25],
  ['g','Recon & risk'],['reconMult','Recon multiplier (calibration)',.05],['reconPt','Recon $/grade point (no announcements)',50],['overrun','Stress: recon over by (%)',5],['shortGrade','Stress: only grades to',.1],['flags','Auto-pass if announcements mention','text'],
- ['g','AI and self-tuning'],['aiUse','AI checks every car on each upload',[['yes','On'],['no','Off']]],['autoTune','Model retunes itself from real results',[['yes','On'],['no','Off']]],
+ ['g','AI and self-tuning'],['useResearch','Use make, model and segment research',[['yes','On'],['no','Off']]],['season','Adjust for the month the car will sell',[['yes','On'],['no','Off']]],['aiUse','AI checks every car on each upload',[['yes','On'],['no','Off']]],['autoTune','Model retunes itself from real results',[['yes','On'],['no','Off']]],
  ['g','Odds (what goes wrong, and how often)'],['gradeSd','Grade miss (± points)',.05],['reconSd','Recon spread (± %)',5],['priceSd','Sale price spread (± %)',1],['lemonPct','Chance of a hidden problem (%)',1],['lemonCost','Hidden problem cost ($)',100],['liftSd','Value-per-point doubt when MMR @ target is missing (± %)',.5]
 ];
 const openGroups=new Set([0]);   // which groups of assumptions are open
