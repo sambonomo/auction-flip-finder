@@ -768,7 +768,7 @@ function carS(S,o){
 
 /* ================= Defaults ================= */
 const DEFAULT_SETTINGS={
-  maxGrade:2.5,sellGrade:4.0,cap:2000,minP:750,target:1500,aiUse:'yes',autoTune:'yes',useResearch:'yes',season:'yes',lane:'national',
+  maxGrade:2.5,sellGrade:4.0,cap:2000,minP:750,target:1500,targetPct:6,floorPct:3,aiUse:'yes',autoTune:'yes',useResearch:'yes',season:'yes',lane:'national',
   liftPct:9,panelPenalty:0.2,hammerPct:96,driftWk:0.45,
   exitMode:'auction',auctionDays:21,retailPct:112,retailPrep:400,retailCost:600,retailDays:45,dealerPct:96,dealerDays:10,
   feeMode:'tiered',feeVal:500,tIn:150,tOut:150,sellFee:500,doc:100,perDay:10,apr:9,reserve:150,
@@ -918,7 +918,7 @@ function exitCalc(S,o,exit,{hammer=o.bidUsed,recon=o.recon,grade=o.gradeAch,pric
 /* ---- Odds: replay the flip a few hundred times with the things that go wrong ---- */
 function mulberry(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return ((t^t>>>14)>>>0)/4294967296;};}
 function hashStr(s){let h=2166136261;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619);}return h>>>0;}
-function simCar(S,o,N,hammer){
+function simRun(S,o,N,hammer){
   N=N||300;if(hammer==null)hammer=o.bidUsed;const r=mulberry(hashStr(String(o.vin)));   // same seed every time, so odds only move when an input moves
   const g=()=>{let u=0;while(!u)u=r();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*r());};
   const exit=o.exitUsed,p=Math.min(1,Math.max(.05,(S.sellThru??100)/100)),gFloor=Math.min(o.gradeAch,o.cond??S.maxGrade),out=[];
@@ -931,23 +931,30 @@ function simCar(S,o,N,hammer){
     out.push(exitCalc(S,o,exit,{hammer,grade,recon:Math.round(recon),priceMult:(1+g()*(S.priceSd||0)/100)*(exit==='auction'?laneDraw(S,r()):1),runs,lift}).profit);
   }
   out.sort((a,b)=>a-b);
-  return {mean:out.reduce((a,b)=>a+b,0)/N,pHit:out.filter(x=>x>=S.minP).length/N,pLoss:out.filter(x=>x<0).length/N,p10:out[Math.floor(N*.1)],p50:out[Math.floor(N*.5)],p90:out[Math.floor(N*.9)]};
+  return {out,h:hammer,k:1+S.apr/100*(o.days||28)/365};   // k: each extra dollar of hammer or fee costs this much once it is financed
 }
+function simStats(S,out){const N=out.length;return {mean:out.reduce((a,b)=>a+b,0)/N,pHit:out.filter(x=>x>=S.minP).length/N,pLoss:out.filter(x=>x<0).length/N,p10:out[Math.floor(N*.1)],p50:out[Math.floor(N*.5)],p90:out[Math.floor(N*.9)]};}
+function simCar(S,o,N,hammer){return simStats(S,simRun(S,o,N,hammer).out);}
+// The profit a bid has to clear. On a pricey car a flat dollar target is too thin for the cash at risk,
+// so the target is the larger of the dollar figure and a share of the cash in the car.
+function needAt(S,o,h,kind){const cash=h+buyerFee(S,h)+S.tIn+o.recon;return kind==='target'?Math.max(S.target,(S.targetPct||0)/100*cash):Math.max(S.minP,(S.floorPct||0)/100*cash);}
+// Every replay's profit moves down dollar for dollar (plus fee and interest) as the hammer goes up, so one big
+// set of replays prices every bid exactly. q is the share of replays allowed to fall short.
+function bidAt(S,o,sim,q,kind){
+  const base=sim.out[Math.min(sim.out.length-1,Math.floor(sim.out.length*q))],c0=sim.h+buyerFee(S,sim.h);
+  const gap=h=>base-((h+buyerFee(S,h))-c0)*sim.k-needAt(S,o,h,kind);
+  if(gap(0)<0)return 0;let lo=0,hi=Math.max(1000,mmrAt(S,o,o.gradeAch)*1.6);if(gap(hi)>=0)return Math.floor(hi/25)*25;
+  for(let i=0;i<32;i++){const m=(lo+hi)/2;gap(m)>=0?lo=m:hi=m;}
+  return Math.floor(lo/25)*25;
+}
+const SIM_N=1500;
 // How well the re-run lane pays is not known yet, so each replay draws it from low / middle / high
 // (a triangle: most draws land near the middle). Returned as a multiple of the middle.
 function laneRange(S){const mid=S.sellPct??100;return [Math.min(S.sellLo??mid,mid),mid,Math.max(S.sellHi??mid,mid)];}
 function laneDraw(S,u){const [lo,mid,hi]=laneRange(S);if(hi-lo<1e-9)return 1;const f=(mid-lo)/(hi-lo);
   return (u<f?lo+Math.sqrt(u*(hi-lo)*(mid-lo)):hi-Math.sqrt((1-u)*(hi-lo)*(hi-mid)))/mid;}
 // Highest hammer where the typical (middle) replay still makes `need`. Starts looking near the on-paper answer.
-function typBidFor(S,o,need,near){
-  const ok=h=>simCar(S,o,200,h).p50>=need;
-  if(!ok(0))return 0;
-  let lo=Math.max(0,near-4000),hi=near+2500;
-  if(!ok(lo))lo=0;
-  if(ok(hi)){lo=hi;hi=Math.max(hi+1000,mmrAt(S,o,o.gradeAch)*1.6);if(ok(hi))return Math.floor(hi/25)*25;}
-  while(hi-lo>12){const m=(lo+hi)/2;ok(m)?lo=m:hi=m;}
-  return Math.floor(lo/25)*25;
-}
+function typBidFor(S,o){return bidAt(S,o,simRun(S,o,SIM_N,o.bidUsed),.5,'target');}
 // Safe bid: the highest hammer where the odds of making the floor are still at least S.conf %
 function safeBid(S,o){
   const need=(S.conf||70)/100,ok=h=>simCar(S,o,200,h).pHit>=need;
@@ -976,14 +983,15 @@ function evaluate(S,o){
   o.sShort=st({grade:Math.min(o.gradeAch,S.shortGrade)});
   o.sBoth=st({recon:Math.round(o.recon*(1+S.overrun/100)),grade:Math.min(o.gradeAch,S.shortGrade)});
   o.down=Math.min(o.sOver,o.sShort,o.sBoth);
-  Object.assign(o,simCar(S,o));
+  const sim=simRun(S,o,SIM_N,o.bidUsed);Object.assign(o,simStats(S,sim.out));
   // Bids come from the replays, not the on-paper plan: the plan assumes the grade and the recon both land.
   o.paperMax=maxBidFor(S,o,S.target,o.exitUsed);
   o.paperWalk=maxBidFor(S,o,S.minP,o.exitUsed);
-  o.max=typBidFor(S,o,S.target,o.paperMax);
-  o.walk=Math.max(o.max,typBidFor(S,o,S.minP,o.paperWalk));
-  o.safe=safeBid(S,o);if(o.safe&&o.max&&o.safe>o.max)o.safe=o.max;   // the safe bid never sits above the max bid
-  o.pHitMax=o.max?simCar(S,o,300,o.max).pHit:null;
+  o.max=bidAt(S,o,sim,.5,'target');
+  o.walk=Math.max(o.max,bidAt(S,o,sim,.5,'floor'));
+  o.safe=bidAt(S,o,sim,1-(S.conf||70)/100,'floor');if(o.safe&&o.max&&o.safe>o.max)o.safe=o.max;   // the safe bid never sits above the max bid
+  o.tNeed=needAt(S,o,o.bidUsed,'target');o.fNeed=needAt(S,o,o.bidUsed,'floor');o.tMax=needAt(S,o,o.max,'target');o.fWalk=needAt(S,o,o.walk,'floor');
+  o.pHitMax=o.max?(()=>{const d=((o.max+buyerFee(S,o.max))-(sim.h+buyerFee(S,sim.h)))*sim.k;return sim.out.filter(x=>x-d>=S.minP).length/sim.out.length;})():null;
   o.typ=o.p50;   // typical profit at the expected bid
   o.cheap=o.mmr!=null&&o.mmr<(S.cheapMMR||0);
   o.est=[];if(o.mmrSrc==='est')o.est.push('Adj MMR');if(o.mmrSrc==='base')o.est.push('Adj MMR (worked out from base MMR)');if(o.sellSrc==='est')o.est.push(`MMR @ ${S.sellGrade.toFixed(1)}`);if(o.reconSrc==='model')o.est.push('recon');if(!o.condGiven)o.est.push('CR grade');
@@ -991,13 +999,13 @@ function evaluate(S,o){
   if(o.cond==null){o.verdict='pass';o.reason='No CR grade on the list';}
   else if(o.flag){o.verdict='pass';o.reason=`Announced: ${o.flag}`;}
   else if(o.research&&o.research.model&&o.research.model.avoid){o.verdict='pass';o.reason='Known problem model for these years. Avoid';}
-  else if(o.typ>=S.target&&S.needSell==='yes'&&o.mmrSrc==='est'){o.verdict='maybe';o.reason='Looks like a buy, but the Adj MMR is a guess from the VIN. Get the real one first';}
-  else if(o.typ>=S.target&&S.needSell==='yes'&&o.sellSrc==='est'){o.verdict='maybe';o.reason=`Looks like a buy, but needs the real MMR @ ${S.sellGrade.toFixed(1)} first`;}
-  else if(o.typ>=S.target&&o.pHit<.5){o.verdict='maybe';o.reason=`Clears ${money(S.target)} in a typical replay, but only ${Math.round(o.pHit*100)}% odds of ${money(S.minP)}+`;}
-  else if(o.typ>=S.target){o.verdict='buy';o.reason=`Clears ${money(S.target)} target · ${Math.round(o.pHit*100)}% odds of ${money(S.minP)}+`;}
-  else if(o.typ>=S.minP){o.verdict='maybe';o.reason=`Clears the ${money(S.minP)} floor, short of target`;}
+  else if(o.typ>=o.tNeed&&S.needSell==='yes'&&o.mmrSrc==='est'){o.verdict='maybe';o.reason='Looks like a buy, but the Adj MMR is a guess from the VIN. Get the real one first';}
+  else if(o.typ>=o.tNeed&&S.needSell==='yes'&&o.sellSrc==='est'){o.verdict='maybe';o.reason=`Looks like a buy, but needs the real MMR @ ${S.sellGrade.toFixed(1)} first`;}
+  else if(o.typ>=o.tNeed&&o.pHit<.5){o.verdict='maybe';o.reason=`Clears ${money(o.tNeed)} in a typical replay, but only ${Math.round(o.pHit*100)}% odds of ${money(o.fNeed)}+`;}
+  else if(o.typ>=o.tNeed){o.verdict='buy';o.reason=`Clears ${money(o.tNeed)} target · ${Math.round(o.pHit*100)}% odds of ${money(o.fNeed)}+`;}
+  else if(o.typ>=o.fNeed){o.verdict='maybe';o.reason=`Clears the ${money(o.fNeed)} floor, short of target`;}
   else if(o.walk>0&&o.walk>=o.bidUsed*.85){o.verdict='maybe';o.reason=`Only works at ${money(o.walk)} or less`;}
-  else{o.verdict='pass';o.reason=o.typ<0?'Typically loses money at the expected bid':`Typically only ${money(o.typ)} profit, under the ${money(S.minP)} floor`;}
+  else{o.verdict='pass';o.reason=o.typ<0?'Typically loses money at the expected bid':`Typically only ${money(o.typ)} profit, under the ${money(o.fNeed)} floor`;}
   o.risk=(o.verdict==='buy'||o.verdict==='maybe')&&(o.down<0||o.pLoss>.25);
   if(o.gradeCapped&&(o.verdict==='buy'||o.verdict==='maybe'))o.reason+=` · paint caps it at CR ${o.gradeAch.toFixed(1)}`;
   // No price, grade or recon limit: any car that pays gets a bid. These are warnings, not passes.
@@ -1108,7 +1116,7 @@ const DEMO_FLIPS=[
  ['102','KNDPM3AC0K7542210',2019,'Kia','Sportage LX',2.3,13900,12600,1200,1250,1150,4.0,16950,'retail',38],
  ['105','JTMBFREV0KD004331',2019,'Toyota','RAV4 XLE',2.1,21200,19500,1500,1700,1610,3.8,24100,'auction',21]
 ];
-if(typeof module!=='undefined')module.exports={carKey,parseInput,buildCar,DEFAULT_SETTINGS,DEFAULT_BOOK,sampleCSV,planBudget,parseRecon,exitCalc,simCar,typBidFor,maxBidFor,laneRange,carS,laneS,LANE_UP,researchFor,RESEARCH};
+if(typeof module!=='undefined')module.exports={carKey,parseInput,buildCar,DEFAULT_SETTINGS,DEFAULT_BOOK,sampleCSV,planBudget,parseRecon,exitCalc,simCar,typBidFor,maxBidFor,laneRange,carS,laneS,LANE_UP,researchFor,RESEARCH,simRun,bidAt,needAt};
 
 /* ================= Backtest: repeat sales at the same auction ================= */
 function parseDate(s){
@@ -1501,6 +1509,7 @@ async function shareSync(){
     for(let i=0;i<up.length;i+=200)await shareCall('POST',{rows:up.slice(i,i+200)});
     setSync(true,'Shared log');ST.sharedKeys=Object.keys(ST.results);persist();
     try{await shareMore();}catch(e){}
+    ['flip','ai','tuned'].forEach(k=>kvFlush(k));   // anything queued while the connection was down
     if(got){autoTune();renderAll();if(typeof renderBacktest==='function'&&tab==='backtest')renderBacktest();}
   }catch(e){SHARE.ok=false;if(e.code!=='no_db')setSync(false,'Not shared yet');}
 }
@@ -1786,10 +1795,10 @@ function updateDetail(){
     :`<button class="b bad" id="d-lost">Lost / passed</button><button class="b good" id="d-won">Won it</button>`;
   $('d-ladder').innerHTML=`<div class="ladder">
       <div><div class="l">Safe bid</div><div class="v pos">${c.safe?money(c.safe):'—'}</div><div class="s">${S.conf}% odds of ${kf(S.minP)}+</div></div>
-      <div class="mx"><div class="l">Max bid</div><div class="v maxbid">${c.max?money(c.max):'—'}</div><div class="s">typically makes ${money(S.target)}${c.pHitMax!=null?` · ${pc100(c.pHitMax)} odds of ${kf(S.minP)}+`:''}</div></div>
-      <div><div class="l">Walk-away</div><div class="v warn">${c.walk?money(c.walk):'—'}</div><div class="s">typically makes ${money(S.minP)}</div></div></div>
+      <div class="mx"><div class="l">Max bid</div><div class="v maxbid">${c.max?money(c.max):'—'}</div><div class="s">typically makes ${money(c.tMax||S.target)}${c.pHitMax!=null?` · ${pc100(c.pHitMax)} odds of ${kf(S.minP)}+`:''}</div></div>
+      <div><div class="l">Walk-away</div><div class="v warn">${c.walk?money(c.walk):'—'}</div><div class="s">typically makes ${money(c.fWalk||S.minP)}</div></div></div>
     <p class="expect">Expected bid ${money(c.bidUsed)}${c.bidSrc==='assumed'?` (assumed ${S.hammerPct}% of MMR)`:''} → typically <b class="${pc(c.typ)}">${money(c.typ)}</b> profit (${money(c.profit)} if everything goes to plan), on ${money(c.capital)} cash for about ${c.days} days.</p>${(()=>{if(!c.max||c.exitUsed!=='auction')return '';const cur=S.lane==='curtis';const alt={...CS};for(const k in LANE_UP)alt[k]=CS[k]+(cur?-1:1)*LANE_UP[k];
-      const m=typBidFor(alt,c,S.target,c.paperMax+(cur?-1:1)*c.mmrAtSell*.05);
+      const m=typBidFor(alt,c);
       return `<p class="expect" style="margin-top:6px">${cur?'These bids use Curtis\'s lane numbers. On the national average':'These bids use the national average. If the re-run lane pays like Curtis reports (up to 108% of MMR)'}, the max bid would be <b>${money(m)}</b>. Real resales in the Garage settle which is right.</p>`;})()}`;
   $('d-notes').innerHTML=`${c.est.length?`<div class="callout red"><b>Estimated, not measured:</b> ${esc(c.est.join(', '))}. Fill ${c.est.length>1?'these':'it'} in below before bidding real money.</div>`:''}
     ${c.buyNow?`<div class="callout ${c.buyNow<=c.safe?'green':'blue'}">Buy Now is ${money(c.buyNow)}${c.buyNow<=c.safe?', under the safe bid.':c.buyNow<=c.max?', between the safe bid and the max bid.':', over the max bid.'}</div>`:''}
@@ -1815,8 +1824,8 @@ function updateDetail(){
         :`<tr><td>Selling costs (${EXIT_LABEL[c.exitUsed].toLowerCase()})</td><td>${m(c.sellCosts)}</td></tr>`}
       <tr><td>Holding + interest (${c.days} days)</td><td>${m(c.holding)}</td></tr>
       <tr class="tot"><td>Profit at this hammer, if all goes to plan</td><td class="${pc(c.profit)}">${money(c.profit)}</td></tr>
-      <tr><td>Hammer that typically leaves ${money(S.minP)}</td><td class="warn">${c.walk?money(c.walk):'none'}</td></tr>
-      <tr><td>Hammer that typically leaves ${money(S.target)}</td><td class="maxbid">${c.max?money(c.max):'none'}</td></tr></tbody></table>
+      <tr><td>Hammer that typically leaves ${money(c.fWalk||S.minP)}</td><td class="warn">${c.walk?money(c.walk):'none'}</td></tr>
+      <tr><td>Hammer that typically leaves ${money(c.tMax||S.target)}</td><td class="maxbid">${c.max?money(c.max):'none'}</td></tr></tbody></table>
       <p class="hint" style="margin:8px 0 0">Everything that is not hammer or recon adds up to ${money(c.allIn-c.bidUsed-c.recon)} on this car. Resale minus hammer minus recon is not the profit.</p>`;})()}
     <div class="l" style="margin-top:14px">Other ways out</div>
     <table class="exits"><thead><tr><th>Exit</th><th>Sells for</th><th>Days</th><th>Profit</th><th>$/day</th></tr></thead><tbody>
@@ -1857,7 +1866,7 @@ function updateDetail(){
     <tr><td>Only grades to CR ${g1(Math.min(c.gradeAch,S.shortGrade))}</td><td class="${pc(c.sShort)}">${money(c.sShort)}</td></tr>
     <tr><td>Both go wrong</td><td class="${pc(c.sBoth)}">${money(c.sBoth)}</td></tr></tbody></table>
     ${c.risk?'<div class="callout red">High risk: this car loses money if the recon or the grade misses. Bid closer to walk-away.</div>':c.down>=S.minP?'<div class="callout green">Holds the profit floor even if both go wrong.</div>':''}
-    <div class="l" style="margin-top:14px">Odds at the ${money(c.bidUsed)} bid · 300 replays</div>
+    <div class="l" style="margin-top:14px">Odds at the ${money(c.bidUsed)} bid · 1,500 replays</div>
     <table class="brk"><tbody>
     <tr><td>Makes ${money(S.minP)} or more</td><td class="${oc(c.pHit)}">${pc100(c.pHit)}</td></tr>
     <tr><td>Loses money</td><td class="${c.pLoss>.25?'neg':''}">${pc100(c.pLoss)}</td></tr>
@@ -2194,7 +2203,7 @@ $('addFlip').onclick=()=>{
 
 /* ================= Settings ================= */
 const SCHEMA=[
- ['g','Buy box & goals'],['maxGrade','Warn when the CR grade is above',.1],['sellGrade','Target grade after recon',.1],['cap','Warn when repairs are over ($)',100],['minP','Profit floor ($)',100],['target','Profit target ($)',100],['conf','Safe bid: odds of the floor needed (%)',5],['needSell','A Buy needs real MMR numbers',[['yes','Yes, no Buy on estimates'],['no','No, allow estimates']]],
+ ['g','Buy box & goals'],['maxGrade','Warn when the CR grade is above',.1],['sellGrade','Target grade after recon',.1],['cap','Warn when repairs are over ($)',100],['minP','Profit floor ($)',100],['target','Profit target ($)',100],['targetPct','Or this share of the cash in the car, if larger (%)',.5],['floorPct','Profit floor as a share of cash, if larger (%)',.5],['conf','Safe bid: odds of the floor needed (%)',5],['needSell','A Buy needs real MMR numbers',[['yes','Yes, no Buy on estimates'],['no','No, allow estimates']]],
  ['g','Value'],['liftPct','MMR change per CR point (%)',.5],['panelPenalty','Grade lost per repainted panel',.05],['mmrKind','A plain “MMR” column on the list is',[['adj','Already adjusted for this car\'s grade (Manheim export)'],['base','Base MMR (average-condition car)']]],['baseGrade','Grade a base MMR assumes',.1],['hammerPct','Expected hammer if no bid (% of MMR)',1],['lane','Re-run lane',[['national','Cautious: national Manheim average'],['curtis','Curtis\'s lane: about 5 points higher (unverified)']]],['sellPct','Re-run sells at, most likely (% of MMR at its grade)',1],['sellLo','Re-run sells at, low case (%)',1],['sellHi','Re-run sells at, high case (%)',1],['cheapMMR','Warn when as-is MMR is under ($)',500],['driftWk','Market drift (% per week)',.1],
  ['g','Exit'],['exitMode','How you sell',[['auction','Re-run at auction'],['retail','Retail on lot'],['dealer','Sell to a dealer'],['best','Best of the three, per car']]],['auctionDays','Days to re-run at auction',1],['sellThru','Chance it sells each run (%)',5],['rerunDays','Days added per no-sale',1],['noSaleFee','No-sale / re-run fee ($)',5],['rerunCut','Price drop per no-sale (%)',.5],['retailPct','Retail price (% of MMR)',1],['retailPrep','Retail-ready prep ($)',25],['retailCost','Retail selling cost ($)',25],['retailDays','Days to retail',1],['dealerPct','Dealer sale (% of MMR)',1],['dealerDays','Days to dealer sale',1],
  ['g','Costs'],['feeMode','Buyer fee',[['tiered','Typical tiered schedule'],['flat','Flat $ per car'],['pct','% of hammer']]],['feeVal','Fee $ or % (if not tiered)',25],['onlineFee','Online (Simulcast) fee per buy ($)',5],['psi','Post-sale inspection per buy ($)',5],['tIn','Transport in ($)',25],['tOut','Transport out ($)',25],['sellFee','Seller fee + re-grade ($)',25],['doc','Title / doc ($)',25],['perDay','Holding cost per day ($)',1],['apr','Floor-plan interest (APR %)',.25],['fpFee','Floor-plan fee per car ($)',5],['reserve','Surprise reserve per car ($)',25],
