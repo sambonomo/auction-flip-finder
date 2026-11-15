@@ -347,7 +347,7 @@ button.b.good{background:var(--good-bg);border-color:var(--good-line);color:var(
 .dropzone.has{padding:12px 14px;border:1px solid var(--line);flex-direction:row;justify-content:space-between;gap:4px 12px}
 .dropzone.has .dz-ic{display:none}.dropzone.has b{font-size:14px}.dropzone.has span{font-size:13px;font-weight:600;color:var(--accent)}
 #tab-list.nolist{max-width:640px;margin:6vh auto 0}
-.nolist #strat,.nolist #kpis,.nolist #liftcal,.nolist #soldcal,.nolist #listcard,.nolist #howbox{display:none}
+.nolist #listchips,.nolist #strat,.nolist #kpis,.nolist #liftcal,.nolist #soldcal,.nolist #listcard,.nolist #howbox{display:none}
 #kpis{grid-template-columns:repeat(3,1fr)}
 #loadbox,#howbox{background:none;border:0;box-shadow:none;padding:0 4px}
 #loadbox>summary,#howbox>summary{justify-content:center;gap:6px;color:var(--muted)}
@@ -399,6 +399,12 @@ table.t tbody tr:last-child td{border-bottom:0}
 .sold-in{width:96px!important;padding:7px 8px!important;text-align:right;background:var(--panel)!important;border-color:var(--line2)!important}
 .vc-sold{display:flex;align-items:center;gap:10px;margin-top:12px;padding-top:12px;border-top:1px solid var(--line);font-size:13px;font-weight:600;color:var(--muted)}
 .vc-sold .sold-in{flex:1;width:auto!important;padding:10px 12px!important;text-align:left}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:6px 6px 6px 12px;border:1px solid var(--line2);border-radius:999px;background:var(--panel);color:var(--text);font:600 13px Inter,system-ui,sans-serif;cursor:pointer}
+button.chip{padding:6px 12px}
+.chip.on{background:var(--blue-bg);border-color:var(--blue-line);color:var(--blue)}
+.chip button{width:24px;height:24px;border-radius:50%;border:0;background:var(--panel3);color:var(--muted);font-size:11px;cursor:pointer;display:grid;place-items:center;padding:0}
+#sample,#demoFlips,#btdemo{display:none!important}   /* real data only */
 </style>
 </head>
 <body>
@@ -414,7 +420,8 @@ table.t tbody tr:last-child td{border-bottom:0}
 <main>
 <!-- ============ RUN LIST ============ -->
 <section id="tab-list" class="on">
-  <label class="dropzone" id="dropzone"><input type="file" id="file2" accept=".csv,.txt,text/csv,text/plain,text/comma-separated-values,application/vnd.ms-excel"><div class="dz-ic"><svg viewBox="0 0 24 24"><path d="M12 15V3M7 8l5-5 5 5M5 21h14"/></svg></div><b id="dzT">Drop the Manheim export here</b><span id="dzS">or tap to choose the file</span></label>
+  <label class="dropzone" id="dropzone"><input type="file" id="file2" multiple accept=".csv,.txt,text/csv,text/plain,text/comma-separated-values,application/vnd.ms-excel"><div class="dz-ic"><svg viewBox="0 0 24 24"><path d="M12 15V3M7 8l5-5 5 5M5 21h14"/></svg></div><b id="dzT">Drop the Manheim export here</b><span id="dzS">or tap to choose the file</span></label>
+  <div class="chips" id="listchips"></div>
   <p class="rules" id="strat"></p>
   <section class="kpis" id="kpis"></section>
   <div id="liftcal"></div>
@@ -428,20 +435,20 @@ table.t tbody tr:last-child td{border-bottom:0}
       <select id="sortsel" style="max-width:200px">
         <option value="rank">Best first</option><option value="profit">Most profit</option><option value="ppd">Profit per day</option><option value="odds">Best odds</option><option value="down">Safest (stress test)</option><option value="lift">Biggest grade lift</option><option value="lot">Lot / run order</option>
       </select>
-      <div class="grow"></div><div style="display:flex;gap:8px"><label class="filebtn primary-file" title="Upload a run list"><svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M12 15V3M7 8l5-5 5 5M5 21h14"/></svg>Upload list<input type="file" id="file3" accept=".csv,.txt,text/csv,text/plain,text/comma-separated-values,application/vnd.ms-excel"></label><button class="b ic-btn" id="exportList" title="Export to spreadsheet" aria-label="Export"><svg viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg></button></div>
+      <div class="grow"></div><div style="display:flex;gap:8px"><label class="filebtn primary-file" title="Upload a run list"><svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M12 15V3M7 8l5-5 5 5M5 21h14"/></svg>Upload list<input type="file" id="file3" multiple accept=".csv,.txt,text/csv,text/plain,text/comma-separated-values,application/vnd.ms-excel"></label><button class="b ic-btn" id="exportList" title="Export to spreadsheet" aria-label="Export"><svg viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg></button></div>
     </div>
     <div class="cards" id="cards"></div>
     <div class="tbl-wrap"><table class="t"><thead><tr id="thead"></tr></thead><tbody id="tbody"></tbody></table></div>
     <div class="copybox" id="resbox"><textarea id="restext" readonly style="min-height:110px"></textarea></div>
   </div>
   <details class="card" id="loadbox">
-    <summary><h2>Paste a list or try a sample <span class="mini" id="loadmini" style="display:none"></span></h2><span class="chev">▼</span></summary>
+    <summary><h2>Paste a list instead <span class="mini" id="loadmini" style="display:none"></span></h2><span class="chev">▼</span></summary>
     <p class="hint">Paste or upload the auction list. A Manheim export file (Export.csv) loads as it is. Best columns: <b>Auction, Lane, Run (or Lot / Work Order), Year, Make, Model, CR Grade, Adj MMR, MMR @ 4.0, Est Bid, Announcements</b>. The real <b>MMR @ 4.0</b> from the MMR tool matters most: without it the sell value is a guess. VIN is optional. Column order doesn't matter, and the app turns announcements into a repair estimate automatically.</p>
     <textarea id="input" spellcheck="false" placeholder="Lot,VIN,Model,Odometer,CR Grade,Adj MMR,MMR @ 4.0,Est Bid,Recon Est,Announcements"></textarea>
     <div class="btns">
       <button class="b primary" id="analyze">Run the model</button>
       <button class="b" id="sample">Load sample list</button>
-      <label class="filebtn">Upload CSV<input type="file" id="file" accept=".csv,.txt,text/csv,text/plain"></label>
+      <label class="filebtn">Upload CSV<input type="file" id="file" multiple accept=".csv,.txt,text/csv,text/plain"></label>
       <button class="b" id="tmpl">Blank template</button>
     </div>
     <div class="copybox" id="tmplbox"><p class="hint" style="margin:8px 0 6px">Copy into Excel or Google Sheets, fill it in, save as CSV, then upload it.</p><textarea id="tmpltext" readonly style="min-height:80px"></textarea><div class="btns"><button class="b" id="copytmpl">Copy template</button></div></div>
@@ -549,7 +556,7 @@ table.t tbody tr:last-child td{border-bottom:0}
     <h2>Recon price book</h2>
     <p class="hint">What each repair costs <i>his</i> shop. “Paint” items count as repainted panels, which lowers the grade a car can reach after repair.</p>
     <table class="book" id="book"></table>
-    <div class="btns"><button class="b" id="resetBook">Reset price book</button><button class="b" id="resetSettings">Reset all assumptions</button></div>
+    <div class="btns"><button class="b" id="resetBook">Reset price book</button><button class="b" id="resetSettings">Reset all assumptions</button><button class="b bad" id="clearAll">Clear all cars on this device</button></div>
   </div>
 </section>
 </main>
@@ -815,7 +822,7 @@ function evaluate(S,o){
   o.max=maxBidFor(S,o,S.target,o.exitUsed);
   o.walk=maxBidFor(S,o,S.minP,o.exitUsed);
   o.stretch=maxBidFor(S,o,S.target+750,o.exitUsed);
-  o.safe=safeBid(S,o);o.pHitMax=o.max?simCar(S,o,300,o.max).pHit:null;
+  o.safe=safeBid(S,o);if(o.safe&&o.max&&o.safe>o.max)o.safe=o.max;   // the safe bid never sits above the max bido.pHitMax=o.max?simCar(S,o,300,o.max).pHit:null;
   o.est=[];if(o.mmrSrc==='est')o.est.push('Adj MMR');if(o.mmrSrc==='base')o.est.push('Adj MMR (worked out from base MMR)');if(o.sellSrc==='est')o.est.push(`MMR @ ${S.sellGrade.toFixed(1)}`);if(o.reconSrc==='model')o.est.push('recon');if(!o.condGiven)o.est.push('CR grade');
   const money=n=>(n<0?'-$':'$')+Math.abs(Math.round(n)).toLocaleString();
   if(o.cond==null){o.verdict='pass';o.reason='No CR grade on the list';}
@@ -1081,14 +1088,21 @@ const clone=o=>JSON.parse(JSON.stringify(o));
 const money=n=>n==null||isNaN(n)?'—':(n<0?'-$':'$')+Math.abs(Math.round(n)).toLocaleString();
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const g1=n=>n==null?'—':Number(n).toFixed(1);
-let ST={settings:clone(DEFAULT_SETTINGS),book:clone(DEFAULT_BOOK),listText:'',ov:{},budget:150000,incMaybe:false,updatedAt:0};
+let ST={settings:clone(DEFAULT_SETTINGS),book:clone(DEFAULT_BOOK),listText:'',lists:[],results:{},resetRev:2,ov:{},budget:150000,incMaybe:false,updatedAt:0};
 let FLIPS={};          // id -> flip
-let RAW=[],CARS=[],PLAN=new Set();
+let RAW=[],CARS=[],PLAN=new Set(),listFilt=null;
+// all loaded lists become one set of cars; a car that is on two lists is kept once, from the newest list
+function rebuildRaw(){
+  const seen=new Set();RAW=[];const Ls=ST.lists||[];Ls.forEach(L=>L.n=0);
+  Ls.slice().reverse().forEach(L=>{parseInput(L.text).forEach((r,i)=>{const k=carKey(r,i);if(seen.has(k))return;seen.add(k);r._list=L.id;RAW.push(r);L.n++;});});
+  if(listFilt&&!Ls.some(L=>L.id===listFilt))listFilt=null;
+}
 let filt='all',sortKey='rank',sortDir=1,query='',gfilt='open',openVin=null,tab='list';
 let DB=null,UID=null,SAMPLE=null,DL=null;
 
 /* ================= Persistence ================= */
 function loadLocal(){
+  try{if(localStorage.getItem('aff_reset')!=='2'){localStorage.removeItem('aff3_flips');localStorage.removeItem('aff3_bt');localStorage.setItem('aff_reset','2');}}catch(e){}
   try{const s=JSON.parse(localStorage.getItem('aff3_state')||'null');if(s)ST=mergeState(s);}catch(e){}
   try{const f=JSON.parse(localStorage.getItem('aff3_flips')||'null');if(f)FLIPS=f;}catch(e){}
 }
@@ -1100,7 +1114,10 @@ function mergeState(s){
   if(rv<4&&out.settings.liftPct===10)out.settings.liftPct=9;   // first real MMR pair: $12,700 at CR 2.2 to $15,350 at 4.5 = 9.1% per point
   if(rv<5&&out.settings.minP===1000)out.settings.minP=750;   // floor lowered from $1,000 to $750
   out.settings.rev=5;   // Manheim's export MMR is confirmed grade-adjusted
-  out.book=Array.isArray(s.book)&&s.book.length?s.book:clone(DEFAULT_BOOK);out.ov=s.ov||{};out.results=s.results||{};return out;
+  out.book=Array.isArray(s.book)&&s.book.length?s.book:clone(DEFAULT_BOOK);out.ov=s.ov||{};out.results=s.results||{};
+  out.lists=Array.isArray(s.lists)?s.lists:(s.listText?[{id:'l0',name:'Saved list',file:'',text:s.listText,at:s.updatedAt||0}]:[]);out.listText='';
+  if((s.resetRev||0)<2){out.lists=[];out.ov={};out.results={};out.btText='';}   // clean start requested 2026-11-15: test lists and results are dropped once
+  out.resetRev=2;return out;
 }
 let saveT=null,saving=false,saveAgain=false;
 function persist(){
@@ -1139,8 +1156,8 @@ async function initCloud(){
   const timer=setTimeout(()=>setSync(false,'Offline · this device'),10000);
   try{
     const snap=await DB.doc(`data/users/${UID}/state`).get();
-    if(snap.exists){const s=snap.data();if((s.updatedAt||0)>(ST.updatedAt||0)){ST=mergeState(clone(s));try{localStorage.setItem('aff3_state',JSON.stringify(ST));}catch(e){}RAW=parseInput(ST.listText);recompute();if(ST.btText){$('btinput').value=ST.btText;runBacktest();}renderAll();if(tab==='backtest')renderBacktest();}}
-    else if(ST.listText){pushState();}
+    if(snap.exists){const s=snap.data();if((s.updatedAt||0)>(ST.updatedAt||0)){ST=mergeState(clone(s));try{localStorage.setItem('aff3_state',JSON.stringify(ST));}catch(e){}rebuildRaw();recompute();if(ST.btText){$('btinput').value=ST.btText;runBacktest();}renderAll();if(tab==='backtest')renderBacktest();}}
+    else if((ST.lists||[]).length){pushState();}
     clearTimeout(timer);setSync(true);
   }catch(e){clearTimeout(timer);setSync(false,'Offline · this device');}
   // flips: subscribe once
@@ -1157,7 +1174,7 @@ async function initCloud(){
 /* ================= Compute ================= */
 function recompute(){
   const S=ST.settings;
-  CARS=RAW.map((r,i)=>buildCar(S,ST.book,r,ST.ov[carKey(r,i)]));
+  CARS=RAW.map((r,i)=>{const c=buildCar(S,ST.book,r,ST.ov[carKey(r,i)]);c.listId=r._list;return c;});
   const ok=CARS.filter(c=>c.ok);
   ok.sort((a,b)=>score(b)-score(a)).forEach((c,i)=>c.rank=i+1);
   const spent=wonSpend();
@@ -1201,7 +1218,7 @@ function renderList(){
   $('loadmini').textContent=RAW.length?`${RAW.length} cars loaded`:'';
   $('dropzone').classList.toggle('has',!!RAW.length);$('tab-list').classList.toggle('nolist',!RAW.length);
   $('dzT').textContent=RAW.length?`${RAW.length} cars loaded`:'Drop the Manheim export here';
-  $('dzS').textContent=RAW.length?'Load a new list':'or tap to choose the file';
+  $('dzS').textContent=RAW.length?'Add another list':'or tap to choose files. Several lists can be loaded together.';renderChips();
   const inBox=ok.filter(c=>c.verdict!=='skip'),buys=ok.filter(c=>c.verdict==='buy'),maybes=ok.filter(c=>c.verdict==='maybe');
   const plan=ok.filter(c=>c.inPlan),bad=CARS.length-ok.length;
   const pP=plan.reduce((s,c)=>s+c.profit,0),pC=plan.reduce((s,c)=>s+c.allIn,0),pD=plan.reduce((s,c)=>s+c.down,0);
@@ -1221,6 +1238,7 @@ function renderList(){
   if(q)list=list.filter(c=>`${c.lot} ${c.realVin||''} ${c.make||''} ${c.model||''} ${c.year||''}`.toLowerCase().includes(q));
   if(filt==='buy'||filt==='maybe')list=list.filter(c=>c.ok&&c.verdict===filt);
   if(filt==='pass')list=list.filter(c=>!c.ok||c.verdict==='pass'||c.verdict==='skip');
+  if(listFilt)list=list.filter(c=>c.listId===listFilt);
   if(filt==='star')list=list.filter(c=>c.star);
   if(filt==='plan')list=list.filter(c=>c.inPlan);
   const key={rank:c=>c.rank,profit:c=>-c.profit,ppd:c=>-c.ppd,down:c=>-c.down,odds:c=>-c.pHit,lift:c=>-c.lift,lot:lotKey}[sortKey]||(c=>c.rank);
@@ -1695,21 +1713,45 @@ $('resetSettings').onclick=()=>{ST.settings=clone(DEFAULT_SETTINGS);persist();re
 
 /* ================= Load / export ================= */
 function toast(m){const t=$('toast');t.textContent=m;t.classList.add('on');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('on'),2000);}
-function loadList(text,msg){
-  const rows=parseInput(text);if(!rows.length){toast('Nothing to read in that list');return;}
-  ST.listText=text;RAW=rows;persist();recompute();$('input').value=text;$('loadbox').open=false;renderAll();if(msg)toast(msg);
+function listLabel(rows,name){
+  const r=rows.find(x=>x.auction||x.saleAt)||{};const d=r.saleAt?new Date(r.saleAt):null;
+  const ds=d&&!isNaN(d)?d.toLocaleDateString([], {weekday:'short',month:'short',day:'numeric'}):'';
+  return [r.auction,ds].filter(Boolean).join(' · ')||(name||'List').replace(/\.(csv|txt)$/i,'');
 }
-$('analyze').onclick=()=>loadList($('input').value);
-$('sample').onclick=()=>loadList(sampleCSV(),'Sample run list loaded: 19 cars');
+function loadList(text,msg,name){
+  const rows=parseInput(text);if(!rows.length){toast('Nothing to read in that list');return;}
+  ST.lists=ST.lists||[];if(ST.lists.some(L=>L.text===text)){toast('That list is already loaded');return;}
+  ST.lists.push({id:'l'+Date.now().toString(36)+Math.random().toString(36).slice(2,5),name:listLabel(rows,name),file:name||'',text,at:Date.now()});
+  const before=RAW.length;rebuildRaw();persist();recompute();$('input').value='';$('loadbox').open=false;renderAll();
+  const add=RAW.length-before;toast(`${msg||'List added'} · ${add} new car${add===1?'':'s'}`);
+}
+function removeList(id){ST.lists=(ST.lists||[]).filter(L=>L.id!==id);rebuildRaw();persist();recompute();renderAll();toast('List removed');}
+function renderChips(){
+  const Ls=ST.lists||[];
+  $('listchips').innerHTML=Ls.length<1?'':(Ls.length>1?`<button class="chip${!listFilt?' on':''}" data-list="">All lists</button>`:'')
+    +Ls.map(L=>`<span class="chip${listFilt===L.id?' on':''}" data-list="${L.id}"><span>${esc(L.name)} · ${L.n||0}</span><button data-rm="${L.id}" aria-label="Remove this list" title="Remove this list">✕</button></span>`).join('');
+  $('listchips').querySelectorAll('[data-list]').forEach(el=>el.onclick=e=>{if(e.target.closest('[data-rm]'))return;if(Ls.length<2)return;listFilt=el.dataset.list||null;renderList();});
+  $('listchips').querySelectorAll('[data-rm]').forEach(b=>b.onclick=e=>{e.stopPropagation();removeList(b.dataset.rm);});
+}
+function clearAllData(){
+  showModal(`<h2 style="margin:0 0 4px">Clear everything on this device?</h2><p class="hint">This removes every loaded list, the edits made to cars, the garage and the sales history on this phone or computer. Settings and the shared sold-price log are kept.</p>
+    <div class="btns" style="display:grid;grid-template-columns:1fr 1fr"><button class="b" id="m-cancel">Cancel</button><button class="b bad" id="m-ok">Clear all</button></div>`);
+  $('m-cancel').onclick=closeModal;
+  $('m-ok').onclick=()=>{closeModal();ST.lists=[];ST.ov={};ST.btText='';if(window.claude)ST.results={};Object.keys(FLIPS).forEach(id=>deleteFlip(id));
+    try{localStorage.removeItem('aff3_bt');}catch(e){}rebuildRaw();persist();recompute();setTab('list');renderAll();toast('Everything on this device is cleared');};
+}
+$('analyze').onclick=()=>loadList($('input').value,'List added','Pasted list');
+$('sample').onclick=()=>loadList(sampleCSV(),'Sample list added','Sample list');
+$('clearAll').onclick=clearAllData;
 function readListFile(f){if(!f)return;if(f.size>8e6){toast('That file is too big to be a run list');return;}
-  const rd=new FileReader();rd.onload=()=>{if(tab==='backtest')setBtText(rd.result,`Loaded ${f.name}`);else{if(tab!=='list')setTab('list');loadList(rd.result,`Loaded ${f.name}`);}};rd.readAsText(f);}
-['file','file2','file3'].forEach(id=>$(id).onchange=e=>{readListFile(e.target.files[0]);e.target.value='';});
+  const rd=new FileReader();rd.onload=()=>{if(tab==='backtest')setBtText(rd.result,`Loaded ${f.name}`);else{if(tab!=='list')setTab('list');loadList(rd.result,`Added ${f.name}`,f.name);}};rd.readAsText(f);}
+['file','file2','file3'].forEach(id=>$(id).onchange=e=>{[...e.target.files].forEach(readListFile);e.target.value='';});
 // drag a file anywhere on the page
 let dragN=0;const hasFiles=e=>e.dataTransfer&&[...(e.dataTransfer.types||[])].includes('Files');
 window.addEventListener('dragenter',e=>{if(!hasFiles(e))return;e.preventDefault();dragN++;$('dropveil').classList.add('on');});
 window.addEventListener('dragover',e=>{if(hasFiles(e))e.preventDefault();});
 window.addEventListener('dragleave',e=>{if(!hasFiles(e))return;dragN=Math.max(0,dragN-1);if(!dragN)$('dropveil').classList.remove('on');});
-window.addEventListener('drop',e=>{if(!hasFiles(e))return;e.preventDefault();dragN=0;$('dropveil').classList.remove('on');readListFile(e.dataTransfer.files[0]);});
+window.addEventListener('drop',e=>{if(!hasFiles(e))return;e.preventDefault();dragN=0;$('dropveil').classList.remove('on');[...e.dataTransfer.files].slice(0,tab==='backtest'?1:20).forEach(readListFile);});
 $('tmpl').onclick=()=>{$('tmplbox').classList.toggle('on');$('tmpltext').value=TEMPLATE;};
 $('copytmpl').onclick=()=>copyText(TEMPLATE,'tmplbox','tmpltext');
 async function copyText(txt,box,area){try{await navigator.clipboard.writeText(txt);toast('Copied');}catch(e){$(box).classList.add('on');$(area).value=txt;$(area).select();toast('Select all and copy from the box');}}
@@ -1745,7 +1787,7 @@ function renderAll(){renderList();if(tab==='live')renderLive();if(tab==='garage'
 
 /* ================= Boot ================= */
 loadLocal();
-RAW=parseInput(ST.listText);$('input').value=ST.listText;
+rebuildRaw();
 recompute();
 const startTab=(location.hash||'').replace('#','');
 
