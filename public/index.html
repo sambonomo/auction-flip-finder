@@ -789,13 +789,13 @@ function carS(S,o){
 
 /* ================= Defaults ================= */
 const DEFAULT_SETTINGS={
-  maxGrade:2.5,sellGrade:4.0,cap:2000,minP:750,target:1500,targetPct:6,floorPct:3,haircut:0,aiUse:'yes',autoTune:'yes',useResearch:'yes',liftAge:'no',season:'yes',lane:'national',
+  maxGrade:2.5,sellGrade:4.0,cap:2000,minP:750,target:1000,targetPct:6,floorPct:3,haircut:0,aiUse:'yes',autoTune:'yes',useResearch:'yes',liftAge:'no',season:'yes',lane:'national',
   liftPct:9,panelPenalty:0.2,hammerPct:96,driftWk:0.3,
   exitMode:'auction',auctionDays:21,retailPct:112,retailPrep:400,retailCost:600,retailDays:45,dealerPct:96,dealerDays:10,
-  feeMode:'tiered',feeVal:500,tIn:150,tOut:150,sellFee:500,doc:100,perDay:10,apr:9,reserve:150,
+  feeMode:'tiered',feeVal:500,tIn:150,tOut:150,sellFee:500,doc:100,perDay:0,apr:9,reserve:150,
   reconMult:1,reconPt:750,overrun:25,shortGrade:3.5,
-  mmrKind:'adj',baseGrade:3.2,rev:9,
-  sellPct:100,sellLo:96,sellHi:108,cheapMMR:10000,sellThru:50,rerunDays:7,noSaleFee:50,onlineFee:0,psi:0,
+  mmrKind:'adj',baseGrade:3.2,rev:10,
+  sellPct:100,sellLo:96,sellHi:108,cheapMMR:10000,sellThru:85,rerunDays:7,noSaleFee:50,onlineFee:0,psi:0,
   gradeSd:0.4,reconSd:25,priceSd:4,lemonPct:10,lemonCost:1800,
   liftSd:2.5,rerunCut:1,fpFee:0,conf:70,needSell:'yes',
   tiers:[[500,260],[1000,270],[1500,295],[2000,305],[3000,340],[4000,365],[5000,385],[6000,395],[7000,410],[8000,420],[9000,445],[10000,470],[11000,485],[12000,500],[13000,510],[14000,520],[15000,540],[16000,565],[17000,590],[18000,600],[19000,620],[20000,640],[21000,660],[22000,715],[23000,725],[24000,740],[25000,755],[26000,805],[27000,815],[28000,835],[29000,845],[30000,860],[31000,875],[36000,960],[1e9,1080]],
@@ -1321,7 +1321,11 @@ function mergeState(s){
   if(rv<8){const sv=s.settings||{};   // research pass 2: all-seller Manheim average is 99.5% of MMR, well-presented dealer cars report more
     if(sv.sellPct==null||(sv.sellPct===98&&sv.sellLo===94&&sv.sellHi===101)){out.settings.sellPct=100;out.settings.sellLo=96;out.settings.sellHi=108;}}
   if(rv<9&&((s.settings||{}).driftWk==null||(s.settings||{}).driftWk===.45))out.settings.driftWk=.3;   // year average; the month table carries the season (0.8 in November)
-  out.settings.rev=9;   // Manheim's export MMR is confirmed grade-adjusted
+  if(rv<10){const sv=s.settings||{},mv=(k,was,now)=>{if(sv[k]==null||sv[k]===was)out.settings[k]=now;};   // audit, Nov 2026: three cushions that stacked on top of costs already counted
+    mv('sellThru',50,85);   // a fixed car priced at the market sells most runs; 50% is the average for sellers holding out for more
+    mv('perDay',10,0);      // interest and the market's weekly drop are charged on their own lines, and the car is trucked out so there is no auction storage
+    mv('target',1500,1000);}   // main bid is the price that leaves $1,000; the walk-away still leaves $750
+  out.settings.rev=10;
   out.book=Array.isArray(s.book)&&s.book.length?s.book:clone(DEFAULT_BOOK);out.ov=s.ov||{};out.results=s.results||{};out.ai=s.ai||{};out.tuneLog=Array.isArray(s.tuneLog)?s.tuneLog:[];
   out.lists=Array.isArray(s.lists)?s.lists:(s.listText?[{id:'l0',name:'Saved list',file:'',text:s.listText,at:s.updatedAt||0}]:[]);out.listText='';
   if((s.resetRev||0)<2){out.lists=[];out.ov={};out.results={};out.btText='';}   // clean start requested 2026-11-15: test lists and results are dropped once
