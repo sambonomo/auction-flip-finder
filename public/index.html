@@ -962,7 +962,7 @@ function needAt(S,o,h,kind){const cash=h+buyerFee(S,h)+S.tIn+o.recon;return (S.h
 // Every replay's profit moves down dollar for dollar (plus fee and interest) as the hammer goes up, so one big
 // set of replays prices every bid exactly. q is the share of replays allowed to fall short.
 function bidAt(S,o,sim,q,kind){
-  const base=sim.out[Math.min(sim.out.length-1,Math.floor(sim.out.length*q))],c0=sim.h+buyerFee(S,sim.h);
+  const base=q==='mean'?sim.out.reduce((a,b)=>a+b,0)/sim.out.length:sim.out[Math.min(sim.out.length-1,Math.floor(sim.out.length*q))],c0=sim.h+buyerFee(S,sim.h);   // 'mean': the average replay, which carries the rare big repair bill the middle replay never sees
   const gap=h=>base-((h+buyerFee(S,h))-c0)*sim.k-needAt(S,o,h,kind);
   if(gap(0)<0)return 0;let lo=0,hi=Math.max(1000,mmrAt(S,o,o.gradeAch)*1.6);if(gap(hi)>=0)return Math.floor(hi/25)*25;
   for(let i=0;i<32;i++){const m=(lo+hi)/2;gap(m)>=0?lo=m:hi=m;}
@@ -1008,8 +1008,12 @@ function evaluate(S,o){
   // Bids come from the replays, not the on-paper plan: the plan assumes the grade and the recon both land.
   o.paperMax=maxBidFor(S,o,S.target,o.exitUsed);
   o.paperWalk=maxBidFor(S,o,S.minP,o.exitUsed);
-  o.max=bidAt(S,o,sim,.5,'target');
-  o.walk=Math.max(o.max,bidAt(S,o,sim,.5,'floor'));
+  // A bid has to clear the profit in the typical replay AND on average. On most cars the two agree; on a model with a
+  // common, costly failure the average is far lower, and a bid set on the typical replay alone loses money over many cars.
+  const typMax=bidAt(S,o,sim,.5,'target'),typWalk=Math.max(typMax,bidAt(S,o,sim,.5,'floor'));
+  o.max=Math.min(typMax,bidAt(S,o,sim,'mean','target'));
+  o.walk=Math.max(o.max,Math.min(typWalk,bidAt(S,o,sim,'mean','floor')));
+  o.riskCut=typWalk-o.walk;   // how far repair risk pulled the walk-away bid down
   o.safe=bidAt(S,o,sim,1-(S.conf||70)/100,'floor');if(o.safe&&o.max&&o.safe>o.max)o.safe=o.max;   // the safe bid never sits above the max bid
   o.tNeed=needAt(S,o,o.bidUsed,'target');o.fNeed=needAt(S,o,o.bidUsed,'floor');o.tMax=needAt(S,o,o.max,'target');o.fWalk=needAt(S,o,o.walk,'floor');
   o.pHitMax=o.max?(()=>{const d=((o.max+buyerFee(S,o.max))-(sim.h+buyerFee(S,sim.h)))*sim.k;return sim.out.filter(x=>x-d>=S.minP).length/sim.out.length;})():null;
@@ -1034,6 +1038,7 @@ function evaluate(S,o){
   o.hard=o.cond==null||!!o.flag||!!(o.research&&o.research.model&&o.research.model.avoid);   // the only reasons a car is ruled out outright
   if(o.cond!=null&&o.cond>S.maxGrade+1e-9)o.warn.push(`CR ${o.cond.toFixed(1)} is above your usual ${S.maxGrade.toFixed(1)}`);
   if(o.recon>S.cap)o.warn.push(`repairs ${money(o.recon)} are over your usual ${money(S.cap)}`);
+  if(o.riskCut>=200)o.warn.push(`bid lowered ${money(o.riskCut)} for this model's repair risk`);
   if(o.warn.length&&(o.verdict==='buy'||o.verdict==='maybe'))o.reason+=' · '+o.warn.join(' · ');
   if(o.research&&o.research.model&&o.research.model.flag&&(o.verdict==='buy'||o.verdict==='maybe'))o.reason+=' · known issue, check notes';
   if(o.cheap&&(o.verdict==='buy'||o.verdict==='maybe'))o.reason+=` · under ${money(S.cheapMMR)} MMR, thin margin`;
